@@ -6,3 +6,122 @@ output: html_document
 ---
 
 
+### Description
+This .rmd file processes the data to create all figures for Brown & Ying et a
+
+* Data
+  + Spike counts by SCPP1V1: SCPP1V1.tcl was run on 8s epochs of data, with glitch=200. The processor generated text files, containing spike counts, theta and delta power. SCPP1V1.tcl outputs: "ndfFilename_SCPP1V1.txt", organised in individual folders by animalID (Raw data: Dropbox/Analysis/Neuroarchiver/J20EEG/SCPP1V1).
+  + Spike counts by Matthias's scripts: To be added
+  + Metadata: RecordingInformationJ20_Saved180816.csv
+  + Abeta load data: to be added
+  + Chat data: to be added
+  + AChE data: to be added
+
+
+
+###Package Initialisation 
+
+First, load packages and source files
+```{r LoadPackages_Chunk, echo=FALSE}
+library(lubridate)
+library(dplyr)
+library(lazyeval) #Needed for using ggplot2 library
+library(ggplot2)
+library(cowplot)
+library(stringr)
+library(scatterplot3d)
+
+
+sourceDir <- function(path, trace = TRUE, ...) {
+    for (nm in list.files(path, pattern = "\\.[Rr]$")) {
+       if(trace) cat(nm,":")           
+       source(file.path(path, nm), ...)
+       if(trace) cat("\n")
+    }
+}
+sourceDir("R/")  #All function in R/ folder relative to project
+```
+### Datafile and variable initialisation
+Specify files and folders to be used
+```{r VariableInitialisationChunk, ECHO=FALSE}
+NDFDataParentFolder<-"~/Dropbox/ANALYSIS/J20_EEG_Manuscript/Data/SCPP1V1_TCL"
+RecordingInfoFile<-"./Data/RecordingInfo.csv"
+```
+
+Import summary recording information dataframe
+```{r ImportRecordingInformation, ECHO=FALSE}
+
+summary_dataframe<-read.csv(RecordingInfoFile, na = "empty")
+summary_dataframe$animalID<-as.character(summary_dataframe$animalID)
+summary_dataframe$drug_date<-as.character(summary_dataframe$drug_date)
+summary_dataframe$drug_time<-as.character(summary_dataframe$drug_time)
+summary_dataframe$time_zone<-as.character(summary_dataframe$time_zone) #Set to "Europe/london" except for animals when clocks changed from GMT-> daylight savings and they stayed on GMT which should be set to "UTC" 
+
+
+```
+
+
+### Figure 1: Spike rate between genotype
+
+This figure requires a dataframe Fig1_summary_dataframe=animalID|genotype|time_zone|spike_rate
+
+Steps:
+1. Create fig1_dataframe from recordingInformation
+```{r create_fig1_dataframe, ECHO=FALSE}
+  fig1_summary_dataframe<-summary_dataframe[, c("animalID", "genotype", "time_zone")]
+```
+  
+
+2. For each AnimalID:
+  i. Set AnimalID subfolder
+  ii. Create SCPPP1_dataframe from all NDFFileName_SCPP1V1.txt files and save to a list with elements accessed by animalID
+  
+  
+```{r CalculateSpikeRateChunk, ECHO=FALSE}
+
+#Initialise variables for current subject
+SCPP1_dataframe_list<-list()
+ECDF_list<-list()
+SpikeCount_x <- c()
+SpikeCount_ID <- as.factor(c())
+SpikeCount_genotype <- as.factor(c())
+for(i in 1:nrow(fig1_summary_dataframe)){
+  animalID_current<-fig1_summary_dataframe$animalID[i]
+  full_path<-paste(NDFDataParentFolder, animalID_current, sep="/")
+  time_zone<-fig1_summary_dataframe$time_zone[i]
+  
+#Next import all files in input_path to create a new r dataframe called `SCPP1_dataframe'
+  SCPP1_dataframe<-ImportData(full_path)
+
+#Add time variables and lighting information to dataframe. This needs to be done before excluding intervals
+  SCPP1_dataframe <- GetTimeOfDayAndDate(SCPP1_dataframe, time_zone)
+  # Exclude Loss and Artifact intervals
+  SCPP1_dataframe <- ExcludeIntervals(SCPP1_dataframe, 3)
+
+  
+  
+#Save SCPP1_dataframe to have current animalID and export
+  SCPP1_dataframe_list[[animalID_current]]<-SCPP1_dataframe
+  
+#create CDF for animal i
+  ECDF_list[[animalID_current]]<-CreateECDF(SCPP1_dataframe)
+}
+```
+
+Comparing ECDFs between animals
+
+```{r ECDF_PlotChunk, echo=FALSE}
+#Plot ECDF for all animals
+for(i in 1:nrow(fig1_summary_dataframe)){
+  animalID_current<-fig1_summary_dataframe$animalID[i]
+  genotype_current<-fig1_summary_dataframe$genotype[i]
+  df_temp<-as.data.frame(ECDF_list[i])
+  df_temp
+ecdf_plot<-ggplot(df_temp, aes(x=ColNames[1], y=ColNames[3])) +  
+  geom_step() + xlab("Number of spikes") + ylab("Number of intervals")
+}
+ecdf_plot
+
+
+
+```
