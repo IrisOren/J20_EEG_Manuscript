@@ -22,7 +22,7 @@ This .rmd file processes the data to create all figures for Brown & Ying et a
 ###Package Initialisation 
 
 First, load packages and source files
-```{r LoadPackages_Chunk, echo=FALSE}
+```{r LoadPackages_Chunk, echo=FALSE, include=FALSE}
 library(lubridate)
 library(dplyr)
 library(lazyeval) #Needed for using ggplot2 library
@@ -50,7 +50,7 @@ RecordingInfoFile<-"./Data/RecordingInfo.csv"
 ```
 
 Import summary recording information dataframe
-```{r ImportRecordingInformation, ECHO=FALSE}
+```{r ImportRecordingInformation, ECHO=FALSE, include=FALSE}
 
 summary_dataframe<-read.csv(RecordingInfoFile, na = "empty")
 summary_dataframe$animalID<-as.character(summary_dataframe$animalID)
@@ -68,7 +68,7 @@ This figure requires a dataframe Fig1_summary_dataframe=animalID|genotype|time_z
 
 Steps:
 1. Create fig1_dataframe from recordingInformation
-```{r create_fig1_dataframe, ECHO=FALSE}
+```{r create_fig1_dataframe, ECHO=FALSE, include=FALSE}
   fig1_summary_dataframe<-summary_dataframe[, c("animalID", "genotype", "time_zone")]
 ```
   
@@ -76,9 +76,10 @@ Steps:
 2. For each AnimalID:
   i. Set AnimalID subfolder
   ii. Create SCPPP1_dataframe from all NDFFileName_SCPP1V1.txt files and save to a list with elements accessed by animalID
+  iii. Create data frame with empirical cumulative distribution for each animal
   
   
-```{r CalculateSpikeRateChunk, ECHO=FALSE}
+```{r CalculateSpikeRateChunk, ECHO=FALSE, include=FALSE}
 
 #Initialise variables for current subject
 SCPP1_dataframe_list<-list()
@@ -113,7 +114,7 @@ for(i in 1:nrow(fig1_summary_dataframe)){
 }
 ```
 
-Comparing ECDFs between animals
+## Compare ECDFs between animals
 
 ```{r ECDF_PlotChunk, echo=FALSE}
 #Plot ECDF for all animals
@@ -133,9 +134,34 @@ ecdf_WT_plot<-ecdf_WT_plot +
 
 ecdf_plot_all<-ggplot(ECDF_df_all, aes(x=SpikeCount, y=CumFrequency, color=AnimalID))
 ecdf_plot_all<-ecdf_plot_all + geom_step() + xlab("Number of spikes") + ylab("Number of intervals") + facet_wrap(~Genotype)
-ecdf_J20_plot
-ecdf_WT_plot
+
 ecdf_plot_all
 
 
 ```
+
+
+
+``` {r ECDF_stats_chunk, ECHO=FALSE, include=FALSE}
+ZeroSpikeIntervals_WT <- filter(ecdf_df_WT, SpikeCount==0)
+ZeroSpikeIntervals_WT$CumFrequencyComplement=1-ZeroSpikeIntervals_WT$CumFrequency
+
+
+
+ZeroSpikeIntervals_J20 <- filter(ecdf_df_J20, SpikeCount==0)
+ZeroSpikeIntervals_J20$CumFrequencyComplement=1-ZeroSpikeIntervals_J20$CumFrequency
+mean(ZeroSpikeIntervals_J20$CumFrequencyComplement)
+
+```
+
+```{r CompareECDFStats, echo=FALSE}
+PercGreaterOneSpike_WT<-ZeroSpikeIntervals_WT$CumFrequencyComplement
+PercGreaterOneSpike_J20<-ZeroSpikeIntervals_J20$CumFrequencyComplement
+#Compare PercGreaterOneSpike in WT and J20
+
+###TO DO: WRITE SCRIPT TO
+###A) CHECK TEST ASSUMPTIONS FOR PARAMETRIC 
+###B) PERFORM PARAMETRIC TESTS
+#REPORT SUMMARY STATS FOR TEST OF CHOICE
+#WRITE UP AS WOULD BE IN PAPER TO ENSURE THAT YOU HAVE RELEVANT STATS
+
