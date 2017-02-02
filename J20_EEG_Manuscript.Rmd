@@ -57,6 +57,8 @@ summary_dataframe$animalID<-as.character(summary_dataframe$animalID)
 summary_dataframe$drug_date<-as.character(summary_dataframe$drug_date)
 summary_dataframe$drug_time<-as.character(summary_dataframe$drug_time)
 summary_dataframe$time_zone<-as.character(summary_dataframe$time_zone) #Set to "Europe/london" except for animals when clocks changed from GMT-> daylight savings and they stayed on GMT which should be set to "UTC" 
+summary_dataframe$drug_date_time<- paste(as.character(summary_dataframe$drug_date)
+, as.character(summary_dataframe$drug_time), " ")
 
 
 ```
@@ -69,14 +71,17 @@ This figure requires a dataframe Fig1_summary_dataframe=animalID|genotype|time_z
 Steps:
 1. Create fig1_dataframe from recordingInformation
 ```{r create_fig1_dataframe, ECHO=FALSE, include=FALSE}
-  fig1_summary_dataframe<-summary_dataframe[, c("animalID", "genotype", "time_zone")]
+  fig1_summary_dataframe<-summary_dataframe[, c("animalID", "genotype", "time_zone", "drug_date_time")]
 ```
   
 
 2. For each AnimalID:
   i. Set AnimalID subfolder
-  ii. Create SCPPP1_dataframe from all NDFFileName_SCPP1V1.txt files and save to a list with elements accessed by animalID
-  iii. Create data frame with empirical cumulative distribution for each animal
+  ii. Create SCPPP1_dataframe from all NDFFileName_SCPP1V1.txt files 
+  iii. Add variables for time and for separating drug and treatment conditions
+  iv. Exclude loss intervals
+  v. Save to a list with elements accessed by animalID
+  iv. Create data frame with empirical cumulative distribution for each animal
   
   
 ```{r CalculateSpikeRateChunk, ECHO=FALSE, include=FALSE}
@@ -90,17 +95,26 @@ SpikeCount_x <- c()
 SpikeCount_ID <- as.factor(c())
 SpikeCount_genotype <- as.factor(c())
 for(i in 1:nrow(fig1_summary_dataframe)){
+  #i. Set AnimalID subfolder
   animalID_current<-fig1_summary_dataframe$animalID[i]
   genotype_current<-fig1_summary_dataframe$genotype[i]
   full_path<-paste(NDFDataParentFolder, animalID_current, sep="/")
-  time_zone<-fig1_summary_dataframe$time_zone[i]
   
-#Next import all files in input_path to create a new r dataframe called `SCPP1_dataframe'
-  SCPP1_dataframe<-ImportData(full_path)
+      #Next import all files in input_path to create a new r dataframe called             `SCPP1_dataframe'
+    SCPP1_dataframe<-ImportData(full_path)
+  
+  #Apend time information to data frame  
+    SCPP1_dataframe <- GetTimeOfDayAndDate(SCPP1_dataframe, time_zone)
+  
+    #Apend treatment variable  TO DO!!!!!!!!!!
+    Treatment<-c()
+    Treatment[which(get(animalID_current)$TimeOfDay<strptime(drug_date_time, "%Y-%m-%d %H:%M:%S"))]="Control"
+Treatment[length(Treatment)+1]="Unknown"
+Treatment[(length(Treatment)+1):(dim(get(animalID_chan))[1])]="Drug"
+assign(animalID_chan, cbind(get(animalID_chan), Treatment))
+ 
 
-#Add time variables and lighting information to dataframe. This needs to be done before excluding intervals
-  SCPP1_dataframe <- GetTimeOfDayAndDate(SCPP1_dataframe, time_zone)
-  # Exclude Loss and Artifact intervals
+ # Exclude Loss and Artifact intervals
   SCPP1_dataframe <- ExcludeIntervals(SCPP1_dataframe, 3)
 
   
