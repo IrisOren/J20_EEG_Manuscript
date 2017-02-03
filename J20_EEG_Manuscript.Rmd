@@ -130,8 +130,12 @@ for(i in 1:nrow(fig1_summary_dataframe)){     #Loop through animals
 First, select for control condition
 ```{r SelectControlCondition_Chunk, echo=FALSE, include=FALSE}
 SCPP1_dataframe_list_control<-list()
-for(i in 1:nrow(fig1_summary_dataframe))
+SCPP1_dataframe_list_drug<-list()
+
+for(i in 1:nrow(fig1_summary_dataframe)){
         SCPP1_dataframe_list_control[[i]]<-filter(SCPP1_dataframe_list[[i]], Treatment=="Control")
+        SCPP1_dataframe_list_drug[[i]]<-filter(SCPP1_dataframe_list[[i]], Treatment=="Drug")
+}
 ```
 
 
