@@ -14,11 +14,11 @@ SpikeCount_df <- SpikeCount_df %>%
 #Add genotype
 if(genotypeFactor=="WT"){
   SpikeCount_df <- SpikeCount_df %>% 
-    mutate(Genotype=1)
+    mutate(Genotype="WT")
 }
 else{
   SpikeCount_df <- SpikeCount_df %>% 
-    mutate(Genotype=2)
+    mutate(Genotype="J20")
 }
 
  
