@@ -133,7 +133,8 @@ ECDF_list<-list()
 for (j in 1:nrow(fig1_summary_dataframe)){
   animalID_current<-fig1_summary_dataframe$animalID[j]
   genotype_current<-fig1_summary_dataframe$genotype[j]
-  ECDF_current <-CreateECDF(SCPP1_dataframe, genotype_current, animalID_current)
+  dataframe_current<-SCPP1_dataframe_list[[j]]
+  ECDF_current <-CreateECDF(dataframe_current, genotype_current, animalID_current)
   ECDF_list[[fig1_summary_dataframe$animalID[j]]]<-ECDF_current  #A list of all ECDFs for each animal. Accessed by animalIDs in fig1_summary_dataframe$AnimalID
    }
 ```
@@ -146,8 +147,8 @@ for (j in 1:nrow(fig1_summary_dataframe)){
 ECDF_df_all<-rbindlist(ECDF_list)
 
 #Now create separate DFs for each genotype using filter
-ecdf_df_J20<-filter(ECDF_df_all, Genotype==2)
-ecdf_df_WT<-filter(ECDF_df_all, Genotype==1)
+ecdf_df_J20<-filter(ECDF_df_all, Genotype=="J20")
+ecdf_df_WT<-filter(ECDF_df_all, Genotype=="WT")
 
 
 ecdf_WT_plot<-ggplot(ecdf_df_WT, aes(x=SpikeCount, y=CumFrequency, color=AnimalID))
