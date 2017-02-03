@@ -127,8 +127,8 @@ for(i in 1:nrow(fig1_summary_dataframe)){     #Loop through animals
 
 ## Compare spike rate data between animals in control condition
 
-First, select for control condition
-```{r SelectControlCondition_Chunk, echo=FALSE, include=FALSE}
+First, select for control/drug treatment condition
+```{r SelectTreatmentCondition_Chunk, echo=FALSE, include=FALSE}
 SCPP1_dataframe_list_control<-list()
 SCPP1_dataframe_list_drug<-list()
 
