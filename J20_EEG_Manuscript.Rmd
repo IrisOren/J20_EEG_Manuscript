@@ -119,16 +119,17 @@ for(i in 1:nrow(fig1_summary_dataframe)){     #Loop through animals
     # Exclude Loss and Artifact intervals
     SCPP1_dataframe <- ExcludeIntervals(SCPP1_dataframe, 3)
 
-    #Save SCPP1_dataframe to have current animalID and export
-    SCPP1_dataframe_all_list[[animalID_current]]<-SCPP1_dataframe
-  
+     #Save SCPP1_dataframe to have current animalID and export
+    SCPP1_dataframe_list[[animalID_current]]<-SCPP1_dataframe
+
 }
 ```
 
-## Compare spike rate data between animals in control condition
+## Compare spike rate data between animals in control condition 
+An average spike rate over the recording is not informative. The readout we use is number of spikes/8s interval which is the SpikeCount variable in SCPP1_dataframe.
 
-First, select for control/drug treatment condition
-```{r SelectTreatmentCondition_Chunk, echo=FALSE, include=FALSE}
+First, Select for control/drug treatment condition
+```{r SelectTreatmentCondition_Chunk, echo=FALSE}
 SCPP1_dataframe_list_control<-list()
 SCPP1_dataframe_list_drug<-list()
 
@@ -137,6 +138,8 @@ for(i in 1:nrow(fig1_summary_dataframe)){
         SCPP1_dataframe_list_drug[[i]]<-filter(SCPP1_dataframe_list[[i]], Treatment=="Drug")
 }
 ```
+
+To compare between animals/genotypes, we will use ECDF.
 
 
   iv. Create data frame with empirical cumulative distribution for each animal in control conditions
@@ -160,7 +163,7 @@ for (j in 1:nrow(fig1_summary_dataframe)){
 
 
     #First, combine all elements of ECDF_list into a single dataframe
-    ECDF_df_all<-rbindlist(ECDF_list)
+    ECDF_df_all_ctrl<-rbindlist(ECDF_list)
 
 
 #Now create separate DFs for each genotype using filter
@@ -171,10 +174,10 @@ for (j in 1:nrow(fig1_summary_dataframe)){
 #ecdf_WT_plot<-ecdf_WT_plot +
 #geom_step() + xlab("Number of spikes") + ylab("Number of intervals") +
 
-ecdf_plot_all<-ggplot(ECDF_df_all, aes(x=SpikeCount, y=CumFrequency, color=AnimalID))
-ecdf_plot_all<-ecdf_plot_all + geom_step() + xlab("Number of spikes") + ylab("Number of intervals") + facet_wrap(~Genotype) +ggtitle("Cumulative frequency of Spike count/8s interval")
+ecdf_plot_all_ctrl<-ggplot(ECDF_df_all_ctrl, aes(x=SpikeCount, y=CumFrequency, color=AnimalID))
+ecdf_plot_all_ctrl<-ecdf_plot_all + geom_step() + xlab("Number of spikes") + ylab("Number of intervals") + facet_wrap(~Genotype) +ggtitle("Cumulative frequency of Spike count/8s interval")
 
-ecdf_plot_all
+ecdf_plot_all_ctrl
 #http://blog.amitsharma.in/2015/09/13/cumulative-distribution-plots-for-frequency-data-in-r/
 
 ```
@@ -182,13 +185,15 @@ ecdf_plot_all
 To compare between genotypes, for each animal, we extract the proportion of intervals with one or more than one spike.
 
 ``` {r ECDF_stats_chunk, ECHO=FALSE, include=FALSE}
-ZeroSpikeIntervals_WT <- filter(ecdf_df_WT, SpikeCount==0)
-ZeroSpikeIntervals_WT$CumFrequencyComplement=1-ZeroSpikeIntervals_WT$CumFrequency
+#For each animal, evaluate the percentile of intervals with one or more spikes
+for(i in 1:nrow(fig1_summary_dataframe)){
+  AnimalID_current<-fig1_summary_dataframe$animalID[i]
+  ECDF_current<-filter(ECDF_df_all_ctrl, AnimalID==AnimalID_current)
+  fig1_summary_dataframe$Grtr1Spike[i]<-ECDF_current$CumFrequency[2]  #Percentage of intervals with 1 or more spikes for this animal
+  
+  
+}
 
-
-
-ZeroSpikeIntervals_J20 <- filter(ecdf_df_J20, SpikeCount==0)
-ZeroSpikeIntervals_J20$CumFrequencyComplement=1-ZeroSpikeIntervals_J20$CumFrequency
 
 
 ```
