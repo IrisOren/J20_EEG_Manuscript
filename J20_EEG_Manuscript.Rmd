@@ -64,7 +64,7 @@ summary_dataframe$drug_date_time<-  paste(as.character(summary_dataframe$drug_da
 ```
 
 
-### Figure 1: Spike rate between genotype
+# Figure 1: Spike rate between genotype
 
 This figure requires a dataframe Fig1_summary_dataframe=animalID|genotype|time_zone|spike_rate
 
@@ -164,24 +164,22 @@ for (j in 1:nrow(fig1_summary_dataframe)){
 
 
 #Now create separate DFs for each genotype using filter
-ecdf_df_J20<-filter(ECDF_df_all, Genotype=="J20")
-ecdf_df_WT<-filter(ECDF_df_all, Genotype=="WT")
+#ecdf_df_J20<-filter(ECDF_df_all, Genotype=="J20")
+#ecdf_df_WT<-filter(ECDF_df_all, Genotype=="WT")
 
-
-ecdf_WT_plot<-ggplot(ecdf_df_WT, aes(x=SpikeCount, y=CumFrequency, color=AnimalID))
-ecdf_WT_plot<-ecdf_WT_plot +
-  geom_step() + xlab("Number of spikes") + ylab("Number of intervals")
-
+#ecdf_WT_plot<-ggplot(ecdf_df_WT, aes(x=SpikeCount, y=CumFrequency, color=AnimalID))
+#ecdf_WT_plot<-ecdf_WT_plot +
+#geom_step() + xlab("Number of spikes") + ylab("Number of intervals") +
 
 ecdf_plot_all<-ggplot(ECDF_df_all, aes(x=SpikeCount, y=CumFrequency, color=AnimalID))
-ecdf_plot_all<-ecdf_plot_all + geom_step() + xlab("Number of spikes") + ylab("Number of intervals") + facet_wrap(~Genotype)
+ecdf_plot_all<-ecdf_plot_all + geom_step() + xlab("Number of spikes") + ylab("Number of intervals") + facet_wrap(~Genotype) +ggtitle("Cumulative frequency of Spike count/8s interval")
 
 ecdf_plot_all
-
+#http://blog.amitsharma.in/2015/09/13/cumulative-distribution-plots-for-frequency-data-in-r/
 
 ```
 
-
+To compare between genotypes, for each animal, we extract the proportion of intervals with one or more than one spike.
 
 ``` {r ECDF_stats_chunk, ECHO=FALSE, include=FALSE}
 ZeroSpikeIntervals_WT <- filter(ecdf_df_WT, SpikeCount==0)
@@ -191,14 +189,20 @@ ZeroSpikeIntervals_WT$CumFrequencyComplement=1-ZeroSpikeIntervals_WT$CumFrequenc
 
 ZeroSpikeIntervals_J20 <- filter(ecdf_df_J20, SpikeCount==0)
 ZeroSpikeIntervals_J20$CumFrequencyComplement=1-ZeroSpikeIntervals_J20$CumFrequency
-mean(ZeroSpikeIntervals_J20$CumFrequencyComplement)
+
 
 ```
+The number of intervals with one or more spikes differed between genotypes (WT=`r mean(ZeroSpikeIntervals_WT$CumFrequencyComplement)`,SD: `r sd(ZeroSpikeIntervals_WT$CumFrequencyComplement)`, `r J20=mean(ZeroSpikeIntervals_J20$CumFrequencyComplement)` SD:`r sd(ZeroSpikeIntervals_WT$CumFrequencyComplement)`)
 
-```{r CompareECDFStats, echo=FALSE}
-PercGreaterOneSpike_WT<-ZeroSpikeIntervals_WT$CumFrequencyComplement
-PercGreaterOneSpike_J20<-ZeroSpikeIntervals_J20$CumFrequencyComplement
+
+The number of intervals with more than 1 spike was compared between genotypes using a permutation test
+
+```{r BinomialLinearRegression_Chunk, echo=FALSE}
+
 #Compare PercGreaterOneSpike in WT and J20
+
+#Prepare the data for binomial regression. 
+#a) for each dataframe in SCPP1dataframe_list_control, Transform SpikeCount to binary 
 
 ###TO DO: WRITE SCRIPT TO
 ###A) CHECK TEST ASSUMPTIONS FOR PARAMETRIC 
@@ -206,3 +210,24 @@ PercGreaterOneSpike_J20<-ZeroSpikeIntervals_J20$CumFrequencyComplement
 #REPORT SUMMARY STATS FOR TEST OF CHOICE
 #WRITE UP AS WOULD BE IN PAPER TO ENSURE THAT YOU HAVE RELEVANT STATS
 
+```
+
+
+IGNORE this because an average spike rate isn't meaningful
+Calculate spike rate as total number of spikes /(total intervals * 8s) 
+```{r  TotalSpikeRate_Chunk, echo=FALSE}
+
+for(i in 1:nrow(fig1_summary_dataframe)){
+  
+  SCPP1_dataframe_current<-SCPP1_dataframe_list[[i]]
+  SCPP1_dataframe_current<-filter(SCPP1_dataframe_current, Treatment=="Control") #Select for control conditions
+  fig1_summary_dataframe$SpikeRate_Control[i]<-CalculateSpikeRate(SCPP1_dataframe_current, 8)
+  
+  SCPP1_dataframe_current<-filter(SCPP1_dataframe_current, Treatment=="Drug") #Select for Drug conditions
+  fig1_summary_dataframe$SpikeRate_Control[i]<-CalculateSpikeRate(SCPP1_dataframe_current, 8)
+  
+}
+
+
+```
+##################
