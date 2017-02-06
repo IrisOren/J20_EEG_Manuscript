@@ -1,34 +1,34 @@
-CreateECDF<-function(DF, genotypeFactor, AnimalIDFactor){
-SpikeCount_df<-data.frame(SpikeCount=DF$SpikeCount)
+CreateECDF<-function(DF, GenotypeFactor, AnimalIDFactor){
+SpikeCountDF<-data.frame(SpikeCount=DF$SpikeCount)
 
-SpikeCount_df <- SpikeCount_df %>% group_by(SpikeCount) %>%  
+SpikeCountDF <- SpikeCountDF %>% group_by(SpikeCount) %>%  
   summarize(NumIntervals=n())
 
-SpikeCount_df <- SpikeCount_df %>%  
+SpikeCountDF <- SpikeCountDF %>%  
   arrange(SpikeCount) %>% 
   mutate(CumFrequency=cumsum(NumIntervals))
 #And Normalise CumFrequency by max of CumFrequency
-  SpikeCount_df<- SpikeCount_df %>%
+  SpikeCountDF<- SpikeCountDF %>%
     mutate(CumFrequency=CumFrequency/max(CumFrequency))
 
-#Add genotype
-if(genotypeFactor=="WT"){
-  SpikeCount_df <- SpikeCount_df %>% 
+#Add Genotype
+if(GenotypeFactor=="WT"){
+  SpikeCountDF <- SpikeCountDF %>% 
     mutate(Genotype="WT")
 }
 else{
-  SpikeCount_df <- SpikeCount_df %>% 
+  SpikeCountDF <- SpikeCountDF %>% 
     mutate(Genotype="J20")
 }
 
  
-  SpikeCount_df$Genotype<-as.factor(SpikeCount_df$Genotype)
+  SpikeCountDF$Genotype<-as.factor(SpikeCountDF$Genotype)
   
   #Add animalID
-  SpikeCount_df<- SpikeCount_df %>%
-    mutate(AnimalID=AnimalIDFactor)
+  SpikeCountDF<- SpikeCountDF %>%
+    mutate(animalID=AnimalIDFactor)
 
 
-return(SpikeCount_df) 
+return(SpikeCountDF) 
 }
 
