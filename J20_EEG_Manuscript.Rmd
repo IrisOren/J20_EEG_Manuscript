@@ -214,7 +214,7 @@ summarise(GroupedData, mean=mean(Grtr1Spike, na.rm=TRUE), sd=sd(Grtr1Spike, na.r
 
 ```{r Grtr1spike_PermutationTest_Chunk, echo=FALSE}
 
-#Remove NAs
+#Remove NAs before performing permutation test
 Fig1SummaryDataframeNoNA<-na.omit(Fig1SummaryDataframe)
 
 #Compare PercGreaterOneSpike in WT and J20
