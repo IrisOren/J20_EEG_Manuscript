@@ -26,7 +26,7 @@ else{
   
   #Add animalID
   SpikeCountDF<- SpikeCountDF %>%
-    mutate(animalID=AnimalIDFactor)
+    mutate(AnimalIDVariable=AnimalIDFactor)
 
 
 return(SpikeCountDF) 

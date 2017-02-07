@@ -47,7 +47,7 @@ sourceDir("R/")  #All function in R/ folder relative to project
 Specify files and folders to be used
 ```{r VariableInitialisationChunk, ECHO=FALSE}
 NDFDataParentFolder<-"~/Dropbox/ANALYSIS/J20_EEG_Manuscript/Data/SCPP1V1_TCL"
-RecordingInfoFile<-"./Data/RecordingInfoWOLights.csv"
+RecordingInfoFile<-"./Data/RecordingInfo.csv"
 ```
 
 Import summary recording information dataframe
@@ -95,7 +95,9 @@ SCPP1DataframeAll<-data.frame()
 #spikeCount_ID <- as.factor(c())
 #spikeCount_genotype <- as.factor(c())
 for(i in 1:nrow(Fig1SummaryDataframe)){     #Loop through animals
-#for(i in 1:10){
+
+  SCPP1Dataframe<-data.frame()
+  
  #Write AnimalID, genotype and TimeZone to current animal
         AnimalIDCurrent<-Fig1SummaryDataframe$AnimalID[i]
         GenotypeCurrent<-Fig1SummaryDataframe$Genotype[i]
@@ -151,15 +153,17 @@ To compare between animals/genotypes, we will use ECDF.
   iv. Create Data frame with empirical cumulative distribution for each animal in control conditions
 ```{r Create_ECDFs_chunk, echo=FALSE, include=FALSE}
 ECDFList<-list()
-
+ECDFAllCtrlDataframe<-data.frame()
 for (j in 1:nrow(Fig1SummaryDataframe)){
+  ECDFCurrent<-data.frame()
   AnimalIDCurrent<-Fig1SummaryDataframe$AnimalID[j]
   GenotypeCurrent<-Fig1SummaryDataframe$Genotype[j]
-  DataframeCurrent<-filter(SCPP1DataframeControl, AnimalID==AnimalIDCurrent)
+  DataframeCurrent<-filter(SCPP1DataframeControl, AnimalIDVariable==AnimalIDCurrent)
   
   ECDFCurrent <-CreateECDF(DataframeCurrent, GenotypeCurrent, AnimalIDCurrent)
   ECDFList[[Fig1SummaryDataframe$AnimalID[j]]]<-ECDFCurrent  #A list of all ECDFs for each animal. Accessed by AnimalIDs in Fig1SummaryDataframe$AnimalID
-   }
+  ECDFAllCtrlDataframe<-rbind(ECDFAllCtrlDataframe, ECDFCurrent)
+  }
 ```
 
 
@@ -168,7 +172,7 @@ for (j in 1:nrow(Fig1SummaryDataframe)){
 
 
     #First, combine all elements of ECDFList into a single dataframe
-    ECDFAllCtrlDataframe<-rbindlist(ECDFList)
+    #ECDFAllCtrlDataframe<-rbindlist(ECDFList)
 
 
 #Now create separate DFs for each genotype using filter
@@ -179,8 +183,8 @@ for (j in 1:nrow(Fig1SummaryDataframe)){
 #ecdf_WT_plot<-ecdf_WT_plot +
 #geom_step() + xlab("Number of spikes") + ylab("Number of intervals") +
 
-ECDFAllCtrlPlot<-ggplot(ECDFAllCtrlDataframe, aes(x=spikeCount, y=CumFrequency, color=AnimalID))
-ECDFAllCtrlPlot<-ECDFAllCtrlPlot + geom_step() + xlab("Number of spikes") + ylab("Number of intervals") + facet_wrap(~Genotype) +ggtitle("Cumulative frequency of Spike count/8s interval")
+ECDFAllCtrlPlot<-ggplot(ECDFAllCtrlDataframe, aes(x=SpikeCount, y=CumFrequency, color=AnimalIDVariable))
+ECDFAllCtrlPlot<-ECDFAllCtrlPlot + geom_step() + xlab("Number of spikes") + ylab("Number of intervals") + facet_wrap(~Genotype) +ggtitle("Cumulative frequency of Spike count/8s interval in control conditions")
 
 ECDFAllCtrlPlot
 #http://blog.amitsharma.in/2015/09/13/cumulative-distribution-plots-for-frequency-Data-in-r/
@@ -193,8 +197,8 @@ To compare between genotypes, for each animal, we extract the proportion of inte
 #For each animal, evaluate the percentile of intervals with one or more spikes
 for(i in 1:nrow(Fig1SummaryDataframe)){
   AnimalIDCurrent<-Fig1SummaryDataframe$AnimalID[i]
-  ECDFCurrent<-filter(ECDFAllCtrlDataframe, AnimalID==AnimalIDCurrent)
-  Fig1SummaryDataframe$grtr1Spike[i]<-ECDFCurrent$CumFrequency[2]  #Percentage of intervals with 1 or more spikes for this animal
+  ECDFCurrent<-filter(ECDFAllCtrlDataframe, AnimalIDVariable==AnimalIDCurrent)
+  Fig1SummaryDataframe$Grtr1Spike[i]<-ECDFCurrent$CumFrequency[2]  #Percentage of intervals with 1 or more spikes for this animal
 }
 ```
 
@@ -203,8 +207,8 @@ The number of intervals with more than 1 spike was compared between genotypes us
 
 #Summary statistics for percentage intervals with 1 or more spikes
 ```{r SummaryStatsChunk, echo=FALSE}
-GroupedData<-group_by(Fig1SummaryDataframeNoNA, Genotype)
-summarise(grouped, mean=mean(Grtr1Spike), sd=sd(Grtr1Spike))
+GroupedData<-group_by(Fig1SummaryDataframe, Genotype)
+summarise(GroupedData, mean=mean(Grtr1Spike, na.rm=TRUE), sd=sd(Grtr1Spike, na.rm=TRUE))
 ```
 #Permutation test to compare intervals with 1 or more spikes between genotypes
 
@@ -214,7 +218,8 @@ summarise(grouped, mean=mean(Grtr1Spike), sd=sd(Grtr1Spike))
 Fig1SummaryDataframeNoNA<-na.omit(Fig1SummaryDataframe)
 
 #Compare PercGreaterOneSpike in WT and J20
-Data<-Fig1SummaryDataframeNoNA$grtr1Spike
+
+Data<-Fig1SummaryDataframeNoNA$Grtr1Spike
 Group<-Fig1SummaryDataframeNoNA$Genotype
 
 #Permutation tests, two-sided hypothesis, with 4 methods of sampling
@@ -222,20 +227,16 @@ PermutationResults_pclt<-permTS(Data~Group,alternative="two.sided",method="pclt"
 PermutationResults_exact.network<-permTS(Data~Group,alternative="two.sided",method="exact.network")
 PermutationResults_exact.ce<-permTS(Data~Group,alternative="two.sided",method="exact.ce")
 PermutationResults_exact.mc<-permTS(Data~Group,alternative="two.sided",method="exact.mc")
-
-
-###TO DO: 
-#Plot
-#REPORT SUMMARY STATS FOR TEST OF CHOICE
-#WRITE UP AS WOULD BE IN PAPER TO ENSURE THAT YOU HAVE RELEVANT STATS
-
 ```
 
 
 IGNORE this because an average spike rate isn't meaningful
 Calculate spike rate as total number of spikes /(total intervals * 8s) 
-```{r  TotalSpikeRate_Chunk, echo=FALSE, include=FALSE}
-
+```{r  Oldcodetoignore, echo=FALSE, include=FALSE}
+###TO DO: 
+#Plot
+#REPORT SUMMARY STATS FOR TEST OF CHOICE
+#WRITE UP AS WOULD BE IN PAPER TO ENSURE THAT YOU HAVE RELEVANT STATS
 #for(i in 1:nrow(Fig1SummaryDataframe)){
   
 #  SCPP1Dataframe_current<-SCPP1DataframeList[[i]]
@@ -245,7 +246,7 @@ Calculate spike rate as total number of spikes /(total intervals * 8s)
 #  SCPP1Dataframe_current<-filter(SCPP1Dataframe_current, Treatment=="Drug") #Select for Drug conditions
 #  Fig1SummaryDataframe$SpikeRate_Control[i]<-CalculateSpikeRate(SCPP1Dataframe_current, 8)
   
-}
+
 
 
 ```
