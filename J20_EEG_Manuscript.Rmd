@@ -2,7 +2,9 @@
 title: "J20_EEG_Manuscript"
 author: "Iris Oren"
 date: "19/12/2016"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 
@@ -47,7 +49,7 @@ sourceDir("R/")  #All function in R/ folder relative to project
 Specify files and folders to be used
 ```{r VariableInitialisationChunk, ECHO=FALSE}
 NDFDataParentFolder<-"~/Dropbox/ANALYSIS/J20_EEG_Manuscript/Data/SCPP1V1_TCL"
-RecordingInfoFile<-"./Data/RecordingInfo.csv"
+RecordingInfoFile<-"./Data/RecordingInfoTest.csv"
 ```
 
 Import summary recording information dataframe
@@ -70,7 +72,7 @@ SummaryDataframe$DrugDateTime<-  paste(as.character(SummaryDataframe$DrugDate)
 This figure requires a dataframe Fig1SummaryDataframe=AnimalID|Genotype|TimeZone|SpikeRate
 
 Steps:
-1. Create Fig1SummaryDataframe from recordingInformation
+1. Create Fig1SummaryDataframe from recordingInformation. 
 ```{r create_fig1_dataframe, ECHO=FALSE, include=FALSE}
   Fig1SummaryDataframe<-SummaryDataframe[, c("AnimalID", "Genotype", "TimeZone", "DrugDateTime")]
 ```
@@ -85,7 +87,7 @@ Steps:
 
   
   
-```{r ImportAndTransformNDFOutput_chunk, ECHO=FALSE, include=FALSE}
+```{r ImportAndTransformNDFOutput_chunk, ECHO=FALSE}
 
 #Initialise variables for current subject
 SCPP1DataframeList<-list()
@@ -98,23 +100,21 @@ for(i in 1:nrow(Fig1SummaryDataframe)){     #Loop through animals
 
   SCPP1Dataframe<-data.frame()
   
- #Write AnimalID, genotype and TimeZone to current animal
+ #Write AnimalID, genotype and TimeZone to variable for current animal
         AnimalIDCurrent<-Fig1SummaryDataframe$AnimalID[i]
         GenotypeCurrent<-Fig1SummaryDataframe$Genotype[i]
         TimeZoneCurrent<-Fig1SummaryDataframe$TimeZone[i]
         DrugDateTimeCurrent<-Fig1SummaryDataframe$DrugDateTime[i] 
   #i. Set AnimalID subfolder
   
- FullPath<-paste(NDFDataParentFolder, AnimalIDCurrent, sep="/")
-  
-    #Next import all files in input_path to create a new r dataframe called             `SCPP1Dataframe'
+    FullPath<-paste(NDFDataParentFolder, AnimalIDCurrent, sep="/")
+ 
+ #Next import all files in input_path to create a new r dataframe called             `SCPP1Dataframe'
     SCPP1Dataframe<-ImportData(FullPath)
   
   #Apend time information to Data frame  
     SCPP1Dataframe <- GetTimeOfDayAndDate(SCPP1Dataframe, TimeZoneCurrent)
-
-
-    #Apend treatment variable 
+  #Apend a Treatment variable to the dataframe, based on DrugDateTime as specified in Fig1SummaryDataframe 
     Treatment<-c()
     Treatment[which(SCPP1Dataframe$TimeOfDay<strptime(DrugDateTimeCurrent, "%d/%m/%y %H:%M:%S"))]="Control"
     Treatment[length(Treatment)+1]="Unknown"
@@ -123,19 +123,21 @@ for(i in 1:nrow(Fig1SummaryDataframe)){     #Loop through animals
     # Exclude Loss and Artifact intervals
     SCPP1Dataframe <- ExcludeIntervals(SCPP1Dataframe, 3)
     
-    #Apend AnimalID variable
+#Apend AnimalID variable
     AnimalIDVariable<-rep(AnimalIDCurrent, nrow(SCPP1Dataframe))
     SCPP1Dataframe<-cbind(SCPP1Dataframe, AnimalIDVariable)
 
-     #Save SCPP1Dataframe to have current AnimalID and export
-    SCPP1DataframeList[[AnimalIDCurrent]]<-SCPP1Dataframe
+ #Apend SCPP1Dataframe to SCPP1DataframeAll. To access an animal, used "filter()" 
     SCPP1DataframeAll<-rbind(SCPP1DataframeAll, SCPP1Dataframe)
 }
 
 
+#Save SCPP1DataframeAll to output directory
+  write.csv(SCPP1DataframeAll, "./Output/SCPP1DataframeAll.csv")
+
 ```
 
-## Compare spike rate Data between animals in control condition 
+## Compare SpikeCount Data between animals in control condition 
 An average spike rate over the recording is not informative. The readout we use is number of spikes/8s interval which is the spikeCount variable in SCPP1Dataframe.
 
 First, Select for control/drug treatment condition
@@ -147,59 +149,57 @@ SCPP1DataframeDrug<-filter(SCPP1DataframeAll, Treatment=="Drug")
 
 ```
 
-To compare between animals/genotypes, we will use ECDF.
+To compare between animals/genotypes, we use ECDF.
 
 
   iv. Create Data frame with empirical cumulative distribution for each animal in control conditions
 ```{r Create_ECDFs_chunk, echo=FALSE, include=FALSE}
-ECDFList<-list()
+
 ECDFAllCtrlDataframe<-data.frame()
+
 for (j in 1:nrow(Fig1SummaryDataframe)){
   ECDFCurrent<-data.frame()
-  AnimalIDCurrent<-Fig1SummaryDataframe$AnimalID[j]
+  #Select animalID for current loop
+    AnimalIDCurrent<-Fig1SummaryDataframe$AnimalID[j]
+  #Select genotype for current loop which will be used for ECDF plot
   GenotypeCurrent<-Fig1SummaryDataframe$Genotype[j]
+  #Filter for control conditions for AnimalIDCurrent only 
   DataframeCurrent<-filter(SCPP1DataframeControl, AnimalIDVariable==AnimalIDCurrent)
   
+  #Create ECDF from current SCPP1 dataframe
   ECDFCurrent <-CreateECDF(DataframeCurrent, GenotypeCurrent, AnimalIDCurrent)
-  ECDFList[[Fig1SummaryDataframe$AnimalID[j]]]<-ECDFCurrent  #A list of all ECDFs for each animal. Accessed by AnimalIDs in Fig1SummaryDataframe$AnimalID
+  #Save to dataframe for all animals to export
   ECDFAllCtrlDataframe<-rbind(ECDFAllCtrlDataframe, ECDFCurrent)
-  }
+}
+
+write.csv(ECDFAllCtrlDataframe, "./Output/ECDFAllCtrlDataframe.csv")
 ```
 
+Plot ECDF for all animals in control conditions
 
-```{r ECDF_PlotChunk, echo=FALSE, include=FALSE}  
-  #Plot ECDF for all animals in control conditions
-
-
-    #First, combine all elements of ECDFList into a single dataframe
-    #ECDFAllCtrlDataframe<-rbindlist(ECDFList)
-
-
-#Now create separate DFs for each genotype using filter
-#ecdf_df_J20<-filter(ECDF_df_all, genotype=="J20")
-#ecdf_df_WT<-filter(ECDF_df_all, genotype=="WT")
-
-#ecdf_WT_plot<-ggplot(ecdf_df_WT, aes(x=spikeCount, y=CumFrequency, color=AnimalID))
-#ecdf_WT_plot<-ecdf_WT_plot +
-#geom_step() + xlab("Number of spikes") + ylab("Number of intervals") +
-
+```{r ECDF_PlotChunk, echo=TRUE, include=TRUE}  
 ECDFAllCtrlPlot<-ggplot(ECDFAllCtrlDataframe, aes(x=SpikeCount, y=CumFrequency, color=AnimalIDVariable))
 ECDFAllCtrlPlot<-ECDFAllCtrlPlot + geom_step() + xlab("Number of spikes") + ylab("Number of intervals") + facet_wrap(~Genotype) +ggtitle("Cumulative frequency of Spike count/8s interval in control conditions")
 
-ECDFAllCtrlPlot
+
 #http://blog.amitsharma.in/2015/09/13/cumulative-distribution-plots-for-frequency-Data-in-r/
+
+ECDFAllCtrlPlot
+
+
 
 ```
 
-To compare between genotypes, for each animal, we extract the proportion of intervals with one or more than one spike.
+To compare between genotypes, for each animal, we extract the proportion of intervals with one or more than one spike and write it to Fig1SummaryDataframe.
 
-``` {r ECDF_stats_chunk, ECHO=FALSE, include=FALSE}
+``` {r ECDF_stats_chunk, ECHO=TRUE, include=TRUE}
 #For each animal, evaluate the percentile of intervals with one or more spikes
 for(i in 1:nrow(Fig1SummaryDataframe)){
   AnimalIDCurrent<-Fig1SummaryDataframe$AnimalID[i]
   ECDFCurrent<-filter(ECDFAllCtrlDataframe, AnimalIDVariable==AnimalIDCurrent)
-  Fig1SummaryDataframe$Grtr1Spike[i]<-ECDFCurrent$CumFrequency[2]  #Percentage of intervals with 1 or more spikes for this animal
+  Fig1SummaryDataframe$Grtr1Spike[i]<-ECDFCurrent$CumFrequency[2]  
 }
+Fig1SummaryDataframe
 ```
 
 
@@ -230,9 +230,11 @@ PermutationResults_exact.mc<-permTS(Data~Group,alternative="two.sided",method="e
 ```
 
 
-IGNORE this because an average spike rate isn't meaningful
-Calculate spike rate as total number of spikes /(total intervals * 8s) 
+
 ```{r  Oldcodetoignore, echo=FALSE, include=FALSE}
+
+#IGNORE this because an average spike rate isn't meaningful
+#Calculate spike rate as total number of spikes /(total intervals * 8s) 
 ###TO DO: 
 #Plot
 #REPORT SUMMARY STATS FOR TEST OF CHOICE
