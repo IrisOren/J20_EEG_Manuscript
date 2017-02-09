@@ -203,7 +203,7 @@ To compare between genotypes, for each animal, we extract the proportion of inte
 for(i in 1:nrow(Fig1SummaryDataframe)){
   AnimalIDCurrent<-Fig1SummaryDataframe$AnimalID[i]
   ECDFCurrent<-filter(ECDFAllCtrlDataframe, AnimalIDVariable==AnimalIDCurrent)
-  Fig1SummaryDataframe$Grtr1Spike[i]<-ECDFCurrent$CumFrequency[2]  
+  Fig1SummaryDataframe$Grtr1SpikeCtrl[i]<-ECDFCurrent$CumFrequency[2]  
 }
 Fig1SummaryDataframe
 ```
@@ -214,25 +214,37 @@ The number of intervals with more than 1 spike was compared between genotypes us
 #Summary statistics for percentage intervals with 1 or more spikes
 ```{r SummaryStatsChunk, echo=FALSE}
 GroupedData<-group_by(Fig1SummaryDataframe, Genotype)
-summarise(GroupedData, mean=mean(Grtr1Spike, na.rm=TRUE), sd=sd(Grtr1Spike, na.rm=TRUE))
+summarise(GroupedData, mean=mean(Grtr1SpikeCtrl, na.rm=TRUE), sd=sd(Grtr1SpikeCtrl, na.rm=TRUE))
 ```
 #Permutation test to compare intervals with 1 or more spikes between genotypes
 
 ```{r Grtr1spike_PermutationTest_Chunk, echo=FALSE}
 
-#Remove NAs before performing permutation test
-Fig1SummaryDataframeNoNA<-na.omit(Fig1SummaryDataframe)
+
 
 #Compare PercGreaterOneSpike in WT and J20
 
-Data<-Fig1SummaryDataframeNoNA$Grtr1Spike
-Group<-Fig1SummaryDataframeNoNA$Genotype
+Data<-Fig1SummaryDataframe$Grtr1SpikeCtrl
+Group<-Fig1SummaryDataframe$Genotype
 
 #Permutation tests, two-sided hypothesis, with 4 methods of sampling
-PermutationResults_pclt<-permTS(Data~Group,alternative="two.sided",method="pclt")
-PermutationResults_exact.network<-permTS(Data~Group,alternative="two.sided",method="exact.network")
+
+
 PermutationResults_exact.ce<-permTS(Data~Group,alternative="two.sided",method="exact.ce")
 PermutationResults_exact.mc<-permTS(Data~Group,alternative="two.sided",method="exact.mc")
+PermutationResults_exact.network<-permTS(Data~Group,alternative="two.sided",method="exact.network")
+PermutationResults_pclt<-permTS(Data~Group,alternative="two.sided",method="pclt")
+
+pCE<-PermutationResults_exact.ce$p.value
+pEMC<-PermutationResults_exact.mc$p.value
+pEN<-PermutationResults_exact.network$p.value
+pPCLT<-PermutationResults_pclt$p.value
+
+PrintVector<-c(pCE, pEMC,pEN, pPCLT)
+cat("pCE   pEMC    pEN    pPCLT:  ")
+cat(PrintVector)
+cat("pCE (exact using complete enumeration) good for small samples")
+
 ```
 
 
