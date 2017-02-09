@@ -49,7 +49,7 @@ sourceDir("R/")  #All function in R/ folder relative to project
 Specify files and folders to be used
 ```{r VariableInitialisationChunk, ECHO=FALSE}
 NDFDataParentFolder<-"~/Dropbox/ANALYSIS/J20_EEG_Manuscript/Data/SCPP1V1_TCL"
-RecordingInfoFile<-"./Data/RecordingInfoTest.csv"
+RecordingInfoFile<-"./Data/RecordingInfo.csv"
 ```
 
 Import summary recording information dataframe
@@ -75,6 +75,8 @@ Steps:
 1. Create Fig1SummaryDataframe from recordingInformation. 
 ```{r create_fig1_dataframe, ECHO=FALSE, include=FALSE}
   Fig1SummaryDataframe<-SummaryDataframe[, c("AnimalID", "Genotype", "TimeZone", "DrugDateTime")]
+#Remove rows with missing variables
+  Fig1SummaryDataframe<-Fig1SummaryDataframe[complete.cases(Fig1SummaryDataframe),]
 ```
   
 
@@ -117,11 +119,15 @@ for(i in 1:nrow(Fig1SummaryDataframe)){     #Loop through animals
   #Apend a Treatment variable to the dataframe, based on DrugDateTime as specified in Fig1SummaryDataframe 
     Treatment<-c()
     Treatment[which(SCPP1Dataframe$TimeOfDay<strptime(DrugDateTimeCurrent, "%d/%m/%y %H:%M:%S"))]="Control"
-    Treatment[length(Treatment)+1]="Unknown"
-    Treatment[(length(Treatment)+1):(dim(SCPP1Dataframe))[1]]="Drug"
-    SCPP1Dataframe<-cbind(SCPP1Dataframe, Treatment)
+    #If there are more intervals than control condition ie. if drug given
+    if(length(Treatment)<nrow(SCPP1Dataframe)){
+      Treatment[length(Treatment)+1]="Unknown"
+      Treatment[(length(Treatment)+1):(dim(SCPP1Dataframe))[1]]="Drug"
+    }
+    #apend Treatment variable to SCPP1Dataframe
+      SCPP1Dataframe<-cbind(SCPP1Dataframe, Treatment)
     # Exclude Loss and Artifact intervals
-    SCPP1Dataframe <- ExcludeIntervals(SCPP1Dataframe, 3)
+      SCPP1Dataframe <- ExcludeIntervals(SCPP1Dataframe, 3)
     
 #Apend AnimalID variable
     AnimalIDVariable<-rep(AnimalIDCurrent, nrow(SCPP1Dataframe))
