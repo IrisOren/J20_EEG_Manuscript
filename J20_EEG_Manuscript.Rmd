@@ -203,27 +203,35 @@ To compare between genotypes, for each animal, we extract the proportion of inte
 for(i in 1:nrow(Fig1SummaryDataframe)){
   AnimalIDCurrent<-Fig1SummaryDataframe$AnimalID[i]
   ECDFCurrent<-filter(ECDFAllCtrlDataframe, AnimalIDVariable==AnimalIDCurrent)
-  Fig1SummaryDataframe$Grtr1SpikeCtrl[i]<-ECDFCurrent$CumFrequency[2]  
+  Fig1SummaryDataframe$Grtr1SpikeCtrl[i]<-1-(ECDFCurrent$CumFrequency[2]) 
 }
 Fig1SummaryDataframe
 ```
 
 
-The number of intervals with more than 1 spike was compared between genotypes using a permutation test
 
 #Summary statistics for percentage intervals with 1 or more spikes
 ```{r SummaryStatsChunk, echo=FALSE}
-GroupedData<-group_by(Fig1SummaryDataframe, Genotype)
+####NOTE:  TO ADD NORMALITY TESTS FOR REPORTING MEAN VS MEDIAN
+#Summary statisitcs by genotype
 SummarySE(Fig1SummaryDataframe, measurevar="Grtr1SpikeCtrl", groupvars=c("Genotype"), na.rm=TRUE)
-#median and quantiles
-summarise(GroupedData, Q1=quantile (Grtr1SpikeCtrl, probs=0.25, na.rm=TRUE),
-          Q2=quantile (Grtr1SpikeCtrl, probs=0.50, na.rm=TRUE),
-          Q3=quantile(Grtr1SpikeCtrl, probs=0.75, na.rm=TRUE)                      )
-                     
+
+Fig1SummaryDataframe_WT<-filter(Fig1SummaryDataframe, Genotype=="WT")
+Fig1SummaryDataframe_J20<-filter(Fig1SummaryDataframe, Genotype=="J20")
+
+#Normality testing using Shapiro-Wilk and QQ plots
+
+DataForTesting <-Fig1SummaryDataframe_WT$Grtr1SpikeCtrl
+  SW_WT<-NormTesting(DataForTesting, "QQPlot_WT")
+  
+DataForTesting <-Fig1SummaryDataframe_J20$Grtr1SpikeCtrl
+  SW_J20<-NormTesting(DataForTesting, "QQPlot_J20")
+
+
 ```
 #Permutation test to compare intervals with 1 or more spikes between genotypes
 
-```{r Grtr1spike_PermutationTest_Chunk, echo=FALSE}
+```{r Grtr1spike_PermutationTest_Chunk, echo=TRUE}
 
 
 
@@ -249,28 +257,21 @@ PrintVector<-data.frame("pCE"=pCE, "pEMC"=pEMC,"pEN"=pEN, "pCLT"=pPCLT)
 
 
 ```
+The number of intervals with one or more spikes was compared between genotypes using a permutation test. There was a significant difference between genotypes in the % intervals with 1 or more spikes (p=`r pCE`, permutation test with complete enumeration)
 
 
 
-```{r  Oldcodetoignore, echo=FALSE, include=FALSE}
+##Plotting % intervals > 0 spikes
+```{r ScatterPlotChunk, echo=FALSE}
+data<-Fig1SummaryDataframe$Grtr1SpikeCtrl
+group<-Fig1SummaryDataframe$Genotype
 
-#IGNORE this because an average spike rate isn't meaningful
-#Calculate spike rate as total number of spikes /(total intervals * 8s) 
-###TO DO: 
-#Plot
-#REPORT SUMMARY STATS FOR TEST OF CHOICE
-#WRITE UP AS WOULD BE IN PAPER TO ENSURE THAT YOU HAVE RELEVANT STATS
-#for(i in 1:nrow(Fig1SummaryDataframe)){
-  
-#  SCPP1Dataframe_current<-SCPP1DataframeList[[i]]
-##  SCPP1Dataframe_current<-filter(SCPP1Dataframe_current, #Treatment=="Control") #Select for control conditions
-#  Fig1SummaryDataframe$SpikeRate_Control[i]<-CalculateSpikeRate(SCPP1Dataframe_current, 8)
-  
-#  SCPP1Dataframe_current<-filter(SCPP1Dataframe_current, Treatment=="Drug") #Select for Drug conditions
-#  Fig1SummaryDataframe$SpikeRate_Control[i]<-CalculateSpikeRate(SCPP1Dataframe_current, 8)
-  
-
-
+stripchart(Grtr1SpikeCtrl ~ Genotype, data=Fig1SummaryDataframe,
+           vertical = TRUE, method = "jitter", ylab="% intervals > 0 spikes",
+            pch = 21, col = "maroon", bg = "bisque",
+            add = FALSE)
 
 ```
+
+
 ##################

@@ -21,8 +21,11 @@ SummarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
                  .fun = function(xx, col) {
                    c(N    = length2(xx[[col]], na.rm=na.rm),
                      mean = mean   (xx[[col]], na.rm=na.rm),
-                     sd   = sd     (xx[[col]], na.rm=na.rm)
-                    )
+                     sd   = sd     (xx[[col]], na.rm=na.rm),
+                     Q1 = quantile(xx[[col]], probs=0.25, na.rm=na.rm),
+                     Q2 = quantile(xx[[col]], probs=0.5, na.rm=na.rm),
+                     Q3 = quantile(xx[[col]], probs=0.75, na.rm=na.rm)
+                     )
                  },
                  measurevar
   )
