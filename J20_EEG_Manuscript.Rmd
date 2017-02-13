@@ -67,13 +67,13 @@ SummaryDataframe$DrugDateTime<-  paste(as.character(SummaryDataframe$DrugDate)
 ```
 
 
-# Figure 1: Spike rate between genotype
+# Figure 1: Spike count measure between genotype
 
-This figure requires a dataframe Fig1SummaryDataframe=AnimalID|Genotype|TimeZone|SpikeRate
+This figure requires a dataframe Fig1SummaryDataframe=AnimalID|Genotype|TimeZone|Spike rate measure = Number of intervals greater than 0 spikes
 
 Steps:
 1. Create Fig1SummaryDataframe from recordingInformation. 
-```{r create_fig1_dataframe, ECHO=FALSE, include=FALSE}
+```{r create_fig1_dataframe, ECHO=FALSE}
   Fig1SummaryDataframe<-SummaryDataframe[, c("AnimalID", "Genotype", "TimeZone", "DrugDateTime")]
 #Remove rows with missing variables
   Fig1SummaryDataframe<-Fig1SummaryDataframe[complete.cases(Fig1SummaryDataframe),]
@@ -85,7 +85,7 @@ Steps:
   ii. Create SCPPP1_dataframe from all NDFFileName_SCPP1V1.txt files 
   iii. Add variables for time and for separating drug and treatment conditions
   iv. Exclude loss intervals
-  v. Save to a list with elements accessed by AnimalID
+  v. Save to a dataframe in long format. To access elements filter by AnimalID
 
   
   
@@ -196,14 +196,14 @@ ECDFAllCtrlPlot
 
 ```
 
-To compare between genotypes, for each animal, we extract the proportion of intervals with one or more than one spike and write it to Fig1SummaryDataframe.
+To compare between genotypes, for each animal, we extract the proportion of intervals with more than 0 spikes and write it to Fig1SummaryDataframe as a new variable Grtr0Spikes.
 
 ``` {r ECDF_stats_chunk, ECHO=TRUE, include=TRUE}
 #For each animal, evaluate the percentile of intervals with one or more spikes
 for(i in 1:nrow(Fig1SummaryDataframe)){
   AnimalIDCurrent<-Fig1SummaryDataframe$AnimalID[i]
   ECDFCurrent<-filter(ECDFAllCtrlDataframe, AnimalIDVariable==AnimalIDCurrent)
-  Fig1SummaryDataframe$Grtr1SpikeCtrl[i]<-1-(ECDFCurrent$CumFrequency[2]) 
+  Fig1SummaryDataframe$Grtr0SpikeCtrl[i]<-1-(ECDFCurrent$CumFrequency[2]) 
 }
 Fig1SummaryDataframe
 ```
@@ -214,30 +214,31 @@ Fig1SummaryDataframe
 ```{r SummaryStatsChunk, echo=FALSE}
 ####NOTE:  TO ADD NORMALITY TESTS FOR REPORTING MEAN VS MEDIAN
 #Summary statisitcs by genotype
-SummarySE(Fig1SummaryDataframe, measurevar="Grtr1SpikeCtrl", groupvars=c("Genotype"), na.rm=TRUE)
+SummarySE(Fig1SummaryDataframe, measurevar="Grtr0SpikeCtrl", groupvars=c("Genotype"), na.rm=TRUE)
 
 Fig1SummaryDataframe_WT<-filter(Fig1SummaryDataframe, Genotype=="WT")
 Fig1SummaryDataframe_J20<-filter(Fig1SummaryDataframe, Genotype=="J20")
 
 #Normality testing using Shapiro-Wilk and QQ plots
 
-DataForTesting <-Fig1SummaryDataframe_WT$Grtr1SpikeCtrl
+DataForTesting <-Fig1SummaryDataframe_WT$Grtr0SpikeCtrl
   SW_WT<-NormTesting(DataForTesting, "QQPlot_WT")
+  SW_WT
   
-DataForTesting <-Fig1SummaryDataframe_J20$Grtr1SpikeCtrl
+DataForTesting <-Fig1SummaryDataframe_J20$Grtr0SpikeCtrl
   SW_J20<-NormTesting(DataForTesting, "QQPlot_J20")
-
+  SW_J20
 
 ```
 #Permutation test to compare intervals with 1 or more spikes between genotypes
 
-```{r Grtr1spike_PermutationTest_Chunk, echo=TRUE}
+```{r Grtr0spike_PermutationTest_Chunk, echo=TRUE}
 
 
 
 #Compare PercGreaterOneSpike in WT and J20
 
-Data<-Fig1SummaryDataframe$Grtr1SpikeCtrl
+Data<-Fig1SummaryDataframe$Grtr0SpikeCtrl
 Group<-Fig1SummaryDataframe$Genotype
 
 #Permutation tests, two-sided hypothesis, with 4 methods of sampling
@@ -254,19 +255,21 @@ pEN<-PermutationResults_exact.network$p.value
 pPCLT<-PermutationResults_pclt$p.value
 
 PrintVector<-data.frame("pCE"=pCE, "pEMC"=pEMC,"pEN"=pEN, "pCLT"=pPCLT)
+PrintVector
 
 
 ```
-The number of intervals with one or more spikes was compared between genotypes using a permutation test. There was a significant difference between genotypes in the % intervals with 1 or more spikes (p=`r pCE`, permutation test with complete enumeration)
+The number of intervals with one or more spikes was compared between genotypes using a permutation test. There was a significant difference between genotypes in the % intervals with 1 or more spikes:
+`r PrintVector`)
 
 
 
 ##Plotting % intervals > 0 spikes
 ```{r ScatterPlotChunk, echo=FALSE}
-data<-Fig1SummaryDataframe$Grtr1SpikeCtrl
+data<-Fig1SummaryDataframe$Grtr0SpikeCtrl
 group<-Fig1SummaryDataframe$Genotype
 
-stripchart(Grtr1SpikeCtrl ~ Genotype, data=Fig1SummaryDataframe,
+stripchart(Grtr0SpikeCtrl ~ Genotype, data=Fig1SummaryDataframe,
            vertical = TRUE, method = "jitter", ylab="% intervals > 0 spikes",
             pch = 21, col = "maroon", bg = "bisque",
             add = FALSE)
@@ -274,4 +277,50 @@ stripchart(Grtr1SpikeCtrl ~ Genotype, data=Fig1SummaryDataframe,
 ```
 
 
-##################
+#Figure 2: IIS and time of day
+Figure 2A: Example of circadian fluctuations in IIS from JF167
+
+It has been suggested that seizure-related activity varies across the circadian cycle {Quigg:2000vq}. Looking at IIS times across several days suggested that IIS the IIS counts vary across the circadian cycle – with IIS occurring more frequently in the inactive phase (Fig 2A).
+
+```{r Fig2AIISTimesExample}
+
+#Filter SCPP1DataFrameAll to select for JF167 
+IISTimesJF167<-filter(SCPP1DataframeAll, AnimalIDVariable=="JF167")
+# Select the relevant columns of dataframe
+IISTimesJF167<-select(IISTimesJF167, SpikeCount, TimeOfDay)
+#Filter for intervals with >0 IIS
+IISTimesJF167<-filter(IISTimesJF167, SpikeCount>0)
+#Convert the to Posixlt format
+IISTimesJF167$TimeOfDay<-strptime(IISTimesJF167$TimeOfDay, "%Y-%m-%d %H:%M:%S")
+
+
+## extract hour of IIS with lubridate function
+IISTimesJF167$hour_of_event <- hour(IISTimesJF167$TimeOfDay)
+# make a new dataframe with hour appended
+EventData <- data.frame(DateTime = IISTimesJF167$TimeOfDay, EventHour = IISTimesJF167$hour_of_event)
+# determine if event is in light hours
+EventData$Light <- EventData$EventHour %in% seq(7, 18)
+
+
+#Make circular plot
+fontsize=18
+
+Fig2A<-ggplot(EventData, aes(x = EventHour, fill = Light)) +
+  geom_histogram(breaks = seq(0,   24), binwidth = 2, colour = "grey") + 
+  coord_polar(start = 0) + 
+  theme_minimal() + 
+  scale_fill_grey(labels=c("Off", "On")) + 
+  ylab("Count") + 
+  ggtitle("IIS by Time of day") + 
+  theme(plot.title = element_text (size = fontsize))+
+  theme(axis.title.y=element_text (size = fontsize))+
+  theme(axis.text.y =element_text (size = fontsize))+
+  theme(axis.text.x =element_text (size = fontsize))+
+  scale_x_continuous("", limits = c(0, 24), breaks = seq(0, 24), labels = seq(0,24))
+
+
+Fig2A
+
+```
+
+Figure 2B 
