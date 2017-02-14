@@ -34,6 +34,7 @@ library(stringr)
 library(scatterplot3d)
 library(data.table)
 library(perm)
+library(circular)
 
 
 sourceDir <- function(path, trace = TRUE, ...) {
@@ -323,4 +324,38 @@ Fig2A
 
 ```
 
-Figure 2B 
+Figure 2B:
+We used circular statistics to establish whether IIS were significantly-coupled to a phase of the circadian cycle within individual animals (Fig 2A, see methods). Indeed X out of Y  animals showed a significant phase coupling, with mean phase=    (Fig 2B, p=   Rayleigh’s test ). 
+
+1. Create Fig2SummaryDataframe from recordingInformation. 
+```{r create_fig2_dataframe, ECHO=FALSE}
+  Fig2SummaryDataframe <- SummaryDataframe[, c("AnimalID", "Genotype", "TimeZone")]
+#Remove rows with missing variables
+  Fig2SummaryDataframe <- Fig2SummaryDataframe[complete.cases(Fig2SummaryDataframe),]
+```
+  
+
+```{r Fig2BCircularStatsSummary}
+# Select the relevant columns of dataframe
+IISTimes<-select(SCPP1DataframeAll, SpikeCount, InitialisedTime, 
+                 TimeOfDay, AnimalIDVariable)
+#Filter for intervals with >0 IIS
+IISTimes<-filter(IISTimes, SpikeCount>0)
+#Convert all IIS times to radian angles
+IISTimes$IISAngles<-ConvertToRadians(IISTimes$InitialisedTime)
+
+#For each animalID, calculate summary stats and write to Fig2SummaryStats
+for(i in 1:nrows(Fig2SummaryDataframe)){
+  AnimalIDCurrent<-Fig2SummaryDataframe$AnimalID[i]
+  IISTimesCurrent<-filter(IISTimes, AnimalIDVariable==AnimalIDCurrent)
+  SummaryCircStatsCurrent<-SummaryCircStats(IISTimesCurrent$IISAngles)
+  Fig2SummaryDataframe$MeanAngle[i]<-SummaryCircStatsCurrent$MeanAngle[1]
+  Fig2SummaryDataframe$Rho[i]<-SummaryCircStatsCurrent$Rho[1]
+  Fig2SummaryDataframe$SDAngle<-SummaryCircStatsCurrent$SDCurrent[1]
+  Fig2SummaryDataframe$RayleighR<-SummaryCircStatsCurrent$RayleighR[1]
+  Fig2SummaryDataframe$RayleighP<-SummaryCircStatsCurrent$RayleighP[1]
+  AnimalIDCurrent<-c()
+  IISTimesCurrent<-c()
+  SummaryCircStatsCurrent<-c()
+}
+```
