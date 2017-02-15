@@ -285,6 +285,7 @@ It has been suggested that seizure-related activity varies across the circadian 
 
 ```{r Fig2AIISTimesExample}
 
+
 #Filter SCPP1DataFrameAll to select for JF167 
 IISTimesJF167<-filter(SCPP1DataframeAll, AnimalIDVariable=="JF167")
 # Select the relevant columns of dataframe
@@ -302,11 +303,14 @@ EventData <- data.frame(DateTime = IISTimesJF167$TimeOfDay, EventHour = IISTimes
 # determine if event is in light hours
 EventData$Light <- EventData$EventHour %in% seq(7, 18)
 
+  #Shift the event hour by 0.5 because having interger times was giving binning problems at 0 bins
+    EventData$EventHourShifted<-EventData$EventHour+0.5
+
 
 #Make circular plot
 fontsize=18
 
-Fig2A<-ggplot(EventData, aes(x = EventHour, fill = Light)) +
+Fig2A<-ggplot(EventData, aes(x = EventHourShifted, fill = Light)) +
   geom_histogram(breaks = seq(0,   24), binwidth = 2, colour = "grey") + 
   coord_polar(start = 0) + 
   theme_minimal() + 
@@ -320,7 +324,7 @@ Fig2A<-ggplot(EventData, aes(x = EventHour, fill = Light)) +
   scale_x_continuous("", limits = c(0, 24), breaks = seq(0, 24), labels = seq(0,24))
 
 
-Fig2A
+print(Fig2A)
 
 ```
 
@@ -369,6 +373,60 @@ for(i in 1:nrow(Fig2SummaryDataframe)){
   TempTimeDataframe<-ConvertUnixSecondsToTimeOfDay(Fig2SummaryDataframe$MeanTimeSecs)
   Fig2SummaryDataframe$MeanDateTime<-TempTimeDataframe$TimeOfDay
   Fig2SummaryDataframe$MeanTimeSeconds<-TempTimeDataframe$TimeOfDayTimeFormat
+
+  #Calculate number of J20s that showed significant phasecoupling
+  Fig2SummaryDataframe_J20<-filter(Fig2SummaryDataframe, Genotype=="J20")
   
-  }
+}
+
+```
+
+```{r SpikeHist_Chunk, echo=FALSE}
+
+for(i in 1:nrow(Fig2SummaryDataframe_J20)){
+    AnimalIDCurrent=Fig2SummaryDataframe_J20$AnimalID[i]
+    #Filter SCPP1DataFrameAll to select for JF167 
+    IISTimesCurrent<-filter(SCPP1DataframeAll, AnimalIDVariable==AnimalIDCurrent)
+    # Select the relevant columns of dataframe
+    IISTimesCurrent<-select(IISTimesCurrent, SpikeCount, TimeOfDay)
+    #Filter for intervals with >0 IIS
+    IISTimesCurrent<-filter(IISTimesCurrent, SpikeCount>0)
+    #Convert the to Posixlt format
+    IISTimesCurrent$TimeOfDay<-strptime(IISTimesCurrent$TimeOfDay, "%Y-%m-%d %H:%M:%S")
+    
+    
+    ## extract hour of IIS with lubridate function
+    IISTimesCurrent$hour_of_event <- hour(IISTimesCurrent$TimeOfDay)
+    # make a new dataframe with hour appended
+    EventData <- data.frame(DateTime = IISTimesCurrent$TimeOfDay, EventHour = IISTimesCurrent$hour_of_event)
+    # determine if event is in light hours
+    EventData$Light <- EventData$EventHour %in% seq(7, 18)
+    
+    #Shift the event hour by 0.5 because having interger times was giving binning problems at 0 bins
+    EventData$EventHourShifted<-EventData$EventHour+0.5
+    
+    #Make circular plot
+    fontsize=18
+    #Filename for saving
+    names<-Fig2SummaryDataframe_J20$AnimalID
+    filename<-paste("./Output/", names[i],"_SpikeHist",".jpg", sep="")
+    
+    SpikeHist<-ggplot(EventData, aes(x = EventHourShifted, fill = Light)) +
+      geom_histogram(breaks = seq(0,   24), binwidth = 2, colour = "grey") +   coord_polar(start = 0) + 
+      theme_minimal() + 
+      scale_fill_grey(labels=c("Off", "On")) + 
+      ylab("Count") + 
+      ggtitle(paste(AnimalIDCurrent, as.character(round(Fig2SummaryDataframe$RayleighP[i], 3)), as.character(round(Fig2SummaryDataframe$RayleighR[i], 3)))) + 
+      theme(plot.title = element_text (size = fontsize))+
+      theme(axis.title.y=element_text (size = fontsize))+
+      theme(axis.text.y =element_text (size = fontsize))+
+      theme(axis.text.x =element_text (size = fontsize))+
+      scale_x_continuous("", limits = c(0, 24), breaks = seq(0, 24), labels = seq(0,24))
+    
+    
+    
+    jpeg(file=filename)
+    print(SpikeHist)
+    dev.off()
+}
 ```
