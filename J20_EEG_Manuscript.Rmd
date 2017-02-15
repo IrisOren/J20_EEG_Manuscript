@@ -344,18 +344,31 @@ IISTimes<-filter(IISTimes, SpikeCount>0)
 #Convert all IIS times to radian angles
 IISTimes$IISAngles<-ConvertToRadians(IISTimes$InitialisedTime)
 
+
+  
 #For each animalID, calculate summary stats and write to Fig2SummaryStats
-for(i in 1:nrows(Fig2SummaryDataframe)){
+for(i in 1:nrow(Fig2SummaryDataframe)){
   AnimalIDCurrent<-Fig2SummaryDataframe$AnimalID[i]
   IISTimesCurrent<-filter(IISTimes, AnimalIDVariable==AnimalIDCurrent)
   SummaryCircStatsCurrent<-SummaryCircStats(IISTimesCurrent$IISAngles)
+  
+  #Write summary circular stats to Fig2SummaryDataframe
   Fig2SummaryDataframe$MeanAngle[i]<-SummaryCircStatsCurrent$MeanAngle[1]
   Fig2SummaryDataframe$Rho[i]<-SummaryCircStatsCurrent$Rho[1]
-  Fig2SummaryDataframe$SDAngle<-SummaryCircStatsCurrent$SDCurrent[1]
-  Fig2SummaryDataframe$RayleighR<-SummaryCircStatsCurrent$RayleighR[1]
-  Fig2SummaryDataframe$RayleighP<-SummaryCircStatsCurrent$RayleighP[1]
+  Fig2SummaryDataframe$SDAngle[i]<-SummaryCircStatsCurrent$SDAngle[1]
+  Fig2SummaryDataframe$RayleighR[i]<-SummaryCircStatsCurrent$RayleighR[1]
+  Fig2SummaryDataframe$RayleighP[i]<-SummaryCircStatsCurrent$RayleighP[1]
   AnimalIDCurrent<-c()
   IISTimesCurrent<-c()
   SummaryCircStatsCurrent<-c()
-}
+  
+  #Convert from radians to time
+  Fig2SummaryDataframe$MeanTimeSecs<-ConvertToSeconds(Fig2SummaryDataframe$MeanAngle)
+  Fig2SummaryDataframe$SDSecs<-ConvertToSeconds(Fig2SummaryDataframe$SDAngle)
+#Convert from unix time to time of day
+  TempTimeDataframe<-ConvertUnixSecondsToTimeOfDay(Fig2SummaryDataframe$MeanTimeSecs)
+  Fig2SummaryDataframe$MeanDateTime<-TempTimeDataframe$TimeOfDay
+  Fig2SummaryDataframe$MeanTimeSeconds<-TempTimeDataframe$TimeOfDayTimeFormat
+  
+  }
 ```
