@@ -35,6 +35,7 @@ library(scatterplot3d)
 library(data.table)
 library(perm)
 library(circular)
+library(plotrix)
 
 
 sourceDir <- function(path, trace = TRUE, ...) {
@@ -332,14 +333,14 @@ print(Fig2A)
 Figure 2B:
 We used circular statistics to establish whether IIS were significantly-coupled to a phase of the circadian cycle within individual animals (Fig 2A, see methods). 
 
-#1. Create Fig2SummaryDataframe from recordingInformation. 
+###1. Create Fig2SummaryDataframe from recordingInformation. 
 ```{r create_fig2_dataframe, ECHO=FALSE, include=FALSE}
   Fig2SummaryDataframe <- SummaryDataframe[, c("AnimalID", "Genotype", "TimeZone")]
 #Remove rows with missing variables
   Fig2SummaryDataframe <- Fig2SummaryDataframe[complete.cases(Fig2SummaryDataframe),]
 ```
   
-#2. Calculate summary statistics for all animals
+###2. Calculate summary statistics for all animals
 ```{r Fig2BCircularStatsSummary}
 # Select the relevant columns of dataframe
 IISTimes<-select(SCPP1DataframeAll, SpikeCount, InitialisedTime, 
@@ -395,7 +396,7 @@ SampleMeanDeviation<-meandeviation(Fig2SummaryDataframe_J20$MeanAngle)
 
 ```
 
-#3. Plot polar histograms for all J20s
+###3. Plot polar histograms for all J20s
 ```{r SpikeHist_Chunk, echo=FALSE}
 
 for(i in 1:nrow(Fig2SummaryDataframe_J20)){
@@ -446,7 +447,7 @@ for(i in 1:nrow(Fig2SummaryDataframe_J20)){
 }
 ```
 
-#4. Determine phase coupling of strength and compare between WT and J20.
+###4. Determine phase coupling of strength and compare between WT and J20.
 To quantify the coupling of IIS to the day-night cycle, we calculated the circular mean angle and dispersion, and Rayleigh probability for all J20s.
 
 ```{r CompareRhoBtwnGenotypes, echo=FALSE, include=FALSE}
@@ -457,16 +458,14 @@ t<-t.test(Fig2SummaryDataframe_J20$Rho)
 
 ```
 
-All animals exhibited significant phase coupling of IIS as estimated by the Rayleigh test (p=(`r min(Fig2Summarydataframe_J20$RayleighP)` - `r max(Fig2Summarydataframe_J20$RayleighP)`. The degree of phase coupling varied between animals as can be seen in the distribution of the angular dispersion, rho (round(mean Fig2SummaryDataframe$Rho, 2)` CI=t$conf.int).
+All animals exhibited significant phase coupling of IIS as estimated by the Rayleigh test (p=(`r min(Fig2SummaryDataframe_J20$RayleighP) -- max(Fig2SummaryDataframe_J20$RayleighP)`. The degree of phase coupling varied between animals as can be seen in the distribution of the angular dispersion, rho (round(mean Fig2SummaryDataframe$Rho, 2)` CI=t$conf.int).
 
 
 
 ```{r DistributionOfRhoJ20, echo=FALSE, include=FALSE}
-RhoHist<-ggplot(Fig2SummaryDataframe_J20, aes(x=Rho)) + 
-          geom_histogram(binwidth = 0.02, col="black", 
-             fill="grey") +
-            labs(x="Rho",y="Count")
-RhoHist
+SampleRhoMeanAngle<-radial.plot(Fig2SummaryDataframe_J20$Rho, Fig2SummaryDataframe_J20$MeanAngle, start=(pi/2), clockwise = TRUE, labels=c("0/24h","6h", "12h", "18h"), label.pos = c(0, (pi/2), pi, (3*pi/2)), label.prop=1.4, rp.type = "s", point.symbols = 20, show.radial.grid = TRUE, radial.lim = c(0, 0.25, 0.5))
+
+print(SampleRhoMeanAngle)
 ```
 
-Across the sample, the mean IIS coupling was `r Phi~J20~=SampleMeanDateTime$TimeOfDayTimeFormat`, confirming that IIS occurred preferentially during the daylight hours.
+Across the sample, the mean IIS coupling was  Phi_J20=`r SampleMeanDateTime$TimeOfDayTimeFormat`, confirming that IIS occurred preferentially during the daylight hours.
