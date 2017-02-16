@@ -283,7 +283,8 @@ Figure 2A: Example of circadian fluctuations in IIS from JF167
 
 It has been suggested that seizure-related activity varies across the circadian cycle {Quigg:2000vq}. Looking at IIS times across several days suggested that IIS the IIS counts vary across the circadian cycle – with IIS occurring more frequently in the inactive phase (Fig 2A).
 
-```{r Fig2AIISTimesExample}
+Plot example of circadian spike probability for JF167
+```{r Fig2AIISTimesExample, echo=FALSE}
 
 
 #Filter SCPP1DataFrameAll to select for JF167 
@@ -329,16 +330,16 @@ print(Fig2A)
 ```
 
 Figure 2B:
-We used circular statistics to establish whether IIS were significantly-coupled to a phase of the circadian cycle within individual animals (Fig 2A, see methods). Indeed X out of Y  animals showed a significant phase coupling, with mean phase=    (Fig 2B, p=   Rayleigh’s test ). 
+We used circular statistics to establish whether IIS were significantly-coupled to a phase of the circadian cycle within individual animals (Fig 2A, see methods). 
 
-1. Create Fig2SummaryDataframe from recordingInformation. 
-```{r create_fig2_dataframe, ECHO=FALSE}
+#1. Create Fig2SummaryDataframe from recordingInformation. 
+```{r create_fig2_dataframe, ECHO=FALSE, include=FALSE}
   Fig2SummaryDataframe <- SummaryDataframe[, c("AnimalID", "Genotype", "TimeZone")]
 #Remove rows with missing variables
   Fig2SummaryDataframe <- Fig2SummaryDataframe[complete.cases(Fig2SummaryDataframe),]
 ```
   
-
+#2. Calculate summary statistics for all animals
 ```{r Fig2BCircularStatsSummary}
 # Select the relevant columns of dataframe
 IISTimes<-select(SCPP1DataframeAll, SpikeCount, InitialisedTime, 
@@ -381,6 +382,20 @@ for(i in 1:nrow(Fig2SummaryDataframe)){
 
 ```
 
+
+```{r SampleSummaryStats, echo=FALSE, include=FALSE}
+SampleMeanAngle<-mean.circular(Fig2SummaryDataframe_J20$MeanAngle)
+if(SampleMeanAngle<0){
+  SampleMeanAngle<-SampleMeanAngle+(2*pi)
+}
+SampleMeanTimeSeconds<-ConvertToSeconds(SampleMeanAngle)
+SampleMeanDateTime<-ConvertUnixSecondsToTimeOfDay(SampleMeanTimeSeconds)
+
+SampleMeanDeviation<-meandeviation(Fig2SummaryDataframe_J20$MeanAngle)
+
+```
+
+#3. Plot polar histograms for all J20s
 ```{r SpikeHist_Chunk, echo=FALSE}
 
 for(i in 1:nrow(Fig2SummaryDataframe_J20)){
@@ -430,3 +445,28 @@ for(i in 1:nrow(Fig2SummaryDataframe_J20)){
     dev.off()
 }
 ```
+
+#4. Determine phase coupling of strength and compare between WT and J20.
+To quantify the coupling of IIS to the day-night cycle, we calculated the circular mean angle and dispersion, and Rayleigh probability for all J20s.
+
+```{r CompareRhoBtwnGenotypes, echo=FALSE, include=FALSE}
+
+#t-test to get CI
+t<-t.test(Fig2SummaryDataframe_J20$Rho)
+
+
+```
+
+All animals exhibited significant phase coupling of IIS as estimated by the Rayleigh test (p=(`r min(Fig2Summarydataframe_J20$RayleighP)` - `r max(Fig2Summarydataframe_J20$RayleighP)`. The degree of phase coupling varied between animals as can be seen in the distribution of the angular dispersion, rho (round(mean Fig2SummaryDataframe$Rho, 2)` CI=t$conf.int).
+
+
+
+```{r DistributionOfRhoJ20, echo=FALSE, include=FALSE}
+RhoHist<-ggplot(Fig2SummaryDataframe_J20, aes(x=Rho)) + 
+          geom_histogram(binwidth = 0.02, col="black", 
+             fill="grey") +
+            labs(x="Rho",y="Count")
+RhoHist
+```
+
+Across the sample, the mean IIS coupling was `r Phi~J20~=SampleMeanDateTime$TimeOfDayTimeFormat`, confirming that IIS occurred preferentially during the daylight hours.
