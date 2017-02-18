@@ -52,6 +52,7 @@ Specify files and folders to be used
 ```{r VariableInitialisationChunk, ECHO=FALSE}
 NDFDataParentFolder<-"~/Dropbox/ANALYSIS/J20_EEG_Manuscript/Data/SCPP1V1_TCL"
 RecordingInfoFile<-"./Data/RecordingInfo.csv"
+OutputFolder<-"./Output"
 ```
 
 Import summary recording information dataframe
@@ -92,57 +93,60 @@ Steps:
   
   
 ```{r ImportAndTransformNDFOutput_chunk, ECHO=FALSE}
-
-#Initialise variables for current subject
-SCPP1DataframeList<-list()
-SCPP1DataframeAll<-data.frame()
-
-#spikeCount_x <- c()
-#spikeCount_ID <- as.factor(c())
-#spikeCount_genotype <- as.factor(c())
-for(i in 1:nrow(Fig1SummaryDataframe)){     #Loop through animals
-
-  SCPP1Dataframe<-data.frame()
-  
- #Write AnimalID, genotype and TimeZone to variable for current animal
-        AnimalIDCurrent<-Fig1SummaryDataframe$AnimalID[i]
-        GenotypeCurrent<-Fig1SummaryDataframe$Genotype[i]
-        TimeZoneCurrent<-Fig1SummaryDataframe$TimeZone[i]
-        DrugDateTimeCurrent<-Fig1SummaryDataframe$DrugDateTime[i] 
-  #i. Set AnimalID subfolder
-  
-    FullPath<-paste(NDFDataParentFolder, AnimalIDCurrent, sep="/")
- 
- #Next import all files in input_path to create a new r dataframe called             `SCPP1Dataframe'
-    SCPP1Dataframe<-ImportData(FullPath)
-  
-  #Apend time information to Data frame  
-    SCPP1Dataframe <- GetTimeOfDayAndDate(SCPP1Dataframe, TimeZoneCurrent)
-  #Apend a Treatment variable to the dataframe, based on DrugDateTime as specified in Fig1SummaryDataframe 
-    Treatment<-c()
-    Treatment[which(SCPP1Dataframe$TimeOfDay<strptime(DrugDateTimeCurrent, "%d/%m/%y %H:%M:%S"))]="Control"
-    #If there are more intervals than control condition ie. if drug given
-    if(length(Treatment)<nrow(SCPP1Dataframe)){
-      Treatment[length(Treatment)+1]="Unknown"
-      Treatment[(length(Treatment)+1):(dim(SCPP1Dataframe))[1]]="Drug"
-    }
-    #apend Treatment variable to SCPP1Dataframe
-      SCPP1Dataframe<-cbind(SCPP1Dataframe, Treatment)
-    # Exclude Loss and Artifact intervals
-      SCPP1Dataframe <- ExcludeIntervals(SCPP1Dataframe, 3)
+if(file.exists("./Output/SCPP1DataframeAll.csv")){
+  read.csv("./Output/SCPP1DataframeAll.csv")
+  } else{  #Else create SCPP1DataframeAll.csv
     
-#Apend AnimalID variable
-    AnimalIDVariable<-rep(AnimalIDCurrent, nrow(SCPP1Dataframe))
-    SCPP1Dataframe<-cbind(SCPP1Dataframe, AnimalIDVariable)
-
- #Apend SCPP1Dataframe to SCPP1DataframeAll. To access an animal, used "filter()" 
-    SCPP1DataframeAll<-rbind(SCPP1DataframeAll, SCPP1Dataframe)
-}
-
-
-#Save SCPP1DataframeAll to output directory
-  write.csv(SCPP1DataframeAll, "./Output/SCPP1DataframeAll.csv")
-
+      #Initialise variables for current subject
+      SCPP1DataframeList<-list()
+      SCPP1DataframeAll<-data.frame()
+      
+      #spikeCount_x <- c()
+      #spikeCount_ID <- as.factor(c())
+      #spikeCount_genotype <- as.factor(c())
+      for(i in 1:nrow(Fig1SummaryDataframe)){     #Loop through animals
+      
+        SCPP1Dataframe<-data.frame()
+        
+       #Write AnimalID, genotype and TimeZone to variable for current animal
+              AnimalIDCurrent<-Fig1SummaryDataframe$AnimalID[i]
+              GenotypeCurrent<-Fig1SummaryDataframe$Genotype[i]
+              TimeZoneCurrent<-Fig1SummaryDataframe$TimeZone[i]
+              DrugDateTimeCurrent<-Fig1SummaryDataframe$DrugDateTime[i] 
+        #i. Set AnimalID subfolder
+        
+          FullPath<-paste(NDFDataParentFolder, AnimalIDCurrent, sep="/")
+       
+       #Next import all files in input_path to create a new r dataframe called             `SCPP1Dataframe'
+          SCPP1Dataframe<-ImportData(FullPath)
+        
+        #Apend time information to Data frame  
+          SCPP1Dataframe <- GetTimeOfDayAndDate(SCPP1Dataframe, TimeZoneCurrent)
+        #Apend a Treatment variable to the dataframe, based on DrugDateTime as specified in Fig1SummaryDataframe 
+          Treatment<-c()
+          Treatment[which(SCPP1Dataframe$TimeOfDay<strptime(DrugDateTimeCurrent, "%d/%m/%y %H:%M:%S"))]="Control"
+          #If there are more intervals than control condition ie. if drug given
+          if(length(Treatment)<nrow(SCPP1Dataframe)){
+            Treatment[length(Treatment)+1]="Unknown"
+            Treatment[(length(Treatment)+1):(dim(SCPP1Dataframe))[1]]="Drug"
+          }
+          #apend Treatment variable to SCPP1Dataframe
+            SCPP1Dataframe<-cbind(SCPP1Dataframe, Treatment)
+          # Exclude Loss and Artifact intervals
+            SCPP1Dataframe <- ExcludeIntervals(SCPP1Dataframe, 3)
+          
+      #Apend AnimalID variable
+          AnimalIDVariable<-rep(AnimalIDCurrent, nrow(SCPP1Dataframe))
+          SCPP1Dataframe<-cbind(SCPP1Dataframe, AnimalIDVariable)
+      
+       #Apend SCPP1Dataframe to SCPP1DataframeAll. To access an animal, used "filter()" 
+          SCPP1DataframeAll<-rbind(SCPP1DataframeAll, SCPP1Dataframe)
+      }
+      
+      
+      #Save SCPP1DataframeAll to output directory
+        write.csv(SCPP1DataframeAll, "./Output/SCPP1DataframeAll.csv")
+  }
 ```
 
 ## Compare SpikeCount Data between animals in control condition 
@@ -418,6 +422,8 @@ for(i in 1:nrow(Fig2SummaryDataframe_J20)){
     # determine if event is in light hours
     EventData$Light <- EventData$EventHour %in% seq(7, 18)
     
+   
+    
     #Shift the event hour by 0.5 because having interger times was giving binning problems at 0 bins
     EventData$EventHourShifted<-EventData$EventHour+0.5
     
@@ -447,7 +453,7 @@ for(i in 1:nrow(Fig2SummaryDataframe_J20)){
 }
 ```
 
-###4. Determine phase coupling of strength and compare between WT and J20.
+###4. Determine phase coupling of strength and compare between WT and J20. Hypothesis testing
 To quantify the coupling of IIS to the day-night cycle, we calculated the circular mean angle and dispersion, and Rayleigh probability for all J20s.
 
 ```{r CompareRhoBtwnGenotypes, echo=FALSE, include=FALSE}
@@ -458,11 +464,12 @@ t<-t.test(Fig2SummaryDataframe_J20$Rho)
 
 ```
 
-All animals exhibited significant phase coupling of IIS as estimated by the Rayleigh test (p=(`r min(Fig2SummaryDataframe_J20$RayleighP) -- max(Fig2SummaryDataframe_J20$RayleighP)`. The degree of phase coupling varied between animals as can be seen in the distribution of the angular dispersion, rho (round(mean Fig2SummaryDataframe$Rho, 2)` CI=t$conf.int).
+
+All animals exhibited significant phase coupling of IIS as estimated by the Rayleigh test (p=(`r min(Fig2SummaryDataframe_J20$RayleighP) -- max(Fig2SummaryDataframe_J20$RayleighP)`. The degree of phase coupling varied between animals as can be seen in the distribution of the angular dispersion, rho= `r(round(mean(Fig2SummaryDataframe$Rho, 2) CI=t$conf.int)`.
 
 
 
-```{r DistributionOfRhoJ20, echo=FALSE, include=FALSE}
+```{r PolarPlotRhoMeanAngleJ20, echo=FALSE, include=FALSE}
 SampleRhoMeanAngle<-radial.plot(Fig2SummaryDataframe_J20$Rho, Fig2SummaryDataframe_J20$MeanAngle, start=(pi/2), clockwise = TRUE, labels=c("0/24h","6h", "12h", "18h"), label.pos = c(0, (pi/2), pi, (3*pi/2)), label.prop=1.4, rp.type = "s", point.symbols = 20, show.radial.grid = TRUE, radial.lim = c(0, 0.25, 0.5))
 
 print(SampleRhoMeanAngle)
