@@ -89,12 +89,13 @@ Steps:
   iii. Add variables for time and for separating drug and treatment conditions
   iv. Exclude loss intervals
   v. Save to a dataframe in long format. To access elements filter by AnimalID
+  OR Import SCPP1DataframeAll.csv which has been created previously
 
   
   
 ```{r ImportAndTransformNDFOutput_chunk, ECHO=FALSE}
 if(file.exists("./Output/SCPP1DataframeAll.csv")){
-  read.csv("./Output/SCPP1DataframeAll.csv")
+  SCPP1DataframeAll<-read.csv("./Output/SCPP1DataframeAll.csv")
   } else{  #Else create SCPP1DataframeAll.csv
     
       #Initialise variables for current subject
@@ -135,9 +136,11 @@ if(file.exists("./Output/SCPP1DataframeAll.csv")){
           # Exclude Loss and Artifact intervals
             SCPP1Dataframe <- ExcludeIntervals(SCPP1Dataframe, 3)
           
-      #Apend AnimalID variable
+      #Apend AnimalID variable and Genotype
           AnimalIDVariable<-rep(AnimalIDCurrent, nrow(SCPP1Dataframe))
           SCPP1Dataframe<-cbind(SCPP1Dataframe, AnimalIDVariable)
+          Genotype<-rep(GenotypeCurrent, nrow(SCPP1Dataframe))
+          SCPP1Dataframe<-cbind(SCPP1Dataframe, Genotype)
       
        #Apend SCPP1Dataframe to SCPP1DataframeAll. To access an animal, used "filter()" 
           SCPP1DataframeAll<-rbind(SCPP1DataframeAll, SCPP1Dataframe)
@@ -162,8 +165,6 @@ SCPP1DataframeDrug<-filter(SCPP1DataframeAll, Treatment=="Drug")
 ```
 
 To compare between animals/genotypes, we use ECDF.
-
-
   iv. Create Data frame with empirical cumulative distribution for each animal in control conditions
 ```{r Create_ECDFs_chunk, echo=FALSE, include=FALSE}
 
@@ -217,7 +218,7 @@ Fig1SummaryDataframe
 
 
 #Summary statistics for percentage intervals with 1 or more spikes
-```{r SummaryStatsChunk, echo=FALSE}
+```{r SummaryStatsChunk, echo=FALSE, include=TRUE}
 ####NOTE:  TO ADD NORMALITY TESTS FOR REPORTING MEAN VS MEDIAN
 #Summary statisitcs by genotype
 SummarySE(Fig1SummaryDataframe, measurevar="Grtr0SpikeCtrl", groupvars=c("Genotype"), na.rm=TRUE)
@@ -465,7 +466,7 @@ t<-t.test(Fig2SummaryDataframe_J20$Rho)
 ```
 
 
-All animals exhibited significant phase coupling of IIS as estimated by the Rayleigh test (p=(`r min(Fig2SummaryDataframe_J20$RayleighP) -- max(Fig2SummaryDataframe_J20$RayleighP)`. The degree of phase coupling varied between animals as can be seen in the distribution of the angular dispersion, rho= `r(round(mean(Fig2SummaryDataframe$Rho, 2) CI=t$conf.int)`.
+`r sum(Fig2SummaryDataframe_J20$RayleighP<0.05)` of `r nrow(Fig2SummaryDataframe_J20)' ) animals exhibited significant phase coupling of IIS as estimated by the Rayleigh test (p=(`r min(Fig2SummaryDataframe_J20$RayleighP) -- max(Fig2SummaryDataframe_J20$RayleighP)`. The degree of phase coupling varied between animals as can be seen in the distribution of the angular dispersion, rho= `r(round(mean(Fig2SummaryDataframe$Rho, 2) CI=t$conf.int)`.
 
 
 
@@ -475,4 +476,47 @@ SampleRhoMeanAngle<-radial.plot(Fig2SummaryDataframe_J20$Rho, Fig2SummaryDatafra
 print(SampleRhoMeanAngle)
 ```
 
-Across the sample, the mean IIS coupling was  Phi_J20=`r SampleMeanDateTime$TimeOfDayTimeFormat`, confirming that IIS occurred preferentially during the daylight hours.
+Across the sample of J20s, the IIS was significantly coupled to light periods (Phi_J20=`r SampleMeanDateTime$TimeOfDay`.
+
+##Figure 3: Probability of IIS and brain state
+Since IIS occurred preferentially in the light, we hypothesised that IIS occur preferentially during sleep. The ratio of theta to delta power has been used previously to characterise the animal's behavioural state. 
+####Validation of theta/delta to characterise behavioural state
+1. Import VideoTimes.csv
+```{r ImportVideoTimes, echo=FALSE, include=False}
+VideoTimesFilename<-"./Data/VideoTimesSummary.csv"
+VideoTimes<-read.csv(VideoTimesFilename)
+TempTimes<-strptime(as.character(VideoTimes$VideoStartTime), "%d/%m/%Y %H:%M:%S")
+VideoTimes$VideoStartTimeLinux<-(as.numeric(as.POSIXct(TempTimes)))
+
+TempTimes<-strptime(as.character(VideoTimes$VideoEndTime), "%d/%m/%Y %H:%M:%S")
+VideoTimes$VideoEndTimeLinux<-(as.numeric(as.POSIXct(TempTimes)))
+
+```
+
+2. Make SCPP1 Dataframe for individual animals
+```{r MakeAnimalDataframe, echo=FALSE, include=FALSE}
+SCPP1DataframeJF220<-filter(SCPP1DataframeAll, AnimalIDVariable=="JF220")
+
+```
+
+3. Import VideoScoring dataframe and amend with UnixTime
+```{r MakeVideoScoringDataframe, echo=FALSE, include=FALSE}
+VideoScoringFilename<-"./Data/VideoScoringJF220_040416.csv"
+Date<-"04/04/2016"
+
+#Import
+VideoScoring <- read_csv(VideoScoringFilename, col_types = cols(X10 = col_skip(), X11 = col_skip(), X4 = col_skip(), X5 = col_skip(), X6 = col_skip(), X7 = col_skip(), X8 = col_skip(), X9 = col_skip()))
+
+#Add date to Time to make TimeString
+VideoScoring$DateTime<-paste(Date, VideoScoring$TimeOfEEG)
+
+VideoScoring$DateTime<-strptime(as.character(VideoScoring$DateTime), "%d/%m/%Y %H:%M:%S")
+
+#Convert to UnixTime
+VideoScoring$UnixTime<-(as.numeric(as.POSIXct(VideoScoring$DateTime)))
+
+#Add video score
+SCPP1DataframeJF220$Score<-AddVideoScoreToSCPP1Data(SCPP1DataframeJF220$InitialisedTime, VideoScoring$InitialisedTime, VideoScoring$Score)
+
+```
+####IIS and theta/delta
