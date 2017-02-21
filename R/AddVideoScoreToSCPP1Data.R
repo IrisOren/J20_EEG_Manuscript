@@ -9,11 +9,15 @@ AddVideoScoreToSCPP1Data<-function(SCPP1Time, VideoTime, VideoScore){
     VideoScoreCurrent<-VideoScore[i]
     if(i<length(VideoTime)){
         while(SCPP1Time[j]<=VideoTime[i+1]){
+          if(j<length(SCPP1Time)){
                 SCPP1Score[j]<-VideoScoreCurrent
                 j<-j+1
-        }
+          } else {
+            break
+            }
             # printout<-paste(SCPP1Time[j], VideoTime[i+1], sep="-")
-    } else{
+        } 
+    }else{
         repeat{
           SCPP1Score[j]<-VideoScoreCurrent
           j<-j+1

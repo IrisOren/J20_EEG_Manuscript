@@ -506,7 +506,7 @@ VideoScoringFilename<-"./Data/VideoScoringJF220_040416.csv"
 Date<-"04/04/2016"
 
 #Import
-VideoScoring <- read.csv(VideoScoringFilename, col_types=cols(X10 = col_skip(), X11 = col_skip(), X4 = col_skip(), X5 = col_skip(), X6 = col_skip(), X7 = col_skip(), X8 = col_skip(), X9 = col_skip()))
+VideoScoring<- read.csv(VideoScoringFilename)#, col_types=cols(X10 = col_skip(), X11 = col_skip(), X4 = col_skip(), X5 = col_skip(), X6 = col_skip(), X7 = col_skip(), X8 = col_skip(), X9 = col_skip()))
 
 #Add date to Time to make TimeString
 VideoScoring$DateTime<-paste(Date, VideoScoring$TimeOfEEG)
