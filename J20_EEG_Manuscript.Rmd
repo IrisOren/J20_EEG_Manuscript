@@ -507,6 +507,8 @@ Date<-"04/04/2016"
 
 #Import
 VideoScoring<- read.csv(VideoScoringFilename)#, col_types=cols(X10 = col_skip(), X11 = col_skip(), X4 = col_skip(), X5 = col_skip(), X6 = col_skip(), X7 = col_skip(), X8 = col_skip(), X9 = col_skip()))
+VideoScoring<-select(VideoScoring, TimeOfEEG, Behaviour, SleepWake)
+VideoScoring$SleepWake<-as.character(VideoScoring$SleepWake)
 
 #Add date to Time to make TimeString
 VideoScoring$DateTime<-paste(Date, VideoScoring$TimeOfEEG)
@@ -526,7 +528,7 @@ SCPP1DataframeJF220VideoTimes<-filter(SCPP1DataframeJF220VideoTimes, Initialised
 
 
 #Add video score to dataframe for which video is available
-InitialisedTimeVector<-SCPP1DataframeJF220$InitialisedTime
+
 SCPP1DataframeJF220VideoTimes$Score<-AddVideoScoreToSCPP1Data(SCPP1DataframeJF220VideoTimes$InitialisedTime, VideoScoring$UnixTime, VideoScoring$SleepWake)
 ```
 ####IIS and theta/delta
