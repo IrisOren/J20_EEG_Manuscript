@@ -494,41 +494,67 @@ VideoTimes$VideoEndTimeLinux<-(as.numeric(as.POSIXct(TempTimes)))
 
 ```
 
+
+
 2. Make SCPP1 Dataframe for individual animals
 ```{r MakeAnimalDataframe, echo=FALSE, include=FALSE}
 SCPP1DataframeJF220<-filter(SCPP1DataframeAll, AnimalIDVariable=="JF220")
+SCPP1DataframeJF221<-filter(SCPP1DataframeAll, AnimalIDVariable=="JF221")
 
 ```
 
-3. Import VideoScoring dataframe and amend with UnixTime
+3. Import VideoScoring dataframe and amend with UnixTime for JF220
 ```{r MakeVideoScoringDataframe, echo=FALSE, include=FALSE}
-VideoScoringFilename<-"./Data/VideoScoringJF220_040416.csv"
-Date<-"04/04/2016"
 
-#Import
-VideoScoring<- read.csv(VideoScoringFilename)#, col_types=cols(X10 = col_skip(), X11 = col_skip(), X4 = col_skip(), X5 = col_skip(), X6 = col_skip(), X7 = col_skip(), X8 = col_skip(), X9 = col_skip()))
-VideoScoring<-select(VideoScoring, TimeOfEEG, Behaviour, SleepWake)
-VideoScoring$SleepWake<-as.character(VideoScoring$SleepWake)
+FileList_JF220<-c("./Data/VideoScoring/VideoScoringJF220_040416.csv","./Data/VideoScoring/VideoScoringJF220_050416.csv", "./Data/VideoScoring/VideoScoringJF220_060416.csv", "./Data/VideoScoring/VideoScoringJF220_070416.csv", "./Data/VideoScoring/VideoScoringJF220_080416.csv")
 
-#Add date to Time to make TimeString
-VideoScoring$DateTime<-paste(Date, VideoScoring$TimeOfEEG)
+DateList_JF220<-c("04/04/2016", "05/04/2016", "06/04/2016", "07/04/2016", "08/04/2016")
 
-VideoScoring$DateTime<-strptime(as.character(VideoScoring$DateTime), "%d/%m/%Y %H:%M:%S")
+SCPP1DataframeJF220VideoTimesAll<-data.frame()
+for(fileindex in 1:length(FileList_JF220)){
+   # VideoScoringFilename<-"./Data/VideoScoringJF220_040416.csv"
+   VideoScoringFilename<-FileList_JF220[[i]] 
+  Date<-DateList_JF220[[i]]
+    
+    #Import
+    VideoScoring<- read.csv(VideoScoringFilename)#, col_types=cols(X10 = col_skip(), X11 = col_skip(), X4 = col_skip(), X5 = col_skip(), X6 = col_skip(), X7 = col_skip(), X8 = col_skip(), X9 = col_skip()))
+    VideoScoring<-select(VideoScoring, TimeOfEEG, Behaviour, SleepWake)
+    VideoScoring$SleepWake<-as.character(VideoScoring$SleepWake)
+    
+    #Add date to Time to make TimeString
+    VideoScoring$DateTime<-paste(Date, VideoScoring$TimeOfEEG)
+    
+    VideoScoring$DateTime<-strptime(as.character(VideoScoring$DateTime), "%d/%m/%Y %H:%M:%S")
+    
+    #Convert to UnixTime
+    VideoScoring$UnixTime<-(as.numeric(as.POSIXct(VideoScoring$DateTime)))
+    
+    #Determine Start and End time of video file for particular day
+    VideoStartTime<-VideoScoring$UnixTime[1]
+    VideoEndTime<-VideoScoring$UnixTime[nrow(VideoScoring)]
+    
+    #Filter SCPP1 between start and endtime of video for particular day
+    SCPP1DataframeJF220VideoTimes<-filter(SCPP1DataframeJF220, InitialisedTime>=VideoStartTime)
+    SCPP1DataframeJF220VideoTimes<-filter(SCPP1DataframeJF220VideoTimes, InitialisedTime<=VideoEndTime)
+    
+    
+    #Add video score to dataframe for which video is available
+    
+    SCPP1DataframeJF220VideoTimes$SleepWake<-AddVideoScoreToSCPP1Data(SCPP1DataframeJF220VideoTimes$InitialisedTime, VideoScoring$UnixTime, VideoScoring$SleepWake)
+    SCPP1DataframeJF220VideoTimesAll<-rbind(SCPP1DataframeJF220VideoTimesAll, SCPP1DataframeJF220VideoTimes)
+}
 
-#Convert to UnixTime
-VideoScoring$UnixTime<-(as.numeric(as.POSIXct(VideoScoring$DateTime)))
-
-#Determine Start and End time of video file for particular day
-VideoStartTime<-VideoScoring$UnixTime[1]
-VideoEndTime<-VideoScoring$UnixTime[nrow(VideoScoring)]
-
-#Filter SCPP1 between start and endtime of video for particular day
-SCPP1DataframeJF220VideoTimes<-filter(SCPP1DataframeJF220, InitialisedTime>=VideoStartTime)
-SCPP1DataframeJF220VideoTimes<-filter(SCPP1DataframeJF220VideoTimes, InitialisedTime<=VideoEndTime)
-
-
-#Add video score to dataframe for which video is available
-
-SCPP1DataframeJF220VideoTimes$Score<-AddVideoScoreToSCPP1Data(SCPP1DataframeJF220VideoTimes$InitialisedTime, VideoScoring$UnixTime, VideoScoring$SleepWake)
 ```
+
+4. Compute Theta/Delta for SCPP1DataframeJF220VideoTimes
+```{r ComputeThetaDelta, echo=FALSE, include=FALSE}
+SCPP1DataframeJF220VideoTimes$ThetaOverDelta<-SCPP1DataframeJF220VideoTimes$Theta/SCPP1DataframeJF220VideoTimes$Delta
+
+#Remove NAs
+
+
+
+```
+
+
 ####IIS and theta/delta
