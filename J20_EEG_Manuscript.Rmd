@@ -506,20 +506,25 @@ SCPP1DataframeJF221<-filter(SCPP1DataframeAll, AnimalIDVariable=="JF221")
 3. Import VideoScoring dataframe and amend with UnixTime for JF220
 ```{r MakeVideoScoringDataframe, echo=FALSE, include=FALSE}
 
-FileList_JF220<-c("./Data/VideoScoring/VideoScoringJF220_040416.csv","./Data/VideoScoring/VideoScoringJF220_050416.csv", "./Data/VideoScoring/VideoScoringJF220_060416.csv", "./Data/VideoScoring/VideoScoringJF220_070416.csv", "./Data/VideoScoring/VideoScoringJF220_080416.csv")
+FileList<-c("./Data/VideoScoring/VideoScoringJF220_040416.csv","./Data/VideoScoring/VideoScoringJF220_050416.csv", "./Data/VideoScoring/VideoScoringJF220_060416.csv", "./Data/VideoScoring/VideoScoringJF220_070416.csv", "./Data/VideoScoring/VideoScoringJF220_080416.csv")#,EXPAND FILELIST  WHEN OTHERS REPLY ABOUT PROCESSED AVAILABLE FILES
+           #       "./Data/VideoScoring/VideoScoringJF221_040416.csv","./Data/Vide#oScoring/VideoScoringJF221_050416.csv", #"./Data/VideoScoring/VideoScoringJF221_060416.csv", #"./Data/VideoScoring/VideoScoringJF221_080416.csv")
 
-DateList_JF220<-c("04/04/2016", "05/04/2016", "06/04/2016", "07/04/2016", "08/04/2016")
+DateList<-c("04/04/2016", "05/04/2016", "06/04/2016", "07/04/2016", "08/04/2016")#, "04/04/2016", "05/04/2016", "06/04/2016", "08/04/2016")
 
-SCPP1DataframeJF220VideoTimesAll<-data.frame()
-for(fileindex in 1:length(FileList_JF220)){
+AnimalIDList<-c("JF220", "JF220", "JF220", "JF220", "JF220")#, "JF221", "JF221", "JF221", "JF221")
+SCPP1DataframeVideoTimesAll<-data.frame()
+AnimalIDVideoStartEnd<-list() #A list to store Start and End times for video data. The list index is AnimalID_FileIndex eg. JF220_1
+
+for(FileIndex in 1:length(FileList)){
    # VideoScoringFilename<-"./Data/VideoScoringJF220_040416.csv"
-   VideoScoringFilename<-FileList_JF220[[i]] 
-  Date<-DateList_JF220[[i]]
-    
+   VideoScoringFilename<-FileList[[FileIndex]] 
+   Date<-DateList[[FileIndex]]
+   AnimalIDCurrent<-AnimalIDList[[FileIndex]]
+   
     #Import
-    VideoScoring<- read.csv(VideoScoringFilename)#, col_types=cols(X10 = col_skip(), X11 = col_skip(), X4 = col_skip(), X5 = col_skip(), X6 = col_skip(), X7 = col_skip(), X8 = col_skip(), X9 = col_skip()))
+    VideoScoring<- read.csv(VideoScoringFilename)
     VideoScoring<-select(VideoScoring, TimeOfEEG, Behaviour, SleepWake)
-    VideoScoring$SleepWake<-as.character(VideoScoring$SleepWake)
+    VideoScoring$SleepWake<-as.character(VideoScoring$SleepWake) #needs to be character. "as.factor" converts to numeric factors
     
     #Add date to Time to make TimeString
     VideoScoring$DateTime<-paste(Date, VideoScoring$TimeOfEEG)
@@ -533,22 +538,36 @@ for(fileindex in 1:length(FileList_JF220)){
     VideoStartTime<-VideoScoring$UnixTime[1]
     VideoEndTime<-VideoScoring$UnixTime[nrow(VideoScoring)]
     
+    #Create vector with videostart and videoend variables for this FileIndex iteration
+    AnimalIDVideoStartEndVectorCurrent<-c(as.numeric(VideoStartTime), as.numeric(VideoEndTime))
+    
+    ListIndex<-paste(AnimalIDCurrent, as.character(FileIndex), sep="_")
+    AnimalIDVideoStartEnd[[ListIndex]]<-AnimalIDVideoStartEndVectorCurrent
+    
     #Filter SCPP1 between start and endtime of video for particular day
-    SCPP1DataframeJF220VideoTimes<-filter(SCPP1DataframeJF220, InitialisedTime>=VideoStartTime)
-    SCPP1DataframeJF220VideoTimes<-filter(SCPP1DataframeJF220VideoTimes, InitialisedTime<=VideoEndTime)
+    if(AnimalIDCurrent=="JF220"){
+    SCPP1DataframeVideoTimes<-filter(SCPP1DataframeJF220, InitialisedTime>=VideoStartTime)
+    SCPP1DataframeVideoTimes<-filter(SCPP1DataframeVideoTimes, InitialisedTime<=VideoEndTime)
+    } else {
+      SCPP1DataframeVideoTimes<-filter(SCPP1DataframeJF221, InitialisedTime>=VideoStartTime)
+    SCPP1DataframeVideoTimes<-filter(SCPP1DataframeVideoTimes, InitialisedTime<=VideoEndTime)
+      
+    }
     
     
     #Add video score to dataframe for which video is available
     
-    SCPP1DataframeJF220VideoTimes$SleepWake<-AddVideoScoreToSCPP1Data(SCPP1DataframeJF220VideoTimes$InitialisedTime, VideoScoring$UnixTime, VideoScoring$SleepWake)
-    SCPP1DataframeJF220VideoTimesAll<-rbind(SCPP1DataframeJF220VideoTimesAll, SCPP1DataframeJF220VideoTimes)
+    SCPP1DataframeVideoTimes$SleepWake<-AddVideoScoreToSCPP1Data(SCPP1DataframeVideoTimes$InitialisedTime, VideoScoring$UnixTime, VideoScoring$SleepWake)
+    SCPP1DataframeVideoTimesAll<-rbind(SCPP1DataframeVideoTimesAll, SCPP1DataframeVideoTimes)
+    #rename animalIDVideoStartEnd dataframe
+    #names(AnimalIDVideoStartEnd)<-c("AnimalIDVariable", "VideoStart", "VideoEnd")
 }
 
 ```
 
 4. Compute Theta/Delta for SCPP1DataframeJF220VideoTimes
 ```{r ComputeThetaDelta, echo=FALSE, include=FALSE}
-SCPP1DataframeJF220VideoTimes$ThetaOverDelta<-SCPP1DataframeJF220VideoTimes$Theta/SCPP1DataframeJF220VideoTimes$Delta
+SCPP1DataframeJF220VideoTimesAll$ThetaOverDelta<-SCPP1DataframeJF220VideoTimes$Theta/SCPP1DataframeJF220VideoTimes$Delta
 
 #Remove NAs
 
