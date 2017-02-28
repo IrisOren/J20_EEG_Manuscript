@@ -54,8 +54,8 @@ sourceDir("R/")  #All function in R/ folder relative to project
 Specify files and folders to be used
 ```{r VariableInitialisationChunk, ECHO=FALSE}
 NDFDataParentFolder<-"~/Dropbox/ANALYSIS/J20_EEG_Manuscript/Data/SCPP1V1_TCL"
-#RecordingInfoFile<-"./Data/RecordingInfo.csv"
-RecordingInfoFile<-"./Data/RecordingInfo_WT_VideoScoring.csv"
+RecordingInfoFile<-"./Data/RecordingInfo.csv"
+#RecordingInfoFile<-"./Data/RecordingInfo_WT_VideoScoring.csv"
 OutputFolder<-"./Output"
 ```
 
@@ -73,19 +73,6 @@ SummaryDataframe$DrugDateTime<-  paste(as.character(SummaryDataframe$DrugDate)
 
 ```
 
-
-# Figure 1: Spike count measure between genotype
-
-This figure requires a dataframe Fig1SummaryDataframe=AnimalID|Genotype|TimeZone|Spike rate measure = Number of intervals greater than 0 spikes
-
-Steps:
-1. Create Fig1SummaryDataframe from recordingInformation. 
-```{r create_fig1_dataframe, ECHO=FALSE}
-  Fig1SummaryDataframe<-SummaryDataframe[, c("AnimalID", "Genotype", "TimeZone", "DrugDateTime")]
-#Remove rows with missing variables
-  Fig1SummaryDataframe<-Fig1SummaryDataframe[complete.cases(Fig1SummaryDataframe),]
-```
-  
 
 2. For each AnimalID:
   i. Set AnimalID subfolder
@@ -109,15 +96,15 @@ if(file.exists("./Output/SCPP1DataframeAll.csv")){
       #spikeCount_x <- c()
       #spikeCount_ID <- as.factor(c())
       #spikeCount_genotype <- as.factor(c())
-      for(i in 1:nrow(Fig1SummaryDataframe)){     #Loop through animals
+      for(i in 1:nrow(SummaryDataframe)){     #Loop through animals
       
         SCPP1Dataframe<-data.frame()
         
        #Write AnimalID, genotype and TimeZone to variable for current animal
-              AnimalIDCurrent<-Fig1SummaryDataframe$AnimalID[i]
-              GenotypeCurrent<-Fig1SummaryDataframe$Genotype[i]
-              TimeZoneCurrent<-Fig1SummaryDataframe$TimeZone[i]
-              DrugDateTimeCurrent<-Fig1SummaryDataframe$DrugDateTime[i] 
+              AnimalIDCurrent<-SummaryDataframe$AnimalID[i]
+              GenotypeCurrent<-SummaryDataframe$Genotype[i]
+              TimeZoneCurrent<-SummaryDataframe$TimeZone[i]
+              DrugDateTimeCurrent<-SummaryDataframe$DrugDateTime[i] 
         #i. Set AnimalID subfolder
         
           FullPath<-paste(NDFDataParentFolder, AnimalIDCurrent, sep="/")
@@ -155,6 +142,21 @@ if(file.exists("./Output/SCPP1DataframeAll.csv")){
         write.csv(SCPP1DataframeAll, "./Output/SCPP1DataframeAll.csv")
   }
 ```
+
+###########################################################
+# Figure 1: Spike count measure between genotype
+
+This figure requires a dataframe Fig1SummaryDataframe=AnimalID|Genotype|TimeZone|Spike rate measure = Number of intervals greater than 0 spikes
+
+Steps:
+1. Create Fig1SummaryDataframe from recordingInformation. 
+```{r create_fig1_dataframe, ECHO=FALSE}
+  Fig1SummaryDataframe<-SummaryDataframe[, c("AnimalID", "Genotype", "TimeZone", "DrugDateTime")]
+#Remove rows with missing variables
+  Fig1SummaryDataframe<-Fig1SummaryDataframe[complete.cases(Fig1SummaryDataframe),]
+```
+  
+
 
 ## Compare SpikeCount Data between animals in control condition 
 An average spike rate over the recording is not informative. The readout we use is number of spikes/8s interval which is the spikeCount variable in SCPP1Dataframe.
@@ -287,7 +289,7 @@ stripchart(Grtr0SpikeCtrl ~ Genotype, data=Fig1SummaryDataframe,
 
 ```
 
-
+#########################################################################
 #Figure 2: IIS and time of day
 Figure 2A: Example of circadian fluctuations in IIS from JF167
 
@@ -482,9 +484,14 @@ print(SampleRhoMeanAngle)
 
 Across the sample of J20s, the IIS was significantly coupled to light periods (Phi_J20=`r SampleMeanDateTime$TimeOfDay`.
 
+
+
+
+#########################################################################
 ##Figure 3: Probability of IIS and brain state
 Since IIS occurred preferentially in the light, we hypothesised that IIS occur preferentially during sleep. The ratio of theta to delta power has been used previously to characterise the animal's behavioural state. 
-####Validation of theta/delta to characterise behavioural state
+
+#### Theta/delta to characterise behavioural state
 1. Import VideoTimes.csv
 ```{r ImportVideoTimes, echo=FALSE, include=False}
 VideoTimesFilename<-"./Data/VideoTimesSummary.csv"
@@ -503,36 +510,53 @@ VideoTimes$VideoEndTimeLinux<-(as.numeric(as.POSIXct(TempTimes)))
 ```{r MakeAnimalDataframe, echo=FALSE, include=FALSE}
 SCPP1DataframeJF220<-filter(SCPP1DataframeAll, AnimalIDVariable=="JF220")
 SCPP1DataframeJF221<-filter(SCPP1DataframeAll, AnimalIDVariable=="JF221")
+SCPP1DataframeJF373<-filter(SCPP1DataframeAll, AnimalIDVariable=="J0373")
+SCPP1DataframeJF375<-filter(SCPP1DataframeAll, AnimalIDVariable=="J0375")
+SCPP1DataframeJF376<-filter(SCPP1DataframeAll, AnimalIDVariable=="J0376")
 
 ```
 
 3. Import VideoScoring dataframe and amend with UnixTime for JF220
 ```{r MakeVideoScoringDataframe, echo=FALSE, include=FALSE}
 
-FileList<-c("./Data/VideoScoring/VideoScoringJF220_040416.csv","./Data/VideoScoring/VideoScoringJF220_050416.csv", "./Data/VideoScoring/VideoScoringJF220_060416.csv", "./Data/VideoScoring/VideoScoringJF220_070416.csv", "./Data/VideoScoring/VideoScoringJF220_080416.csv")#,EXPAND FILELIST  WHEN OTHERS REPLY ABOUT PROCESSED AVAILABLE FILES
+FileList<-c("./Data/VideoScoring/VideoScoringJF220_040416.csv",
+            "./Data/VideoScoring/VideoScoringJF220_050416.csv",   
+            "./Data/VideoScoring/VideoScoringJF220_060416.csv",  
+            "./Data/VideoScoring/VideoScoringJF220_070416.csv",
+            "./Data/VideoScoring/VideoScoringJF220_080416.csv", 
+            "./Data/VideoScoring/VideoScoringJ0373_030816Day.csv",
+            "./Data/VideoScoring/VideoScoringJ0373_030816Night.csv",
+            "./Data/VideoScoring/VideoScoringJ0375_120816Day.csv",
+            "./Data/VideoScoring/VideoScoringJ0375_120816Night.csv",
+            "./Data/VideoScoring/VideoScoringJ0376_140816Day.csv"
+            )
+#,EXPAND FILELIST  WHEN OTHERS REPLY ABOUT PROCESSED AVAILABLE FILES
            #       "./Data/VideoScoring/VideoScoringJF221_040416.csv","./Data/Vide#oScoring/VideoScoringJF221_050416.csv", #"./Data/VideoScoring/VideoScoringJF221_060416.csv", #"./Data/VideoScoring/VideoScoringJF221_080416.csv")
 
-DateList<-c("04/04/2016", "05/04/2016", "06/04/2016", "07/04/2016", "08/04/2016")#, "04/04/2016", "05/04/2016", "06/04/2016", "08/04/2016")
 
-AnimalIDList<-c("JF220", "JF220", "JF220", "JF220", "JF220")#, "JF221", "JF221", "JF221", "JF221")
+AnimalIDList<-c("JF220", "JF220", "JF220", "JF220", "JF220",
+               "J0373", "J0373",
+               "J0375", "J0375", 
+              "J0376", "J0376"
+                )#, "JF221", "JF221", "JF221", "JF221")
 SCPP1DataframeVideoTimesAll<-data.frame()
 AnimalIDVideoStartEnd<-list() #A list to store Start and End times for video data. The list index is AnimalID_FileIndex eg. JF220_1
 
 for(FileIndex in 1:length(FileList)){
    # VideoScoringFilename<-"./Data/VideoScoringJF220_040416.csv"
    VideoScoringFilename<-FileList[[FileIndex]] 
-   Date<-DateList[[FileIndex]]
+   #Date<-DateList[[FileIndex]]
    AnimalIDCurrent<-AnimalIDList[[FileIndex]]
    
     #Import
     VideoScoring<- read.csv(VideoScoringFilename)
-    VideoScoring<-select(VideoScoring, TimeOfEEG, Behaviour, SleepWake)
+    VideoScoring<-select(VideoScoring, DateOfEEG, TimeOfEEG, Behaviour, SleepWake)
     VideoScoring$SleepWake<-as.character(VideoScoring$SleepWake) #needs to be character. "as.factor" converts to numeric factors
     
     #Add date to Time to make TimeString
-    VideoScoring$DateTime<-paste(Date, VideoScoring$TimeOfEEG)
+    VideoScoring$DateTime<-paste(VideoScoring$DateOfEEG, VideoScoring$TimeOfEEG)
     
-    VideoScoring$DateTime<-strptime(as.character(VideoScoring$DateTime), "%d/%m/%Y %H:%M:%S")
+    VideoScoring$DateTime<-strptime(as.character(VideoScoring$DateTime), "%d/%m/%y %H:%M:%S")
     
     #Convert to UnixTime
     VideoScoring$UnixTime<-(as.numeric(as.POSIXct(VideoScoring$DateTime)))
@@ -548,14 +572,10 @@ for(FileIndex in 1:length(FileList)){
     AnimalIDVideoStartEnd[[ListIndex]]<-AnimalIDVideoStartEndVectorCurrent
     
     #Filter SCPP1 between start and endtime of video for particular day
-    if(AnimalIDCurrent=="JF220"){
-    SCPP1DataframeVideoTimes<-filter(SCPP1DataframeJF220, InitialisedTime>=VideoStartTime)
+
+SCPP1DataframeVideoTimes<-filter(SCPP1DataframeAll, AnimalIDVariable==AnimalIDCurrent)
+SCPP1DataframeVideoTimes<-filter(SCPP1DataframeVideoTimes, InitialisedTime>=VideoStartTime)
     SCPP1DataframeVideoTimes<-filter(SCPP1DataframeVideoTimes, InitialisedTime<=VideoEndTime)
-    } else {
-      SCPP1DataframeVideoTimes<-filter(SCPP1DataframeJF221, InitialisedTime>=VideoStartTime)
-    SCPP1DataframeVideoTimes<-filter(SCPP1DataframeVideoTimes, InitialisedTime<=VideoEndTime)
-      
-    }
     
     
     #Add video score to dataframe for which video is available
@@ -582,7 +602,7 @@ NumberOfExcludedIntervals<-nrow(SCPP1DataframeVideoTimesAll)-nrow(SCPP1Dataframe
 No. of excluded intervals:`r NumberOfExcludedIntervals`
 
 5. Plot theta/delta and sleep wake against time
-```{r, PlotThetaDeltaSW, echo=FALSE, include=FALSE}
+```{r, PlotThetaDeltaSW_JF220, echo=FALSE, include=FALSE}
 ListID<-paste("JF220_", "1", sep="")
 
 Theta_1<-ggplot(SCPP1DataframeVideoTimesAllExcluded, aes(x=InitialisedTime, y=Theta))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])
@@ -647,6 +667,23 @@ grid.newpage()
 grid.draw(rbind(ggplotGrob(Theta_5), ggplotGrob(Delta_5), ggplotGrob(ThetaOverDelta_5), ggplotGrob(SleepWake_5), size = "last"))
 #########################
 ```
+
+
+```{r, PlotThetaDeltaSW_J0373, echo=FALSE, include=FALSE}
+ListID<-"J0373_Day"
+
+Theta_1<-ggplot(SCPP1DataframeVideoTimesAllExcluded, aes(x=InitialisedTime, y=Theta))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])
+
+Delta_1<-ggplot(SCPP1DataframeVideoTimesAllExcluded, aes(x=InitialisedTime, y=Delta))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])+ylim(0, 300)
+
+ThetaOverDelta_1<-ggplot(SCPP1DataframeVideoTimesAllExcluded, aes(x=InitialisedTime, y=ThetaOverDelta))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])+ylim(0, 10)
+
+SleepWake_1<-ggplot(SCPP1DataframeVideoTimesAllExcluded, aes(x=InitialisedTime, y=SleepWake))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])
+grid.newpage()
+grid.draw(rbind(ggplotGrob(Theta_1), ggplotGrob(Delta_1), ggplotGrob(ThetaOverDelta_1), ggplotGrob(SleepWake_1), size = "last"))
+#
+```
+
 
 
 ####IIS and theta/delta
