@@ -528,17 +528,21 @@ FileList<-c("./Data/VideoScoring/VideoScoringJF220_040416.csv",
             "./Data/VideoScoring/VideoScoringJ0373_030816Night.csv",
             "./Data/VideoScoring/VideoScoringJ0375_120816Day.csv",
             "./Data/VideoScoring/VideoScoringJ0375_120816Night.csv",
-            "./Data/VideoScoring/VideoScoringJ0376_140816Day.csv"
-            )
-#,EXPAND FILELIST  WHEN OTHERS REPLY ABOUT PROCESSED AVAILABLE FILES
-           #       "./Data/VideoScoring/VideoScoringJF221_040416.csv","./Data/Vide#oScoring/VideoScoringJF221_050416.csv", #"./Data/VideoScoring/VideoScoringJF221_060416.csv", #"./Data/VideoScoring/VideoScoringJF221_080416.csv")
+            "./Data/VideoScoring/VideoScoringJ0376_140816Day.csv",
+            "./Data/VideoScoring/VideoScoringJF221_040416.csv",
+            "./Data/VideoScoring/VideoScoringJF221_050416.csv",
+            "./Data/VideoScoring/VideoScoringJF221_060416.csv",
+            "./Data/VideoScoring/VideoScoringJF221_080416.csv"
+          )
 
 
 AnimalIDList<-c("JF220", "JF220", "JF220", "JF220", "JF220",
                "J0373", "J0373",
                "J0375", "J0375", 
-              "J0376", "J0376"
-                )#, "JF221", "JF221", "JF221", "JF221")
+              "J0376", 
+              "JF221", "JF221", 
+             "JF221", "JF221"
+            )
 SCPP1DataframeVideoTimesAll<-data.frame()
 AnimalIDVideoStartEnd<-list() #A list to store Start and End times for video data. The list index is AnimalID_FileIndex eg. JF220_1
 
@@ -601,91 +605,54 @@ NumberOfExcludedIntervals<-nrow(SCPP1DataframeVideoTimesAll)-nrow(SCPP1Dataframe
 
 No. of excluded intervals:`r NumberOfExcludedIntervals`
 
-5. Plot theta/delta and sleep wake against time
-```{r, PlotThetaDeltaSW_JF220, echo=FALSE, include=FALSE}
-ListID<-paste("JF220_", "1", sep="")
+5. Plot theta/delta and sleep wake against time. The chunk iterates through all animals and saves output plots into folder ./Output/ThetaDeltaBehavioralState
 
-Theta_1<-ggplot(SCPP1DataframeVideoTimesAllExcluded, aes(x=InitialisedTime, y=Theta))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])
+```{r, PlotThetaDeltaSW_all, echo=FALSE, include=FALSE}
 
-Delta_1<-ggplot(SCPP1DataframeVideoTimesAllExcluded, aes(x=InitialisedTime, y=Delta))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])+ylim(0, 300)
+      for(FileIndex in 1:length(AnimalIDVideoStartEnd)){ #Loop through all video files from video start to end and plot
+        AnimalIDCurrent<-AnimalIDList[[FileIndex]]
+        ListID<-paste(AnimalIDCurrent, as.character(FileIndex), sep="_")
+      
+      Theta<-ggplot(filter(SCPP1DataframeVideoTimesAllExcluded, AnimalIDVariable==AnimalIDCurrent), aes(x=InitialisedTime, y=Theta))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])+ggtitle(ListID)
+      
+      Delta<-ggplot(filter(SCPP1DataframeVideoTimesAllExcluded, AnimalIDVariable==AnimalIDCurrent), aes(x=InitialisedTime, y=Delta))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])
+      
+      ThetaOverDelta<-ggplot(filter(SCPP1DataframeVideoTimesAllExcluded, AnimalIDVariable==AnimalIDCurrent), aes(x=InitialisedTime, y=ThetaOverDelta))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])+ylim(0, 5)
+      
+      SleepWake<-ggplot(filter(SCPP1DataframeVideoTimesAllExcluded,
+                               AnimalIDVariable==AnimalIDCurrent),
+                        aes(x=InitialisedTime,
+                            y=SleepWake)) + 
+        geom_point()+
+        xlim(AnimalIDVideoStartEnd[[ListID]])
+      
+      
+      FileName<-paste("./Output/ThetaDeltaBehaviouralState/", "ThetaDeltaBehaviouralState",ListID,".jpg", sep="")
 
-ThetaOverDelta_1<-ggplot(SCPP1DataframeVideoTimesAllExcluded, aes(x=InitialisedTime, y=ThetaOverDelta))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])+ylim(0, 10)
+    PlotGridSave<-plot_grid(Theta, Delta, ThetaOverDelta, SleepWake, align = "v", nrow = 4)
+  
+ if(dir.exists("./Output/ThetaDeltaBehaviouralState")==FALSE) {
+   dir.create("./Output/ThetaDeltaBehaviouralState")
+ }
+  jpeg(filename=FileName)
+  print(PlotGridSave)
+  dev.off()
+      
+}
 
-SleepWake_1<-ggplot(SCPP1DataframeVideoTimesAllExcluded, aes(x=InitialisedTime, y=SleepWake))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])
-grid.newpage()
-grid.draw(rbind(ggplotGrob(Theta_1), ggplotGrob(Delta_1), ggplotGrob(ThetaOverDelta_1), ggplotGrob(SleepWake_1), size = "last"))
-############################
-ListID<-paste("JF220_", "2", sep="")
-
-Theta_2<-ggplot(SCPP1DataframeVideoTimesAllExcluded, aes(x=InitialisedTime, y=Theta))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])
-
-Delta_2<-ggplot(SCPP1DataframeVideoTimesAllExcluded, aes(x=InitialisedTime, y=Delta))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])+ylim(0, 300)
-
-ThetaOverDelta_2<-ggplot(SCPP1DataframeVideoTimesAllExcluded, aes(x=InitialisedTime, y=ThetaOverDelta))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])+ylim(0, 10)
-
-SleepWake_2<-ggplot(SCPP1DataframeVideoTimesAllExcluded, aes(x=InitialisedTime, y=SleepWake))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])
-grid.newpage()
-grid.draw(rbind(ggplotGrob(Theta_2), ggplotGrob(Delta_2), ggplotGrob(ThetaOverDelta_2), ggplotGrob(SleepWake_2), size = "last"))
-#########################
-
-ListID<-paste("JF220_", "3", sep="")
-
-Theta_3<-ggplot(SCPP1DataframeVideoTimesAllExcluded, aes(x=InitialisedTime, y=Theta))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])
-
-Delta_3<-ggplot(SCPP1DataframeVideoTimesAllExcluded, aes(x=InitialisedTime, y=Delta))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])+ylim(0, 300)
-
-ThetaOverDelta_3<-ggplot(SCPP1DataframeVideoTimesAllExcluded, aes(x=InitialisedTime, y=ThetaOverDelta))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])+ylim(0, 10)
-
-SleepWake_3<-ggplot(SCPP1DataframeVideoTimesAllExcluded, aes(x=InitialisedTime, y=SleepWake))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])
-grid.newpage()
-grid.draw(rbind(ggplotGrob(Theta_3), ggplotGrob(Delta_3), ggplotGrob(ThetaOverDelta_3), ggplotGrob(SleepWake_3), size = "last"))
-#########################
-
-ListID<-paste("JF220_", "4", sep="")
-
-Theta_4<-ggplot(SCPP1DataframeVideoTimesAllExcluded, aes(x=InitialisedTime, y=Theta))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])
-
-Delta_4<-ggplot(SCPP1DataframeVideoTimesAllExcluded, aes(x=InitialisedTime, y=Delta))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])+ylim(0, 300)
-
-ThetaOverDelta_4<-ggplot(SCPP1DataframeVideoTimesAllExcluded, aes(x=InitialisedTime, y=ThetaOverDelta))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])+ylim(0, 10)
-
-SleepWake_4<-ggplot(SCPP1DataframeVideoTimesAllExcluded, aes(x=InitialisedTime, y=SleepWake))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])
-grid.newpage()
-grid.draw(rbind(ggplotGrob(Theta_4), ggplotGrob(Delta_4), ggplotGrob(ThetaOverDelta_4), ggplotGrob(SleepWake_4), size = "last"))
-#########################
-
-ListID<-paste("JF220_", "5", sep="")
-
-Theta_5<-ggplot(SCPP1DataframeVideoTimesAllExcluded, aes(x=InitialisedTime, y=Theta))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])
-
-Delta_5<-ggplot(SCPP1DataframeVideoTimesAllExcluded, aes(x=InitialisedTime, y=Delta))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])+ylim(0, 300)
-
-ThetaOverDelta_5<-ggplot(SCPP1DataframeVideoTimesAllExcluded, aes(x=InitialisedTime, y=ThetaOverDelta))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])+ylim(0, 10)
-
-SleepWake_5<-ggplot(SCPP1DataframeVideoTimesAllExcluded, aes(x=InitialisedTime, y=SleepWake))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])
-grid.newpage()
-grid.draw(rbind(ggplotGrob(Theta_5), ggplotGrob(Delta_5), ggplotGrob(ThetaOverDelta_5), ggplotGrob(SleepWake_5), size = "last"))
-#########################
-```
-
-
-```{r, PlotThetaDeltaSW_J0373, echo=FALSE, include=FALSE}
-ListID<-"J0373_Day"
-
-Theta_1<-ggplot(SCPP1DataframeVideoTimesAllExcluded, aes(x=InitialisedTime, y=Theta))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])
-
-Delta_1<-ggplot(SCPP1DataframeVideoTimesAllExcluded, aes(x=InitialisedTime, y=Delta))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])+ylim(0, 300)
-
-ThetaOverDelta_1<-ggplot(SCPP1DataframeVideoTimesAllExcluded, aes(x=InitialisedTime, y=ThetaOverDelta))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])+ylim(0, 10)
-
-SleepWake_1<-ggplot(SCPP1DataframeVideoTimesAllExcluded, aes(x=InitialisedTime, y=SleepWake))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])
-grid.newpage()
-grid.draw(rbind(ggplotGrob(Theta_1), ggplotGrob(Delta_1), ggplotGrob(ThetaOverDelta_1), ggplotGrob(SleepWake_1), size = "last"))
 #
+
+
 ```
-
-
+To do:
+Create loop for plotting SW and theta/delta
+Check theta/delta/behaviour time info correct for J0XXX animals
+Create training and test data sets for theta/delta/behaviour 
+Decide on how to do IIS and theta/delta
 
 ####IIS and theta/delta
 1. Distribution of theta power
+
+
+###
 
