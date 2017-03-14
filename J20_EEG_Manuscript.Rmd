@@ -124,7 +124,7 @@ if(file.exists("./Output/SCPP1DataframeAll.csv")){
           }
           #apend Treatment variable to SCPP1Dataframe
             SCPP1Dataframe<-cbind(SCPP1Dataframe, Treatment)
-          # Exclude Loss and Artifact intervals
+          # Exclude Loss and Artifact intervals which have delta power >3sd
             SCPP1Dataframe <- ExcludeIntervals(SCPP1Dataframe, 3)
           
       #Apend AnimalID variable and Genotype
@@ -136,12 +136,31 @@ if(file.exists("./Output/SCPP1DataframeAll.csv")){
        #Apend SCPP1Dataframe to SCPP1DataframeAll. To access an animal, used "filter()" 
           SCPP1DataframeAll<-rbind(SCPP1DataframeAll, SCPP1Dataframe)
       }
+  }      
       
       
-      #Save SCPP1DataframeAll to output directory
-        write.csv(SCPP1DataframeAll, "./Output/SCPP1DataframeAll.csv")
-  }
 ```
+
+
+Add LightDark variable
+
+```{r LightDarkVariable, echo=FALSE, include = FALSE}
+Hour<-hour(SCPP1DataframeAll$TimeOfDay)
+SCPP1DataframeAll$LightDark <- Hour %in% seq(7, 18)
+
+```
+
+Add ThetaOverDelta
+```{r ThetaOverDeltaChunk, echo=FALSE, include=FALSE}
+SCPP1DataframeAll$ThetaOverDelta<-SCPP1DataframeAll$Theta/SCPP1DataframeAll$Delta
+```
+
+Save SCPP1DataframeAll to output directory
+```{r SaveSCPP1DataframeAllChunk, echo=FALSE, include = FALSE}
+        write.csv(SCPP1DataframeAll, "./Output/SCPP1DataframeAll.csv")
+  
+```
+
 
 ###########################################################
 # Figure 1: Spike count measure between genotype
@@ -156,12 +175,15 @@ Steps:
   Fig1SummaryDataframe<-Fig1SummaryDataframe[complete.cases(Fig1SummaryDataframe),]
 ```
   
+2. Select animals that will be used in the analysis: animals with cortical or cerebellum reference recorded for in control conditions with known light dark cycles.
+```{r SelectAnimalsChunk, echo=FALSE, include=TRUE}
+AnimalsToInclude<-c("JF105", "JF106", "JF110", "JF111", "JF118", "JF120", "JF127","JF131", "JF133", "JF138", "JF140", "JF143", "JF152","JF157", "JF167", "JF168", "JF179","JF56", "JF81","JF82","JF87","JF90", "JF94", "JF96", "JF218","JF220", "JF221","J0373", "J0375", "J0376") #J0374, J0393, J0397, J0400 excluded as they are on lev treatment througout recording
 
+Fig1SummaryDataframe<-subset(Fig1SummaryDataframe, AnimalID %in% AnimalsToInclude)
 
-## Compare SpikeCount Data between animals in control condition 
-An average spike rate over the recording is not informative. The readout we use is number of spikes/8s interval which is the spikeCount variable in SCPP1Dataframe.
+```
 
-First, Select for control/drug treatment condition
+Select for control/drug treatment condition
 ```{r SelectTreatmentCondition_Chunk, echo=FALSE}
 
 
@@ -169,6 +191,11 @@ SCPP1DataframeControl<-filter(SCPP1DataframeAll, Treatment=="Control")
 SCPP1DataframeDrug<-filter(SCPP1DataframeAll, Treatment=="Drug")
 
 ```
+
+
+## Compare SpikeCount Data between animals in control condition 
+An average spike rate over the recording is not informative. The readout we use is number of spikes/8s interval which is the spikeCount variable in SCPP1Dataframe.
+
 
 To compare between animals/genotypes, we use ECDF.
   iv. Create Data frame with empirical cumulative distribution for each animal in control conditions
@@ -300,7 +327,7 @@ Plot example of circadian spike probability for JF167
 
 
 #Filter SCPP1DataFrameAll to select for JF167 
-IISTimesJF167<-filter(SCPP1DataframeAll, AnimalIDVariable=="JF167")
+IISTimesJF167<-filter(SCPP1DataframeAll, AnimalIDVariable=="JF167", Treatment=="Control")
 # Select the relevant columns of dataframe
 IISTimesJF167<-select(IISTimesJF167, SpikeCount, TimeOfDay)
 #Filter for intervals with >0 IIS
@@ -351,11 +378,31 @@ We used circular statistics to establish whether IIS were significantly-coupled 
   Fig2SummaryDataframe <- Fig2SummaryDataframe[complete.cases(Fig2SummaryDataframe),]
 ```
   
+2. Select animals that will be used in the analysis: animals with cortical or cerebellum reference recorded for in control conditions with known light dark cycles.
+```{r SelectAnimalsChunk, echo=FALSE, include=TRUE}
+AnimalsToInclude<-c("JF105", "JF106", "JF110", "JF111", "JF118","JF131", "JF133", "JF140", "JF152","JF157", "JF167", "JF168", "JF179", "JF96", "JF218","JF220", "JF221","J0373", "J0375", "J0376") #J0374, J0393, J0397, J0400 excluded as they are on lev treatment througout recording
+
+Fig2SummaryDataframe<-subset(Fig1SummaryDataframe, AnimalID %in% AnimalsToInclude)
+
+```
+
+Select for control/drug treatment condition
+```{r SelectTreatmentCondition_Chunk, echo=FALSE}
+
+
+SCPP1DataframeControl<-filter(SCPP1DataframeAll, Treatment=="Control")
+SCPP1DataframeDrug<-filter(SCPP1DataframeAll, Treatment=="Drug")
+
+```
+
+  
+  
 ###2. Calculate summary statistics for all animals
 ```{r Fig2BCircularStatsSummary}
 # Select the relevant columns of dataframe
-IISTimes<-select(SCPP1DataframeAll, SpikeCount, InitialisedTime, 
-                 TimeOfDay, AnimalIDVariable)
+IISTimes<-select(SCPP1DataframeControl, SpikeCount, InitialisedTime, 
+                 TimeOfDay,Treatment, AnimalIDVariable)
+
 #Filter for intervals with >0 IIS
 IISTimes<-filter(IISTimes, SpikeCount>0)
 #Convert all IIS times to radian angles
@@ -477,7 +524,15 @@ t<-t.test(Fig2SummaryDataframe_J20$Rho)
 
 
 ```{r PolarPlotRhoMeanAngleJ20, echo=FALSE, include=FALSE}
-SampleRhoMeanAngle<-radial.plot(Fig2SummaryDataframe_J20$Rho, Fig2SummaryDataframe_J20$MeanAngle, start=(pi/2), clockwise = TRUE, labels=c("0/24h","6h", "12h", "18h"), label.pos = c(0, (pi/2), pi, (3*pi/2)), label.prop=1.4, rp.type = "s", point.symbols = 20, show.radial.grid = TRUE, radial.lim = c(0, 0.25, 0.5))
+SampleRhoMeanAngle<-radial.plot(Fig2SummaryDataframe_J20$Rho,
+                                Fig2SummaryDataframe_J20$MeanAngle,
+                                start=(pi/2), clockwise = TRUE,
+                                labels=c("0/24h","6h", "12h", "18h"),
+                                label.pos = c(0, (pi/2), pi, (3*pi/2)), 
+                                label.prop=1.4, rp.type = "s",
+                                point.symbols = 20, 
+                                show.radial.grid = TRUE, 
+                                radial.lim = c(0, 0.25, 0.5))
 
 print(SampleRhoMeanAngle)
 ```
@@ -596,10 +651,10 @@ SCPP1DataframeVideoTimes<-filter(SCPP1DataframeVideoTimes, InitialisedTime>=Vide
 SCPP1DataframeVideoTimesAll$ThetaOverDelta<-SCPP1DataframeVideoTimesAll$Theta/SCPP1DataframeVideoTimesAll$Delta
 ```
 
-5. Exclude NAs, Loss intervals and extremes of delta power (artifacts). We exclude delta power>5 sds away from mean delta
+5. Exclude NAs, Loss intervals and extremes of delta power (artifacts). We exclude delta power>3 sds away from mean delta
 ```{r ExcludeEpochs, echo=FALSE, include=FALSE}
 #Excluded values are omitted from Dataframe. This means that data points can no longer be coerced into time series object
-SCPP1DataframeVideoTimesAllExcluded<-ExcludeIntervals(SCPP1DataframeVideoTimesAll, 5)
+SCPP1DataframeVideoTimesAllExcluded<-ExcludeIntervals(SCPP1DataframeVideoTimesAll, 3)
 NumberOfExcludedIntervals<-nrow(SCPP1DataframeVideoTimesAll)-nrow(SCPP1DataframeVideoTimesAllExcluded)
 ```
 
@@ -613,13 +668,15 @@ No. of excluded intervals:`r NumberOfExcludedIntervals`
         AnimalIDCurrent<-AnimalIDList[[FileIndex]]
         ListID<-paste(AnimalIDCurrent, as.character(FileIndex), sep="_")
       
-      Theta<-ggplot(filter(SCPP1DataframeVideoTimesAllExcluded, AnimalIDVariable==AnimalIDCurrent), aes(x=InitialisedTime, y=Theta))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])+ggtitle(ListID)
+      ThetaPlot<-ggplot(filter(SCPP1DataframeVideoTimesAllExcluded, AnimalIDVariable==AnimalIDCurrent), aes(x=InitialisedTime, y=Theta))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])+ylim(0,100)+ggtitle(ListID)
       
-      Delta<-ggplot(filter(SCPP1DataframeVideoTimesAllExcluded, AnimalIDVariable==AnimalIDCurrent), aes(x=InitialisedTime, y=Delta))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])
+      DeltaPlot<-ggplot(filter(SCPP1DataframeVideoTimesAlßlExcluded, AnimalIDVariable==AnimalIDCurrent), aes(x=InitialisedTime, y=Delta))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])+ylim(0,200)
       
-      ThetaOverDelta<-ggplot(filter(SCPP1DataframeVideoTimesAllExcluded, AnimalIDVariable==AnimalIDCurrent), aes(x=InitialisedTime, y=ThetaOverDelta))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])+ylim(0, 5)
+      ThetaOverDeltaPlot<-ggplot(filter(SCPP1DataframeVideoTimesAllExcluded, AnimalIDVariable==AnimalIDCurrent), aes(x=InitialisedTime, y=ThetaOverDelta))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])+ylim(0, 5)
       
-      SleepWake<-ggplot(filter(SCPP1DataframeVideoTimesAllExcluded,
+      SpikeCountPlot<-ggplot(filter(SCPP1DataframeVideoTimesAllExcluded, AnimalIDVariable==AnimalIDCurrent), aes(x=InitialisedTime, y=SpikeCount))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])+ylim(0, 5)
+      
+      SleepWakePlot<-ggplot(filter(SCPP1DataframeVideoTimesAllExcluded,
                                AnimalIDVariable==AnimalIDCurrent),
                         aes(x=InitialisedTime,
                             y=SleepWake)) + 
@@ -629,7 +686,7 @@ No. of excluded intervals:`r NumberOfExcludedIntervals`
       
       FileName<-paste("./Output/ThetaDeltaBehaviouralState/", "ThetaDeltaBehaviouralState",ListID,".jpg", sep="")
 
-    PlotGridSave<-plot_grid(Theta, Delta, ThetaOverDelta, SleepWake, align = "v", nrow = 4)
+    PlotGridSave<-plot_grid(ThetaPlot, DeltaPlot, ThetaOverDeltaPlot, SpikeCountPlot, SleepWakePlot, align = "v", nrow = 5)
   
  if(dir.exists("./Output/ThetaDeltaBehaviouralState")==FALSE) {
    dir.create("./Output/ThetaDeltaBehaviouralState")
@@ -645,14 +702,58 @@ No. of excluded intervals:`r NumberOfExcludedIntervals`
 
 ```
 To do:
-Create loop for plotting SW and theta/delta
-Check theta/delta/behaviour time info correct for J0XXX animals
+
 Create training and test data sets for theta/delta/behaviour 
 Decide on how to do IIS and theta/delta
 
 ####IIS and theta/delta
-1. Distribution of theta power
+IIS occurred in the light hours, we wanted to ask whether IIS are more prevalent in specific brain states. To this end, we used the theta signal to characterise epochs as sleep/wake and asked whether p(IIS|S)>p(IIS|W)
 
+Theta/delta ratios have been used to charecterise sleep stages (Ewell et al 2016) and seizures were shown to be more prevalent following REM. We thus asked whether IIS were more prevalent during periods of elevated Theta/Delta.
+p(IIS|theta/delta>threshold)
+
+###Event-triggered averages of theta/delta 
+Event times are calculated
+```{r EventTriggeredAveragingOfThetaDelta, echo=FALSE, include=TRUE}
+AnimalIDList<-c("JF220", "JF221")
+ETAvList<-list()
+
+#Filter dataframe for control and daylight only
+SCPP1DataframeCurrent<-filter(SCPP1DataframeAll, 
+                                LightDark==TRUE, 
+                                Treatment=="Control")
+#For each animal, we are going to loop through each epoch with IIS to create an average ThetaOverDelta for 64+8s interval around the IIS time (9 * 8s intervals)
+for(AnimalIndex in 1:length(AnimalIDList)){
+  AnimalIDCurrent=AnimalIDList[[AnimalIndex]]
+  
+  SCPP1DataframeCurrent<-filter(SCPP1DataframeAll, 
+                                AnimalIDVariable==AnimalIDCurrent)
+  #Calculate ThetaOverDelta for each inte
+  SCPP1DataframeCurrent$ThetaOverDelta<-SCPP1DataframeCurrent$Theta/SCPP1DataframeCurrent$Delta
+  
+  #Filter the current SCPP1 for intervals >= 1 spike
+  EventsDataframe<-filter(SCPP1DataframeCurrent,  SpikeCount>0)
+  
+
+  #Filter the current SCPP1 for intervals >= 1 spike
+  NonEventsDataframe<-filter(SCPP1DataframeCurrent,  SpikeCount==0)
+  
+  #Initialise variables and objects for evaluating within animal triggered averages
+  WindowLength<-64
+  
+  ETAv<-rep(0,((WindowLength/8)+1))   #Initialise vector for Event-Triggered average 
+  
+  ETWList<-list()
+  
+  for(SpikeIndex in 1:nrow(EventsDataframe)){
+    ETW<-EventTriggeredWindow(EventsDataFrame$InitialisedTime[SpikeIndex], WindowLength, SCPP1DataframeCurrent$InitialisedTime, SCPP1DataframeCurrent$ThetaOverDelta)
+    ETAv<-ETAv+ETW$TriggeredWindowData
+    ETWList[[SpikeIndex]]<-ETW
+  }
+  ETAv<-ETAv/SpikeIndex
+ETList$ETAv[[AnimalIDCurrent]]<-ETAv
+ETList$ETW[[AnimalIDCurrent]]<-ETWList
+  }
 
 ###
 
