@@ -142,7 +142,7 @@ if(file.exists("./Output/SCPP1DataframeAll.csv")){
 ```
 
 
-Add LightDark variable
+Add LightDark variable where LightDark=TRUE is lights on
 
 ```{r LightDarkVariable, echo=FALSE, include = FALSE}
 Hour<-hour(SCPP1DataframeAll$TimeOfDay)
@@ -713,30 +713,37 @@ Theta/delta ratios have been used to charecterise sleep stages (Ewell et al 2016
 p(IIS|theta/delta>threshold)
 
 ###Event-triggered averages of theta/delta 
-Event times are calculated
+Event times are used for an event-triggered average for 72s around interval of event. The output of the chunk is ETList with 2 list elements per AnimalID. ETList$ETAv for that animal is event triggered average; ETList$ETW is the list of each individual event triggered window. List elements for ETW are $TriggeredWindowTime and $TriggeredWindowData.
+
+
 ```{r EventTriggeredAveragingOfThetaDelta, echo=FALSE, include=TRUE}
 AnimalIDList<-c("JF220", "JF221")
 ETAvList<-list()
 
-#Filter dataframe for control and daylight only
+#Filter dataframe for control and daylight only as a proxy for sleep
 SCPP1DataframeCurrent<-filter(SCPP1DataframeAll, 
-                                LightDark==TRUE, 
-                                Treatment=="Control")
+                              LightDark==TRUE, 
+                              Treatment=="Control")
+
 #For each animal, we are going to loop through each epoch with IIS to create an average ThetaOverDelta for 64+8s interval around the IIS time (9 * 8s intervals)
 for(AnimalIndex in 1:length(AnimalIDList)){
   AnimalIDCurrent=AnimalIDList[[AnimalIndex]]
   
   SCPP1DataframeCurrent<-filter(SCPP1DataframeAll, 
                                 AnimalIDVariable==AnimalIDCurrent)
-  #Calculate ThetaOverDelta for each inte
-  SCPP1DataframeCurrent$ThetaOverDelta<-SCPP1DataframeCurrent$Theta/SCPP1DataframeCurrent$Delta
+  
   
   #Filter the current SCPP1 for intervals >= 1 spike
   EventsDataframe<-filter(SCPP1DataframeCurrent,  SpikeCount>0)
   
-
-  #Filter the current SCPP1 for intervals >= 1 spike
+  NumberOfEvents<-nrow(EventsDataframe)
+  
+  #Filter the current SCPP1 for intervals ==0 spike
   NonEventsDataframe<-filter(SCPP1DataframeCurrent,  SpikeCount==0)
+  
+  
+  NumberOfNonEvents<-nrow(NonEventsDataframe)
+  
   
   #Initialise variables and objects for evaluating within animal triggered averages
   WindowLength<-64
@@ -744,16 +751,54 @@ for(AnimalIndex in 1:length(AnimalIDList)){
   ETAv<-rep(0,((WindowLength/8)+1))   #Initialise vector for Event-Triggered average 
   
   ETWList<-list()
+  ETList<-list()
+  #Loop through all events and compute event triggered average
+  SpikeCounterForAveraging<-0
+  for(SpikeIndex in 1:NumberOfEvents){
+    EventTimeCurrent<-EventsDataframe$InitialisedTime[[SpikeIndex]]
+    #Extract epoch centered on IIS
+    ETW<-EventTriggeredWindow(EventTimeCurrent, WindowLength,
+                              SCPP1DataframeCurrent$InitialisedTime, 
+                              SCPP1DataframeCurrent$ThetaOverDelta)
+    if(nrow(ETW)==9){
+      ETAv<-ETAv+ETW$TriggeredWindowData
+      ETWList[[SpikeIndex]]<-ETW
+      SpikeCounterForAveraging<-SpikeCounterForAveraging+1
+    }else{
+      print(SpikeIndex)
+    }
+  }
+  ETAv<-ETAv/SpikeCounterForAveraging
+  ETList$ETAv[[AnimalIDCurrent]]<-ETAv
+  ETList$ETW[[AnimalIDCurrent]]<-ETWList
   
-  for(SpikeIndex in 1:nrow(EventsDataframe)){
-    ETW<-EventTriggeredWindow(EventsDataFrame$InitialisedTime[SpikeIndex], WindowLength, SCPP1DataframeCurrent$InitialisedTime, SCPP1DataframeCurrent$ThetaOverDelta)
-    ETAv<-ETAv+ETW$TriggeredWindowData
-    ETWList[[SpikeIndex]]<-ETW
+  
+  NETAv<-rep(0,((WindowLength/8)+1))   #Initialise vector for NonEvent-Triggered average 
+  
+  NETWList<-list()
+  NETList
+  #Loop through all nonevents and compute event triggered average
+  for(SpikeIndex in 1:NumberOfNonEvents){
+    NonEventTimeCurrent<-NonEventsDataframe$InitialisedTime[[SpikeIndex]]
+    #Extract epoch centered on NIIS
+    NETW<-EventTriggeredWindow(NonEventTimeCurrent, WindowLength, SCPP1DataframeCurrent$InitialisedTime, SCPP1DataframeCurrent$ThetaOverDelta)
+    
+    if(nrow(NETW)==9){
+      NETAv<-NETAv+NETW$TriggeredWindowData
+      NETWList[[SpikeIndex]]<-NETW
+      SpikeCounterForAveraging<-SpikeCounterForAveraging+1
+    }else{
+      print(SpikeIndex)
+    }
   }
-  ETAv<-ETAv/SpikeIndex
-ETList$ETAv[[AnimalIDCurrent]]<-ETAv
-ETList$ETW[[AnimalIDCurrent]]<-ETWList
-  }
-
+  NETAv<-NETAv/SpikeIndex
+  NETList$NETAv[[AnimalIDCurrent]]<-NETAv
+  NETList$ETW[[AnimalIDCurrent]]<-NETWList
+}
+#plot(seq(1, 9, 1), ETList$ETAv[["JF220"]])
+# plot(seq(1, 9, 1), ETList$ETAv[["JF221"]])
+# plot(seq(1, 9, 1), NETList$NETAv[["JF221"]])
+# plot(seq(1, 9, 1), NETList$NETAv[["JF220"]])
+```
 ###
 
