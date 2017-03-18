@@ -125,7 +125,9 @@ if(file.exists("./Output/SCPP1DataframeAll.csv")){
           #apend Treatment variable to SCPP1Dataframe
             SCPP1Dataframe<-cbind(SCPP1Dataframe, Treatment)
           # Exclude Loss and Artifact intervals which have delta power >3sd
+            TotalIntervals<-nrow(SCPP1Dataframe)
             SCPP1Dataframe <- ExcludeIntervals(SCPP1Dataframe, 3)
+            ExcludedIntervals<-TotalIntervals-nrow(SCPP1Dataframe)
           
       #Apend AnimalID variable and Genotype
           AnimalIDVariable<-rep(AnimalIDCurrent, nrow(SCPP1Dataframe))
@@ -799,6 +801,13 @@ for(AnimalIndex in 1:length(AnimalIDList)){
 # plot(seq(1, 9, 1), ETList$ETAv[["JF221"]])
 # plot(seq(1, 9, 1), NETList$NETAv[["JF221"]])
 # plot(seq(1, 9, 1), NETList$NETAv[["JF220"]])
+
+#To test length of window
+#for(i in 1:length(ETWList)){
+#  if(nrow(ETWList[[i]])!=9){
+#    print(i)
+#  }
+#}
 ```
 ###
 
