@@ -124,11 +124,12 @@ if(file.exists("./Output/SCPP1DataframeAll.csv")){
           }
           #apend Treatment variable to SCPP1Dataframe
             SCPP1Dataframe<-cbind(SCPP1Dataframe, Treatment)
-          # Exclude Loss and Artifact intervals which have delta power >3sd
+          # Exclude Loss and Artifact intervals which have delta power >3sd and write the number of ExcludedIntervals to ExcludedIntervalsVariable in SCPP1Dataframe
             TotalIntervals<-nrow(SCPP1Dataframe)
             SCPP1Dataframe <- ExcludeIntervals(SCPP1Dataframe, 3)
             ExcludedIntervals<-TotalIntervals-nrow(SCPP1Dataframe)
-          
+          ExcludedIntervalsVariable<-rep(ExcludedIntervals, nrow(SCPP1Dataframe))
+          SCPP1Dataframe<-cbind(SCPP1Dataframe, ExcludedIntervalsVariable)
       #Apend AnimalID variable and Genotype
           AnimalIDVariable<-rep(AnimalIDCurrent, nrow(SCPP1Dataframe))
           SCPP1Dataframe<-cbind(SCPP1Dataframe, AnimalIDVariable)
