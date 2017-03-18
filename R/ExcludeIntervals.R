@@ -7,7 +7,8 @@ ExcludeIntervals <- function(DF, Factor){
   DF <- filter(DF, Theta>0.00001 & Delta>0.00001)
   MeanDelta<-mean(DF$Delta)
   sdDelta<-sd(DF$Delta)
-  DF <- filter(DF, Delta < MeanDelta+5*sdDelta)
+  DF <- filter(DF, Delta < MeanDelta+Factor*sdDelta)
+  DF <- filter(DF, Delta > MeanDelta-Factor*sdDelta)
   return(DF)
   
   
