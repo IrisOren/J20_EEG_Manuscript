@@ -155,24 +155,25 @@ if(file.exists("./Output/SCPPDataframeAll.csv")){
 Add LightDark variable where LightDark=TRUE is lights on
 
 ```{r LightDarkVariable, echo=FALSE, include = FALSE}
-Hour<-hour(SCPP1DataframeAll$TimeOfDay)
-SCPP1DataframeAll$LightDark <- Hour %in% seq(7, 18)
+Hour<-hour(SCPPDataframeAll$TimeOfDay)
+SCPPDataframeAll$LightDark <- Hour %in% seq(7, 18)
 
 ```
 
 Add ThetaOverDelta
 ```{r ThetaOverDeltaChunk, echo=FALSE, include=FALSE}
-SCPP1DataframeAll$ThetaOverDelta<-SCPP1DataframeAll$Theta/SCPP1DataframeAll$Delta
+SCPPDataframeAll$ThetaOverDelta<-SCPPDataframeAll$Theta/SCPPDataframeAll$Delta
 ```
 
 Save SCPP1DataframeAll to output directory
-```{r SaveSCPP1DataframeAllChunk, echo=FALSE, include = FALSE}
-        write.csv(SCPP1DataframeAll, "./Output/SCPP1DataframeAll.csv")
+```{r SaveSCPPDataframeAllChunk, echo=FALSE, include = FALSE}
+        write.csv(SCPPDataframeAll, "./Output/SCPPDataframeAll.csv")
   
 ```
 
 
-Preanalysis by animal
+
+
 
 ###########################################################
 # Figure 1: Spike count measure between genotype
