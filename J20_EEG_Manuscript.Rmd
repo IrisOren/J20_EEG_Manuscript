@@ -112,6 +112,18 @@ if(file.exists("./Output/SCPP1DataframeAll.csv")){
        #Next import all files in input_path to create a new r dataframe called             `SCPP1Dataframe'
           SCPP1Dataframe<-ImportData(FullPath)
         
+          
+           # Exclude Loss and Artifact intervals which have delta power >3sd and write the number of ExcludedIntervals to ExcludedIntervalsVariable in SCPP1Dataframe
+            TotalIntervals<-nrow(SCPP1Dataframe)
+            
+            SCPP1Dataframe <- ExcludeIntervals(SCPP1Dataframe, 3)
+            ExcludedIntervals<-TotalIntervals-nrow(SCPP1Dataframe)
+            TotalIntervalsVariable<-rep(TotalIntervals, nrow(SCPP1Dataframe))
+            SCPP1Dataframe<-cbind(SCPP1Dataframe, TotalIntervalsVariable)
+          ExcludedIntervalsVariable<-rep(ExcludedIntervals, nrow(SCPP1Dataframe))
+          SCPP1Dataframe<-cbind(SCPP1Dataframe, ExcludedIntervalsVariable)
+          
+          
         #Apend time information to Data frame  
           SCPP1Dataframe <- GetTimeOfDayAndDate(SCPP1Dataframe, TimeZoneCurrent)
         #Apend a Treatment variable to the dataframe, based on DrugDateTime as specified in Fig1SummaryDataframe 
@@ -124,12 +136,7 @@ if(file.exists("./Output/SCPP1DataframeAll.csv")){
           }
           #apend Treatment variable to SCPP1Dataframe
             SCPP1Dataframe<-cbind(SCPP1Dataframe, Treatment)
-          # Exclude Loss and Artifact intervals which have delta power >3sd and write the number of ExcludedIntervals to ExcludedIntervalsVariable in SCPP1Dataframe
-            TotalIntervals<-nrow(SCPP1Dataframe)
-            SCPP1Dataframe <- ExcludeIntervals(SCPP1Dataframe, 3)
-            ExcludedIntervals<-TotalIntervals-nrow(SCPP1Dataframe)
-          ExcludedIntervalsVariable<-rep(ExcludedIntervals, nrow(SCPP1Dataframe))
-          SCPP1Dataframe<-cbind(SCPP1Dataframe, ExcludedIntervalsVariable)
+         
       #Apend AnimalID variable and Genotype
           AnimalIDVariable<-rep(AnimalIDCurrent, nrow(SCPP1Dataframe))
           SCPP1Dataframe<-cbind(SCPP1Dataframe, AnimalIDVariable)
@@ -243,10 +250,12 @@ To compare between genotypes, for each animal, we extract the proportion of inte
 
 ``` {r ECDF_stats_chunk, ECHO=TRUE, include=TRUE}
 #For each animal, evaluate the percentile of intervals with one or more spikes
+
+#1-ECDFCurrent$CumFrequency[1] is the number of intervals with 1 or more spikes
 for(i in 1:nrow(Fig1SummaryDataframe)){
   AnimalIDCurrent<-Fig1SummaryDataframe$AnimalID[i]
   ECDFCurrent<-filter(ECDFAllCtrlDataframe, AnimalIDVariable==AnimalIDCurrent)
-  Fig1SummaryDataframe$Grtr0SpikeCtrl[i]<-1-(ECDFCurrent$CumFrequency[2]) 
+  Fig1SummaryDataframe$Grtr0SpikeCtrl[i]<-1-(ECDFCurrent$CumFrequency[1]) 
 }
 Fig1SummaryDataframe
 ```
@@ -724,7 +733,7 @@ AnimalIDList<-c("JF220", "JF221")
 ETAvList<-list()
 
 #Filter dataframe for control and daylight only as a proxy for sleep
-SCPP1DataframeCurrent<-filter(SCPP1DataframeAll, 
+SCPP1DataframeEventAv<-filter(SCPP1DataframeAll, 
                               LightDark==TRUE, 
                               Treatment=="Control")
 
@@ -732,7 +741,7 @@ SCPP1DataframeCurrent<-filter(SCPP1DataframeAll,
 for(AnimalIndex in 1:length(AnimalIDList)){
   AnimalIDCurrent=AnimalIDList[[AnimalIndex]]
   
-  SCPP1DataframeCurrent<-filter(SCPP1DataframeAll, 
+  SCPP1DataframeCurrent<-filter(SCPP1DataframeEventAv, 
                                 AnimalIDVariable==AnimalIDCurrent)
   
   
@@ -749,9 +758,10 @@ for(AnimalIndex in 1:length(AnimalIDList)){
   
   
   #Initialise variables and objects for evaluating within animal triggered averages
-  WindowLength<-64
+  NoOfIntervalsForAveraging<-9
+  WindowLengthInSecs<-NoOfIntervalsForAveraging*8
   
-  ETAv<-rep(0,((WindowLength/8)+1))   #Initialise vector for Event-Triggered average 
+  ETAv<-rep(0,NoOfIntervalsForAveraging)   #Initialise vector for Event-Triggered average 
   
   ETWList<-list()
   ETList<-list()
@@ -760,15 +770,14 @@ for(AnimalIndex in 1:length(AnimalIDList)){
   for(SpikeIndex in 1:NumberOfEvents){
     EventTimeCurrent<-EventsDataframe$InitialisedTime[[SpikeIndex]]
     #Extract epoch centered on IIS
-    ETW<-EventTriggeredWindow(EventTimeCurrent, WindowLength,
-                              SCPP1DataframeCurrent$InitialisedTime, 
-                              SCPP1DataframeCurrent$ThetaOverDelta)
-    if(nrow(ETW)==9){
+    ETW<-EventTriggeredWindow(EventTimeCurrent, WindowLengthInSecs,SCPP1DataframeCurrent$InitialisedTime, 
+                          SCPP1DataframeCurrent$ThetaOverDelta)
+    if(nrow(ETW)==NoOfIntervalsForAveraging){
       ETAv<-ETAv+ETW$TriggeredWindowData
       ETWList[[SpikeIndex]]<-ETW
       SpikeCounterForAveraging<-SpikeCounterForAveraging+1
     }else{
-      print(SpikeIndex)
+      #print(SpikeIndex)
     }
   }
   ETAv<-ETAv/SpikeCounterForAveraging
@@ -776,27 +785,28 @@ for(AnimalIndex in 1:length(AnimalIDList)){
   ETList$ETW[[AnimalIDCurrent]]<-ETWList
   
   
-  NETAv<-rep(0,((WindowLength/8)+1))   #Initialise vector for NonEvent-Triggered average 
+  NETAv<-rep(0,NoOfIntervalsForAveraging)   #Initialise vector for NonEvent-Triggered average 
   
   NETWList<-list()
-  NETList
+  NETList<-list()
+  SpikeCounterForAveraging<-0
   #Loop through all nonevents and compute event triggered average
   for(SpikeIndex in 1:NumberOfNonEvents){
     NonEventTimeCurrent<-NonEventsDataframe$InitialisedTime[[SpikeIndex]]
     #Extract epoch centered on NIIS
-    NETW<-EventTriggeredWindow(NonEventTimeCurrent, WindowLength, SCPP1DataframeCurrent$InitialisedTime, SCPP1DataframeCurrent$ThetaOverDelta)
+    NETW<-EventTriggeredWindow(NonEventTimeCurrent, WindowLengthInSecs, SCPP1DataframeCurrent$InitialisedTime, SCPP1DataframeCurrent$ThetaOverDelta)
     
-    if(nrow(NETW)==9){
+    if(nrow(NETW)==NoOfIntervalsForAveraging){
       NETAv<-NETAv+NETW$TriggeredWindowData
       NETWList[[SpikeIndex]]<-NETW
       SpikeCounterForAveraging<-SpikeCounterForAveraging+1
     }else{
-      print(SpikeIndex)
+     # print(SpikeIndex)
     }
   }
-  NETAv<-NETAv/SpikeIndex
+  NETAv<-NETAv/SpikeCounterForAveraging
   NETList$NETAv[[AnimalIDCurrent]]<-NETAv
-  NETList$ETW[[AnimalIDCurrent]]<-NETWList
+  NETList$NETW[[AnimalIDCurrent]]<-NETWList
 }
 #plot(seq(1, 9, 1), ETList$ETAv[["JF220"]])
 # plot(seq(1, 9, 1), ETList$ETAv[["JF221"]])
