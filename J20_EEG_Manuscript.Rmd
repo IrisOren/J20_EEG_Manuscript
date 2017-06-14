@@ -128,9 +128,9 @@ if(file.exists("./Output/SCPPDataframeAll.csv")){
           SCPPDataframe <- GetTimeOfDayAndDate(SCPPDataframe, TimeZoneCurrent)
         #Apend a Treatment variable to the dataframe, based on DrugDateTime as specified in Fig1SummaryDataframe 
           Treatment<-c()
-          Treatment[which(SCPPDataframe$TimeOfDay<strptime(DrugDateTimeCurrent, "%d/%m/%y %H:%M:%S"))]="Control"
+          Treatment[which(SCPPDataframe$TimeOfDay<strptime(DrugDateTimeCurrent, "%d/%m/%Y %H:%M:%S"))]="Control"
           #If there are more intervals than control condition ie. if drug given
-          if(length(Treatment)<nrow(SCPP1Dataframe)){
+          if(length(Treatment)<nrow(SCPPDataframe)){
             Treatment[length(Treatment)+1]="Unknown"
             Treatment[(length(Treatment)+1):(dim(SCPPDataframe))[1]]="Drug"
           }
