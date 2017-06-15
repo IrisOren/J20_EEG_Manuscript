@@ -2,7 +2,7 @@
 ---
 title: "J20_EEG_Manuscript"
 author: "Iris Oren"
-date: "19/12/2016"
+date: "13-06-2017"
 output:
   html_document: default
   pdf_document: default
@@ -13,7 +13,7 @@ output:
 This .rmd file processes the Data to create all figures for Brown & Ying et a
 
 * Data
-  + Spike counts by SCPP1V1: SCPP1V1.tcl was run on 8s epochs of Data, with glitch=200. The processor generated text files, containing spike counts, theta and delta power. SCPP1V1.tcl outputs: "ndfFilename_SCPP1V1.txt", organised in individual folders by AnimalID (Raw Data: Dropbox/Analysis/Neuroarchiver/J20EEG/SCPP1V1).
+  + Spike counts by SCPP3: SCPP3.tcl was run on 8s epochs of Data, with glitch=200. The processor generated text files, containing: loss| spike counts| delta power| theta power. SCPP3.tcl outputs: "ndfFilename_SCPP1V1.txt", organised in individual folders by AnimalID (Raw Data: Dropbox/Analysis/Neuroarchiver/J20EEG/SCPP1V1).
   + Spike counts by Matthias's scripts: To be added
   + Metadata: RecordingInformationJ20_Saved180816.csv
   + Abeta load Data: to be added
@@ -53,7 +53,7 @@ sourceDir("R/")  #All function in R/ folder relative to project
 ### Datafile and variable initialisation
 Specify files and folders to be used
 ```{r VariableInitialisationChunk, ECHO=FALSE}
-NDFDataParentFolder<-"~/Dropbox/ANALYSIS/J20_EEG_Manuscript/Data/SCPP1V1_TCL"
+NDFDataParentFolder<-"~/Dropbox/ANALYSIS/J20_EEG_Manuscript/Data/SCPP3V2_TCL"
 RecordingInfoFile<-"./Data/RecordingInfo.csv"
 #RecordingInfoFile<-"./Data/RecordingInfo_WT_VideoScoring.csv"
 OutputFolder<-"./Output"
@@ -69,36 +69,37 @@ SummaryDataframe$DrugTime<-as.character(SummaryDataframe$DrugTime)
 SummaryDataframe$TimeZone<-as.character(SummaryDataframe$TimeZone) #Set to "Europe/london" except for animals when clocks changed from GMT-> daylight savings and they stayed on GMT which should be set to "UTC" 
 SummaryDataframe$DrugDateTime<-  paste(as.character(SummaryDataframe$DrugDate)
 , as.character(SummaryDataframe$DrugTime), " ")
+SummaryDataframe$Fig1_IISRate<-as.character(SummaryDataframe$Fig1_IISRate)
+#Select animals that will be included in MS as the subset that will be included in Fig1
+SummaryDataframe<-filter(SummaryDataframe, Fig1_IISRate=="YES")
 
 
 ```
 
 
-2. For each AnimalID:
+2. For each AnimalID to be included:
   i. Set AnimalID subfolder
-  ii. Create SCPPP1_dataframe from all NDFFileName_SCPP1V1.txt files 
+  ii. Create SCPPP_dataframe from all processor characteristics .txt files 
   iii. Add variables for time and for separating drug and treatment conditions
-  iv. Exclude loss intervals
-  v. Save to a dataframe in long format. To access elements filter by AnimalID
-  OR Import SCPP1DataframeAll.csv which has been created previously
+  iv. Add variable for excluding based on  loss and high delta intervals
+
+3. Save to a dataframe in long format. To access elements filter by AnimalID
+  OR Import SCPPDataframeAll.csv which has been created previously
 
   
   
 ```{r ImportAndTransformNDFOutput_chunk, ECHO=FALSE}
-if(file.exists("./Output/SCPP1DataframeAll.csv")){
-  SCPP1DataframeAll<-read.csv("./Output/SCPP1DataframeAll.csv")
-  } else{  #Else create SCPP1DataframeAll.csv
+if(file.exists("./Output/SCPPDataframeAll.csv")){
+  SCPPDataframeAll<-read.csv("./Output/SCPPDataframeAll.csv")
+  } else{  #Else create SCPPDataframeAll.csv
     
-      #Initialise variables for current subject
-      SCPP1DataframeList<-list()
-      SCPP1DataframeAll<-data.frame()
+      #Initialise variables all animals
+      SCPPDataframeList<-list()
+      SCPPDataframeAll<-data.frame()
       
-      #spikeCount_x <- c()
-      #spikeCount_ID <- as.factor(c())
-      #spikeCount_genotype <- as.factor(c())
       for(i in 1:nrow(SummaryDataframe)){     #Loop through animals
       
-        SCPP1Dataframe<-data.frame()
+        SCPPDataframe<-data.frame() #Initialise dataframe for current animal
         
        #Write AnimalID, genotype and TimeZone to variable for current animal
               AnimalIDCurrent<-SummaryDataframe$AnimalID[i]
@@ -110,9 +111,10 @@ if(file.exists("./Output/SCPP1DataframeAll.csv")){
           FullPath<-paste(NDFDataParentFolder, AnimalIDCurrent, sep="/")
        
        #Next import all files in input_path to create a new r dataframe called             `SCPP1Dataframe'
-          SCPP1Dataframe<-ImportData(FullPath)
+          SCPPDataframe<-ImportData(FullPath)
         
           
+<<<<<<< HEAD
            # Exclude Loss and Artifact intervals which have delta power >3sd and write the number of ExcludedIntervals to ExcludedIntervalsVariable in SCPP1Dataframe
             TotalIntervals<-nrow(SCPP1Dataframe)
             
@@ -123,28 +125,43 @@ if(file.exists("./Output/SCPP1DataframeAll.csv")){
           ExcludedIntervalsVariable<-rep(ExcludedIntervals, nrow(SCPP1Dataframe))
           SCPP1Dataframe<-cbind(SCPP1Dataframe, ExcludedIntervalsVariable)
           
+=======
+           # Add Variable for ExcludeInterval: If Loss>LossThreshold or  delta power >DeltaThreshold
+          LossThreshold=0.2
+          DeltaThreshold=1000
+          ExcludedIntervalsVariable<-which((SCPPDataframe$Loss>LossThreshold)| (SCPPDataframe$Delta>DeltaThreshold))
+          #Set ExcludeInterval to a default of 0
+          SCPPDataframe$ExcludeInterval<-0
+          #ExcludeInterval<-1 for exclusion
+          SCPPDataframe$ExcludeInterval[ExcludedIntervalsVariable]<-1
+            
+>>>>>>> SCPP3
           
         #Apend time information to Data frame  
-          SCPP1Dataframe <- GetTimeOfDayAndDate(SCPP1Dataframe, TimeZoneCurrent)
+          SCPPDataframe <- GetTimeOfDayAndDate(SCPPDataframe, TimeZoneCurrent)
         #Apend a Treatment variable to the dataframe, based on DrugDateTime as specified in Fig1SummaryDataframe 
           Treatment<-c()
-          Treatment[which(SCPP1Dataframe$TimeOfDay<strptime(DrugDateTimeCurrent, "%d/%m/%y %H:%M:%S"))]="Control"
+          Treatment[which(SCPPDataframe$TimeOfDay<strptime(DrugDateTimeCurrent, "%d/%m/%Y %H:%M:%S"))]="Control"
           #If there are more intervals than control condition ie. if drug given
-          if(length(Treatment)<nrow(SCPP1Dataframe)){
+          if(length(Treatment)<nrow(SCPPDataframe)){
             Treatment[length(Treatment)+1]="Unknown"
-            Treatment[(length(Treatment)+1):(dim(SCPP1Dataframe))[1]]="Drug"
+            Treatment[(length(Treatment)+1):(dim(SCPPDataframe))[1]]="Drug"
           }
           #apend Treatment variable to SCPP1Dataframe
+<<<<<<< HEAD
             SCPP1Dataframe<-cbind(SCPP1Dataframe, Treatment)
+=======
+            SCPPDataframe<-cbind(SCPPDataframe, Treatment)
+>>>>>>> SCPP3
          
       #Apend AnimalID variable and Genotype
-          AnimalIDVariable<-rep(AnimalIDCurrent, nrow(SCPP1Dataframe))
-          SCPP1Dataframe<-cbind(SCPP1Dataframe, AnimalIDVariable)
-          Genotype<-rep(GenotypeCurrent, nrow(SCPP1Dataframe))
-          SCPP1Dataframe<-cbind(SCPP1Dataframe, Genotype)
+          AnimalIDVariable<-rep(AnimalIDCurrent, nrow(SCPPDataframe))
+          SCPPDataframe<-cbind(SCPPDataframe, AnimalIDVariable)
+          Genotype<-rep(GenotypeCurrent, nrow(SCPPDataframe))
+          SCPPDataframe<-cbind(SCPPDataframe, Genotype)
       
-       #Apend SCPP1Dataframe to SCPP1DataframeAll. To access an animal, used "filter()" 
-          SCPP1DataframeAll<-rbind(SCPP1DataframeAll, SCPP1Dataframe)
+       #Apend SCPPDataframe to SCPPDataframeAll. To access an animal, used "filter()" 
+          SCPPDataframeAll<-rbind(SCPPDataframeAll, SCPPDataframe)
       }
   }      
       
@@ -155,21 +172,24 @@ if(file.exists("./Output/SCPP1DataframeAll.csv")){
 Add LightDark variable where LightDark=TRUE is lights on
 
 ```{r LightDarkVariable, echo=FALSE, include = FALSE}
-Hour<-hour(SCPP1DataframeAll$TimeOfDay)
-SCPP1DataframeAll$LightDark <- Hour %in% seq(7, 18)
+Hour<-hour(SCPPDataframeAll$TimeOfDay)
+SCPPDataframeAll$LightDark <- Hour %in% seq(7, 18)
 
 ```
 
 Add ThetaOverDelta
 ```{r ThetaOverDeltaChunk, echo=FALSE, include=FALSE}
-SCPP1DataframeAll$ThetaOverDelta<-SCPP1DataframeAll$Theta/SCPP1DataframeAll$Delta
+SCPPDataframeAll$ThetaOverDelta<-SCPPDataframeAll$Theta/SCPPDataframeAll$Delta
 ```
 
 Save SCPP1DataframeAll to output directory
-```{r SaveSCPP1DataframeAllChunk, echo=FALSE, include = FALSE}
-        write.csv(SCPP1DataframeAll, "./Output/SCPP1DataframeAll.csv")
+```{r SaveSCPPDataframeAllChunk, echo=FALSE, include = FALSE}
+        write.csv(SCPPDataframeAll, "./Output/SCPPDataframeAll.csv")
   
 ```
+
+
+
 
 
 ###########################################################
