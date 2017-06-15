@@ -149,7 +149,7 @@ if(file.exists("./Output/SCPPDataframeAll.csv")){
           }
           #apend Treatment variable to SCPP1Dataframe
 
-            SCPP1Dataframe<-cbind(SCPP1Dataframe, Treatment)
+            
 
             SCPPDataframe<-cbind(SCPPDataframe, Treatment)
 
