@@ -114,7 +114,7 @@ if(file.exists("./Output/SCPPDataframeAll.csv")){
           SCPPDataframe<-ImportData(FullPath)
         
           
-<<<<<<< HEAD
+
            # Exclude Loss and Artifact intervals which have delta power >3sd and write the number of ExcludedIntervals to ExcludedIntervalsVariable in SCPP1Dataframe
             TotalIntervals<-nrow(SCPP1Dataframe)
             
@@ -125,7 +125,7 @@ if(file.exists("./Output/SCPPDataframeAll.csv")){
           ExcludedIntervalsVariable<-rep(ExcludedIntervals, nrow(SCPP1Dataframe))
           SCPP1Dataframe<-cbind(SCPP1Dataframe, ExcludedIntervalsVariable)
           
-=======
+
            # Add Variable for ExcludeInterval: If Loss>LossThreshold or  delta power >DeltaThreshold
           LossThreshold=0.2
           DeltaThreshold=1000
@@ -135,7 +135,7 @@ if(file.exists("./Output/SCPPDataframeAll.csv")){
           #ExcludeInterval<-1 for exclusion
           SCPPDataframe$ExcludeInterval[ExcludedIntervalsVariable]<-1
             
->>>>>>> SCPP3
+
           
         #Apend time information to Data frame  
           SCPPDataframe <- GetTimeOfDayAndDate(SCPPDataframe, TimeZoneCurrent)
@@ -148,11 +148,11 @@ if(file.exists("./Output/SCPPDataframeAll.csv")){
             Treatment[(length(Treatment)+1):(dim(SCPPDataframe))[1]]="Drug"
           }
           #apend Treatment variable to SCPP1Dataframe
-<<<<<<< HEAD
+
             SCPP1Dataframe<-cbind(SCPP1Dataframe, Treatment)
-=======
+
             SCPPDataframe<-cbind(SCPPDataframe, Treatment)
->>>>>>> SCPP3
+
          
       #Apend AnimalID variable and Genotype
           AnimalIDVariable<-rep(AnimalIDCurrent, nrow(SCPPDataframe))
