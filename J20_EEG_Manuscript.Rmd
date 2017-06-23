@@ -74,7 +74,7 @@ SummaryDataframe$DOB<-as.character(SummaryDataframe$DOB)
 #Select animals that will be included in MS as the subset that will be included in Fig1
 SummaryDataframe<-filter(SummaryDataframe, Fig1_IISRate=="YES")
 
-#Add age variable
+#Add age variable as difference of DOB and first NDF file
 SummaryDataframe$Age<-as.POSIXct(SummaryDataframe$FirstNDF, origin="1970-01-01", tz="Europe/london")-strptime(SummaryDataframe$DOB, format="%d/%m/%Y", tz="Europe/london")
 
 
