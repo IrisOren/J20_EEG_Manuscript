@@ -845,5 +845,32 @@ for(AnimalIndex in 1:length(AnimalIDList)){
 #  }
 #}
 ```
-###
+###########
 
+# AChE absorption assay
+The activity of AChE was measured following the protocol of Ellman et al (Biochem Pharmacol 7:88-95. 1961). The thiocline production rate was compared between neocortical brain homogenates for WT and J20 with/without DPZ treatment. A positive control of WT brain homogenate treated with 10uM neostigmine was included in each preparation.
+
+```{r AChEAbsorptionAssay, include=TRUE, echo = FALSE}
+AbsorptionFilename<-"~/Dropbox/ANALYSIS/J20_EEG_Manuscript/Data/AChEAbsorptionAssayLong.csv"
+AChEAbsorption<-read.csv(AbsorptionFilename, header = TRUE, sep = ",")
+AChEAbsorption$RepeatID<-as.factor(AChEAbsorption$RepeatID)
+#Select the window for looking at slope
+AChEAbsorption<-filter(AChEAbsorption, Time==20)
+#Reorder the factor variables
+AChEAbsorption$GenotypeTreatment<-as.factor(AChEAbsorption$GenotypeTreatment)
+AChEAbsorption$GenotypeTreatment<-factor(AChEAbsorption$GenotypeTreatment, levels=c("WT_Ctrl", "WT_DPZ", "J20_Ctrl", "J20_DPZ", "WT_NSTG"))
+AChEAbsorptionPlot<-ggplot(AChEAbsorption, aes(x=GenotypeTreatment, y=ThioclineRate, shape=RepeatID, group=RepeatID)) + geom_point() +
+  geom_line(color="grey") +
+  ylab(" Thiocline production rate (nMol/min)") +
+  xlab("") 
+  
+AChEAbsorptionPlot<- AChEAbsorptionPlot +
+  theme_bw() +
+  theme(panel.border=element_blank(), 
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(), 
+    axis.line=element_line(colour = "black"), 
+    axis.text.x = element_text(angle=90))
+
+AChEAbsorptionPlot
+```
