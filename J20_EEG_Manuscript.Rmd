@@ -40,6 +40,8 @@ library(circular)
 library(plotrix)
 library(readr)  #for col_skip in read.csv
 library(lme4)
+library(lsmeans)
+library(multcomp)
 
 
 sourceDir <- function(path, trace = TRUE, ...) {
@@ -858,21 +860,63 @@ AChEAbsorption$RepeatID<-as.factor(AChEAbsorption$RepeatID)
 
 #Select the window for looking at slope
 AChEAbsorption<-filter(AChEAbsorption, Time==20)
+```
+
+Fit Linear mixed models with GenotypeTreatment as fixed effect and RepeatID as random variable
+```{r AChEAbsorptionLME, include=TRUE, echo= TRUE}
+
+AChEAbsorption.model<-lmer(ThioclineRate~ GenotypeTreatment + (1|RepeatID), data=AChEAbsorption, REML = FALSE)
+
+#Plot residuals
+plot(fitted(AChEAbsorption.model), residuals(AChEAbsorption.model))
+```
+
+Residuals have trend so we log transform the data
+
+```{r AChEAbsorptionLMELogAssumptions, include=TRUE, echo=TRUE}
+minThioclineRate<-min(AChEAbsorption$ThioclineRate)
+AChEAbsorption$ThioclineRateTranslate<-AChEAbsorption$ThioclineRate+minThioclineRate+1
+AChEAbsorption$LogThioclineRate<-log(AChEAbsorption$ThioclineRateTranslate)
+
 
 #Linear mixed models with GenotypeTreatment as fixed effect and RepeatID as random variable
-AChEAbsorption.model<-lmer(ThioclineRate~ (1|RepeatID)+GenotypeTreatment, data=AChEAbsorption, REML = FALSE)
+AChEAbsorption.model<-lmer(LogThioclineRate~ GenotypeTreatment + (1|RepeatID), data=AChEAbsorption, REML = FALSE)
+
+#Plot residuals
+plot(fitted(AChEAbsorption.model), residuals(AChEAbsorption.model))
+
+
+#qqplot
+
+qqnorm(residuals(AChEAbsorption.model))
+
+
+```
+
+The data fit the assumptions for the linear mixed model of homoscedactity and normality as determined by residual plot and qqnormal plot of residuals. Proceed with linear mixed model test and post-hoc tests..
+
+```{r AChEAbsorptionLMETest, include=TRUE, echo=FALSE}
+
+# summary
+
 summary(AChEAbsorption.model)
 
 
-#Test signficance of fixed effect
-AChEAbsorption.null<-lmer(ThioclineRate~ (1|RepeatID), data=AChEAbsorption, REML = FALSE)
+#Test signficance of genotype fixed effect using a chi-squared statistic
+AChEAbsorption.null<-lmer(LogThioclineRate~ (1|RepeatID), data=AChEAbsorption, REML = FALSE)
 anova(AChEAbsorption.model, AChEAbsorption.null)
 
-#Post-hoc test two-sided
-summary(glht(AChEAbsorption.model, linfct = mcp(GenotypeTreatment = "Tukey"), alternative = "two.sided"), test = adjusted("holm"))
 
-#Post-hoc test one sided
-summary(glht(AChEAbsorption.model, linfct = mcp(GenotypeTreatment = "Tukey"), alternative = "less"), test = adjusted("holm"))
+
+
+#Perform post-hoc tests. Use one sided for NSTG < DPZ < Ctrl. Use two-sided for  J20 and WT 
+summary(glht(AChEAbsorption.model, linfct = mcp(GenotypeTreatment = "Tukey"), alternative = "less", test = adjusted("holm")))
+
+
+summary(glht(AChEAbsorption.model, linfct = mcp(GenotypeTreatment = "Tukey"), alternative = "greater", test = adjusted("holm")))
+
+summary(glht(AChEAbsorption.model, linfct = mcp(GenotypeTreatment = "Tukey"), alternative = "two.sided", test = adjusted("holm")))
+
 ```
 
 ```{r AChEAbsorptionPlot, include=TRUE, echo=FALSE}
