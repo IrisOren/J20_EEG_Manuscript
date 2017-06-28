@@ -9,7 +9,7 @@
 
 ImportData<-function(data_dir){
   #Lists all files of form SCPP1V1.txt
-  FileList<-list.files(path=data_dir, pattern="SCPP4V1.txt") #List of all files in working directory
+  FileList<-list.files(path=data_dir, pattern="*SCPP4V1.txt") #List of all files in working directory
   EndFile<-length(FileList)  #This will be changed to length of FileList
   for (i in 1:EndFile){
     #Write to a temp dataframe
