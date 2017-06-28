@@ -56,7 +56,7 @@ sourceDir("R/")  #All function in R/ folder relative to project
 ### Datafile and variable initialisation
 Specify files and folders to be used
 ```{r VariableInitialisationChunk, ECHO=FALSE}
-NDFDataParentFolder<-"~/Dropbox/ANALYSIS/J20_EEG_Manuscript/Data/SCPP3V2_TCL"
+NDFDataParentFolder<-"~/Dropbox/ANALYSIS/J20_EEG_Manuscript/Data/SCPP4V1_TCL"
 RecordingInfoFile<-"./Data/RecordingInfo.csv"
 #RecordingInfoFile<-"./Data/RecordingInfo_WT_VideoScoring.csv"
 OutputFolder<-"./Output"
@@ -117,26 +117,28 @@ if(file.exists("./Output/SCPPDataframeAll.csv")){
         #i. Set AnimalID subfolder
         
           FullPath<-paste(NDFDataParentFolder, AnimalIDCurrent, sep="/")
-       
-       #Next import all files in input_path to create a new r dataframe called             `SCPP1Dataframe'
+       FullPath<-paste(FullPath, "/", sep="")
+       #Next import all files in input_path to create a new r dataframe called             `SCPPDataframe'
           SCPPDataframe<-ImportData(FullPath)
         
           
 
            # Exclude Loss and Artifact intervals which have delta power >3sd and write the number of ExcludedIntervals to ExcludedIntervalsVariable in SCPP1Dataframe
-            TotalIntervals<-nrow(SCPP1Dataframe)
+          LossThreshold=0.2
+          DeltaThreshold=1000  
+          
+          #TotalIntervals<-nrow(SCPPDataframe)
             
-            SCPP1Dataframe <- ExcludeIntervals(SCPP1Dataframe, 3)
-            ExcludedIntervals<-TotalIntervals-nrow(SCPP1Dataframe)
-            TotalIntervalsVariable<-rep(TotalIntervals, nrow(SCPP1Dataframe))
-            SCPP1Dataframe<-cbind(SCPP1Dataframe, TotalIntervalsVariable)
-          ExcludedIntervalsVariable<-rep(ExcludedIntervals, nrow(SCPP1Dataframe))
-          SCPP1Dataframe<-cbind(SCPP1Dataframe, ExcludedIntervalsVariable)
+           # SCPP1Dataframe <- ExcludeIntervals(SCPPDataframe, LossThreshold, DeltaThreshold)
+           # ExcludedIntervals<-TotalIntervals-nrow(SCPP1Dataframe)
+           # TotalIntervalsVariable<-rep(TotalIntervals, nrow(SCPP1Dataframe))
+          #  SCPP1Dataframe<-cbind(SCPP1Dataframe, TotalIntervalsVariable)
+         # ExcludedIntervalsVariable<-rep(ExcludedIntervals, nrow(SCPP1Dataframe))
+         # SCPP1Dataframe<-cbind(SCPP1Dataframe, ExcludedIntervalsVariable)
           
 
            # Add Variable for ExcludeInterval: If Loss>LossThreshold or  delta power >DeltaThreshold
-          LossThreshold=0.2
-          DeltaThreshold=1000
+          
           ExcludedIntervalsVariable<-which((SCPPDataframe$Loss>LossThreshold)| (SCPPDataframe$Delta>DeltaThreshold))
           #Set ExcludeInterval to a default of 0
           SCPPDataframe$ExcludeInterval<-0
@@ -147,6 +149,7 @@ if(file.exists("./Output/SCPPDataframeAll.csv")){
           
         #Apend time information to Data frame  
           SCPPDataframe <- GetTimeOfDayAndDate(SCPPDataframe, TimeZoneCurrent)
+          SCPPDataframe$TimeOfDay<-as.POSIXct(SCPPDataframe$TimeOfDay)
         #Apend a Treatment variable to the dataframe, based on DrugDateTime as specified in Fig1SummaryDataframe 
           Treatment<-c()
           Treatment[which(SCPPDataframe$TimeOfDay<strptime(DrugDateTimeCurrent, "%d/%m/%Y %H:%M:%S"))]="Control"
@@ -155,7 +158,7 @@ if(file.exists("./Output/SCPPDataframeAll.csv")){
             Treatment[length(Treatment)+1]="Unknown"
             Treatment[(length(Treatment)+1):(dim(SCPPDataframe))[1]]="Drug"
           }
-          #apend Treatment variable to SCPP1Dataframe
+          #apend Treatment variable to SCPPDataframe
 
             
 
