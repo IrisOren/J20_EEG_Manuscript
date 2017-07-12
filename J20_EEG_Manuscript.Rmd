@@ -944,4 +944,6 @@ AChEAbsorptionPlot<- AChEAbsorptionPlot +
     axis.text.x = element_text(angle=90))
 
 AChEAbsorptionPlot
+
+ggsave("ThioclineRate.png")
 ```
