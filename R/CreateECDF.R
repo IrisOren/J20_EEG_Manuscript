@@ -2,7 +2,7 @@ CreateECDF<-function(DF, GenotypeFactor, AnimalIDFactor){
 SpikeCountDF<-data.frame(SpikeCount=DF$SpikeCount)
 
 SpikeCountDF <- SpikeCountDF %>% group_by(SpikeCount) %>%  
-  summarize(NumIntervals=n())
+  dplyr::summarise(NumIntervals=n())
 
 SpikeCountDF <- SpikeCountDF %>%  
   arrange(SpikeCount) %>% 
