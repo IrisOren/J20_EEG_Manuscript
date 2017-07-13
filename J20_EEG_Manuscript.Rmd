@@ -56,7 +56,7 @@ sourceDir("R/")  #All function in R/ folder relative to project
 ### Datafile and variable initialisation
 Specify files and folders to be used
 ```{r VariableInitialisationChunk, ECHO=FALSE}
-NDFDataParentFolder<-"~/Dropbox/ANALYSIS/J20_EEG_Manuscript/Data/SCPP4V1_TCL"
+NDFDataParentFolder<-"~/Dropbox/ANALYSIS/Neuroarchiver/J20EEG/SCPP4V1"
 RecordingInfoFile<-"./Data/RecordingInfo.csv"
 #RecordingInfoFile<-"./Data/RecordingInfo_WT_VideoScoring.csv"
 OutputFolder<-"./Output"
@@ -211,16 +211,15 @@ This figure requires a dataframe Fig1SummaryDataframe=AnimalID|Genotype|TimeZone
 Steps:
 1. Create Fig1SummaryDataframe from recordingInformation. 
 ```{r create_fig1_dataframe, ECHO=FALSE}
-  Fig1SummaryDataframe<-SummaryDataframe[, c("AnimalID", "Genotype", "TimeZone", "DrugDateTime")]
+  Fig1SummaryDataframe<-SummaryDataframe[, c("AnimalID", "Genotype", "TimeZone", "DrugDateTime", "Fig1_IISRate")]
 #Remove rows with missing variables
   Fig1SummaryDataframe<-Fig1SummaryDataframe[complete.cases(Fig1SummaryDataframe),]
 ```
   
 2. Select animals that will be used in the analysis: animals with cortical or cerebellum reference recorded for in control conditions with known light dark cycles.
 ```{r SelectAnimalsChunk, echo=FALSE, include=TRUE}
-AnimalsToInclude<-c("JF105", "JF106", "JF110", "JF111", "JF118", "JF120", "JF127","JF131", "JF133", "JF138", "JF140", "JF143", "JF152","JF157", "JF167", "JF168", "JF179","JF56", "JF81","JF82","JF87","JF90", "JF94", "JF96", "JF218","JF220", "JF221","J0373", "J0375", "J0376") #J0374, J0393, J0397, J0400 excluded as they are on lev treatment througout recording
 
-Fig1SummaryDataframe<-subset(Fig1SummaryDataframe, AnimalID %in% AnimalsToInclude)
+Fig1SummaryDataframe<-filter(Fig1SummaryDataframe, Fig1_IISRate=="YES")
 
 ```
 
@@ -228,8 +227,8 @@ Select for control/drug treatment condition
 ```{r SelectTreatmentCondition_Chunk, echo=FALSE}
 
 
-SCPP1DataframeControl<-filter(SCPP1DataframeAll, Treatment=="Control")
-SCPP1DataframeDrug<-filter(SCPP1DataframeAll, Treatment=="Drug")
+SCPPDataframeControl<-filter(SCPPDataframeAll, Treatment=="Control")
+SCPPDataframeDrug<-filter(SCPPDataframeAll, Treatment=="Drug")
 
 ```
 
@@ -251,9 +250,9 @@ for (j in 1:nrow(Fig1SummaryDataframe)){
   #Select genotype for current loop which will be used for ECDF plot
   GenotypeCurrent<-Fig1SummaryDataframe$Genotype[j]
   #Filter for control conditions for AnimalIDCurrent only 
-  DataframeCurrent<-filter(SCPP1DataframeControl, AnimalIDVariable==AnimalIDCurrent)
+  DataframeCurrent<-filter(SCPPDataframeControl, AnimalIDVariable==AnimalIDCurrent)
   
-  #Create ECDF from current SCPP1 dataframe
+  #Create ECDF from current SCPP dataframe
   ECDFCurrent <-CreateECDF(DataframeCurrent, GenotypeCurrent, AnimalIDCurrent)
   #Save to dataframe for all animals to export
   ECDFAllCtrlDataframe<-rbind(ECDFAllCtrlDataframe, ECDFCurrent)
@@ -266,12 +265,20 @@ Plot ECDF for all animals in control conditions
 
 ```{r ECDF_PlotChunk, echo=TRUE, include=TRUE}  
 ECDFAllCtrlPlot<-ggplot(ECDFAllCtrlDataframe, aes(x=SpikeCount, y=CumFrequency, color=AnimalIDVariable))
-ECDFAllCtrlPlot<-ECDFAllCtrlPlot + geom_step() + xlab("Number of spikes") + ylab("Number of intervals") + facet_wrap(~Genotype) +ggtitle("Cumulative frequency of Spike count/8s interval in control conditions")
+ECDFAllCtrlPlot<-ECDFAllCtrlPlot +
+  geom_step() + 
+  xlab("Number of spikes") + 
+  ylab("Cumulative frequency") + 
+  facet_wrap(~Genotype) + 
+  ggtitle("ECDF Spike count/8s interval - control") +
+  theme(legend.position = "none")
 
 
 #http://blog.amitsharma.in/2015/09/13/cumulative-distribution-plots-for-frequency-Data-in-r/
 
 ECDFAllCtrlPlot
+
+ggsave("Output/ECDFSpikesControl.png")
 
 
 
@@ -349,13 +356,18 @@ The number of intervals with one or more spikes was compared between genotypes u
 
 ##Plotting % intervals > 0 spikes
 ```{r ScatterPlotChunk, echo=FALSE}
-data<-Fig1SummaryDataframe$Grtr0SpikeCtrl
-group<-Fig1SummaryDataframe$Genotype
+Fig1SummaryDataframe$Genotype<-factor(Fig1SummaryDataframe$Genotype, levels = c("WT", "J20"))  #Need to reorder factor so that WT appears first in plot
 
-stripchart(Grtr0SpikeCtrl ~ Genotype, data=Fig1SummaryDataframe,
-           vertical = TRUE, method = "jitter", ylab="% intervals > 0 spikes",
-            pch = 21, col = "maroon", bg = "bisque",
-            add = FALSE)
+Grtr0SpikePlot<- ggplot(Fig1SummaryDataframe, aes(x=Genotype, y=Grtr0SpikeCtrl))
+
+Grtr0SpikePlot <- Grtr0SpikePlot+
+  geom_point()+
+  xlab("Genotype")+
+  ylab("Prop intervals > 0 spikes")
+ 
+Grtr0SpikePlot 
+
+ggsave("Output/Grtr0Spike.png")
 
 ```
 
