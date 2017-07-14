@@ -979,6 +979,9 @@ DPZAMPlot<-ggplot(Fig5SummaryDataframeAM_long,
 DPZAMPlot
 
 ggsave("Output/DPZAMPlot.png")
+
+
+
 ```
 
 Repeat for PM group
@@ -1029,8 +1032,26 @@ DPZPMPlot
 
 ggsave("Output/DPZPMPlot.png")
 
+
 ```
 
+
+Stats
+```{r DPZEffectStatsChunk, include=TRUE, echo=TRUE}
+
+#Unpaired t-test for DPZ-Control!=0
+Fig5SummaryDataframeAM$SpikeRateDif<-Fig5SummaryDataframeAM$Control-Fig5SummaryDataframeAM$DPZ
+
+TTestAM<-t.test(Fig5SummaryDataframeAM$SpikeRateDif)
+
+#Unpaired t-test for DPZ-Control!=0
+Fig5SummaryDataframePM$SpikeRateDif<-Fig5SummaryDataframePM$Control-Fig5SummaryDataframePM$DPZ
+
+TTestPM<-t.test(Fig5SummaryDataframePM$SpikeRateDif)
+
+TTestAM
+TTestPM
+```
 
 ###Fig 5 AChE absorption assay
 The activity of AChE was measured following the protocol of Ellman et al (Biochem Pharmacol 7:88-95. 1961). The thiocline production rate was compared between neocortical brain homogenates for WT and J20 with/without DPZ treatment. A positive control of WT brain homogenate treated with 10uM neostigmine was included in each preparation.
