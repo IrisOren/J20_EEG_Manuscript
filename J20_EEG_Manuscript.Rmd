@@ -1042,6 +1042,9 @@ Stats
 #Paired t-test AM
 Fig5SummaryDataframeAM$SpikeRateDif<-Fig5SummaryDataframeAM$Control-Fig5SummaryDataframeAM$DPZ
 
+#Test assumptions
+SW_DPZAM<-NormTesting(Fig5SummaryDataframeAM$SpikeRateDif, "QQ_DPZAM")
+SW_DPZAM
 
 TTestAM<-t.test(Fig5SummaryDataframeAM$Control, Fig5SummaryDataframeAM$DPZ, 
                       paired = TRUE)
@@ -1049,6 +1052,11 @@ TTestAM<-t.test(Fig5SummaryDataframeAM$Control, Fig5SummaryDataframeAM$DPZ,
 
 #Paired t-test PM
 Fig5SummaryDataframePM$SpikeRateDif<-Fig5SummaryDataframePM$Control-Fig5SummaryDataframePM$DPZ
+
+#Test assumptions
+SW_DPZPM<-NormTesting(Fig5SummaryDataframePM$SpikeRateDif, "QQ_DPZPM")
+SW_DPZPM
+
 
 TTestPM<-t.test(Fig5SummaryDataframePM$Control, Fig5SummaryDataframeAM$DPZ, 
                       paired = TRUE)
