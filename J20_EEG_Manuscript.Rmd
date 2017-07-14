@@ -199,9 +199,12 @@ Save SCPP1DataframeAll to output directory
   
 ```
 
+Make a copy of SCPP1DataFrameAllOriginal and exclude intervals from SCPP1DataframeAll
+```{r ExcludeIntervals, echo=FALSE, include=TRUE}
+SCPPDataframeAllOriginal<-SCPPDataframeAll
+SCPPDataframeAll<-filter(SCPPDataframeAll, ExcludeInterval==0)
 
-
-
+```
 
 ###########################################################
 # Figure 1: Spike count measure between genotype
@@ -382,7 +385,7 @@ Plot example of circadian spike probability for JF167
 
 
 #Filter SCPP1DataFrameAll to select for JF167 
-IISTimesJF167<-filter(SCPP1DataframeAll, AnimalIDVariable=="JF167", Treatment=="Control")
+IISTimesJF167<-filter(SCPPDataframeAll, AnimalIDVariable=="JF167", Treatment=="Control")
 # Select the relevant columns of dataframe
 IISTimesJF167<-select(IISTimesJF167, SpikeCount, TimeOfDay)
 #Filter for intervals with >0 IIS
@@ -403,7 +406,7 @@ EventData$Light <- EventData$EventHour %in% seq(7, 18)
 
 
 #Make circular plot
-fontsize=18
+fontsize=10
 
 Fig2A<-ggplot(EventData, aes(x = EventHourShifted, fill = Light)) +
   geom_histogram(breaks = seq(0,   24), binwidth = 2, colour = "grey") + 
@@ -421,6 +424,8 @@ Fig2A<-ggplot(EventData, aes(x = EventHourShifted, fill = Light)) +
 
 print(Fig2A)
 
+ggsave("Output/Fig2A.png")
+
 ```
 
 Figure 2B:
@@ -428,16 +433,16 @@ We used circular statistics to establish whether IIS were significantly-coupled 
 
 ###1. Create Fig2SummaryDataframe from recordingInformation. 
 ```{r create_fig2_dataframe, ECHO=FALSE, include=FALSE}
-  Fig2SummaryDataframe <- SummaryDataframe[, c("AnimalID", "Genotype", "TimeZone")]
+  Fig2SummaryDataframe <- SummaryDataframe[, c("AnimalID", "Genotype", "TimeZone", "Fig2_CircadianCoupling")]
 #Remove rows with missing variables
   Fig2SummaryDataframe <- Fig2SummaryDataframe[complete.cases(Fig2SummaryDataframe),]
 ```
   
 2. Select animals that will be used in the analysis: animals with cortical or cerebellum reference recorded for in control conditions with known light dark cycles.
 ```{r SelectAnimalsChunk, echo=FALSE, include=TRUE}
-AnimalsToInclude<-c("JF105", "JF106", "JF110", "JF111", "JF118","JF131", "JF133", "JF140", "JF152","JF157", "JF167", "JF168", "JF179", "JF96", "JF218","JF220", "JF221","J0373", "J0375", "J0376") #J0374, J0393, J0397, J0400 excluded as they are on lev treatment througout recording
 
-Fig2SummaryDataframe<-subset(Fig1SummaryDataframe, AnimalID %in% AnimalsToInclude)
+
+Fig2SummaryDataframe<-filter(Fig2SummaryDataframe, Fig2_CircadianCoupling=="YES")
 
 ```
 
@@ -445,8 +450,8 @@ Select for control/drug treatment condition
 ```{r SelectTreatmentCondition_Chunk, echo=FALSE}
 
 
-SCPP1DataframeControl<-filter(SCPP1DataframeAll, Treatment=="Control")
-SCPP1DataframeDrug<-filter(SCPP1DataframeAll, Treatment=="Drug")
+SCPPDataframeControl<-filter(SCPPDataframeAll, Treatment=="Control")
+SCPPDataframeDrug<-filter(SCPPDataframeAll, Treatment=="Drug")
 
 ```
 
@@ -455,7 +460,7 @@ SCPP1DataframeDrug<-filter(SCPP1DataframeAll, Treatment=="Drug")
 ###2. Calculate summary statistics for all animals
 ```{r Fig2BCircularStatsSummary}
 # Select the relevant columns of dataframe
-IISTimes<-select(SCPP1DataframeControl, SpikeCount, InitialisedTime, 
+IISTimes<-select(SCPPDataframeControl, SpikeCount, InitialisedTime, 
                  TimeOfDay,Treatment, AnimalIDVariable)
 
 #Filter for intervals with >0 IIS
@@ -511,11 +516,12 @@ SampleMeanDeviation<-meandeviation(Fig2SummaryDataframe_J20$MeanAngle)
 
 ###3. Plot polar histograms for all J20s
 ```{r SpikeHist_Chunk, echo=FALSE}
+dir.create("./Output/SpikeHists")
 
 for(i in 1:nrow(Fig2SummaryDataframe_J20)){
     AnimalIDCurrent=Fig2SummaryDataframe_J20$AnimalID[i]
     #Filter SCPP1DataFrameAll to select for JF167 
-    IISTimesCurrent<-filter(SCPP1DataframeAll, AnimalIDVariable==AnimalIDCurrent)
+    IISTimesCurrent<-filter(SCPPDataframeAll, AnimalIDVariable==AnimalIDCurrent)
     # Select the relevant columns of dataframe
     IISTimesCurrent<-select(IISTimesCurrent, SpikeCount, TimeOfDay)
     #Filter for intervals with >0 IIS
@@ -540,7 +546,7 @@ for(i in 1:nrow(Fig2SummaryDataframe_J20)){
     fontsize=18
     #Filename for saving
     names<-Fig2SummaryDataframe_J20$AnimalID
-    filename<-paste("./Output/", names[i],"_SpikeHist",".jpg", sep="")
+    filename<-paste("./Output/SpikeHists/", names[i],"_SpikeHist",".jpg", sep="")
     
     SpikeHist<-ggplot(EventData, aes(x = EventHourShifted, fill = Light)) +
       geom_histogram(breaks = seq(0,   24), binwidth = 2, colour = "grey") +   coord_polar(start = 0) + 
@@ -587,9 +593,27 @@ SampleRhoMeanAngle<-radial.plot(Fig2SummaryDataframe_J20$Rho,
                                 label.prop=1.4, rp.type = "s",
                                 point.symbols = 20, 
                                 show.radial.grid = TRUE, 
-                                radial.lim = c(0, 0.25, 0.5))
+                                radial.lim = c(0, 0.5,1))
 
 print(SampleRhoMeanAngle)
+
+filename<-"./Output/SummaryRadialStatsControl.jpeg"
+
+jpeg(file=filename)
+ radial.plot(Fig2SummaryDataframe_J20$Rho,
+                                Fig2SummaryDataframe_J20$MeanAngle,
+                                start=(pi/2), clockwise = TRUE,
+                                labels=c("0/24h","6h", "12h", "18h"),
+                                label.pos = c(0, (pi/2), pi, (3*pi/2)), 
+                                label.prop=2, rp.type = "s",
+                                point.symbols = 20, 
+                                show.radial.grid = TRUE, 
+                                radial.lim = c(0, 0.5,1))
+
+dev.off()
+
+#Saved file does not have x-axis labels. NEED TO FIX THIS 13/07/17
+
 ```
 
 Across the sample of J20s, the IIS was significantly coupled to light periods (Phi_J20=`r SampleMeanDateTime$TimeOfDay`.
@@ -618,15 +642,15 @@ VideoTimes$VideoEndTimeLinux<-(as.numeric(as.POSIXct(TempTimes)))
 
 2. Make SCPP1 Dataframe for individual animals
 ```{r MakeAnimalDataframe, echo=FALSE, include=FALSE}
-SCPP1DataframeJF220<-filter(SCPP1DataframeAll, AnimalIDVariable=="JF220")
-SCPP1DataframeJF221<-filter(SCPP1DataframeAll, AnimalIDVariable=="JF221")
-SCPP1DataframeJF373<-filter(SCPP1DataframeAll, AnimalIDVariable=="J0373")
-SCPP1DataframeJF375<-filter(SCPP1DataframeAll, AnimalIDVariable=="J0375")
-SCPP1DataframeJF376<-filter(SCPP1DataframeAll, AnimalIDVariable=="J0376")
+SCPPDataframeJF220<-filter(SCPPDataframeAll, AnimalIDVariable=="JF220")
+SCPPDataframeJF221<-filter(SCPPDataframeAll, AnimalIDVariable=="JF221")
+SCPPDataframeJF373<-filter(SCPPDataframeAll, AnimalIDVariable=="J0373")
+SCPPDataframeJF375<-filter(SCPPDataframeAll, AnimalIDVariable=="J0375")
+SCPPDataframeJF376<-filter(SCPPDataframeAll, AnimalIDVariable=="J0376")
 
 ```
 
-3. Import VideoScoring dataframe and amend with UnixTime for JF220
+3. Import VideoScoring dataframe and amend with UnixTime 
 ```{r MakeVideoScoringDataframe, echo=FALSE, include=FALSE}
 
 FileList<-c("./Data/VideoScoring/VideoScoringJF220_040416.csv",
@@ -634,11 +658,11 @@ FileList<-c("./Data/VideoScoring/VideoScoringJF220_040416.csv",
             "./Data/VideoScoring/VideoScoringJF220_060416.csv",  
             "./Data/VideoScoring/VideoScoringJF220_070416.csv",
             "./Data/VideoScoring/VideoScoringJF220_080416.csv", 
-            "./Data/VideoScoring/VideoScoringJ0373_030816Day.csv",
-            "./Data/VideoScoring/VideoScoringJ0373_030816Night.csv",
-            "./Data/VideoScoring/VideoScoringJ0375_120816Day.csv",
-            "./Data/VideoScoring/VideoScoringJ0375_120816Night.csv",
-            "./Data/VideoScoring/VideoScoringJ0376_140816Day.csv",
+           # "./Data/VideoScoring/VideoScoringJ0373_030816Day.csv",
+            #"./Data/VideoScoring/VideoScoringJ0373_030816Night.csv",
+           # "./Data/VideoScoring/VideoScoringJ0375_120816Day.csv",
+           # "./Data/VideoScoring/VideoScoringJ0375_120816Night.csv",
+          #  "./Data/VideoScoring/VideoScoringJ0376_140816Day.csv",
             "./Data/VideoScoring/VideoScoringJF221_040416.csv",
             "./Data/VideoScoring/VideoScoringJF221_050416.csv",
             "./Data/VideoScoring/VideoScoringJF221_060416.csv",
@@ -647,13 +671,13 @@ FileList<-c("./Data/VideoScoring/VideoScoringJF220_040416.csv",
 
 
 AnimalIDList<-c("JF220", "JF220", "JF220", "JF220", "JF220",
-               "J0373", "J0373",
-               "J0375", "J0375", 
-              "J0376", 
+               #"J0373", "J0373",
+              # "J0375", "J0375", 
+             # "J0376", 
               "JF221", "JF221", 
              "JF221", "JF221"
             )
-SCPP1DataframeVideoTimesAll<-data.frame()
+SCPPDataframeVideoTimesAll<-data.frame()
 AnimalIDVideoStartEnd<-list() #A list to store Start and End times for video data. The list index is AnimalID_FileIndex eg. JF220_1
 
 for(FileIndex in 1:length(FileList)){
@@ -670,7 +694,7 @@ for(FileIndex in 1:length(FileList)){
     #Add date to Time to make TimeString
     VideoScoring$DateTime<-paste(VideoScoring$DateOfEEG, VideoScoring$TimeOfEEG)
     
-    VideoScoring$DateTime<-strptime(as.character(VideoScoring$DateTime), "%d/%m/%y %H:%M:%S")
+    VideoScoring$DateTime<-strptime(as.character(VideoScoring$DateTime), "%d/%m/%Y %H:%M:%S")
     
     #Convert to UnixTime
     VideoScoring$UnixTime<-(as.numeric(as.POSIXct(VideoScoring$DateTime)))
@@ -687,33 +711,23 @@ for(FileIndex in 1:length(FileList)){
     
     #Filter SCPP1 between start and endtime of video for particular day
 
-SCPP1DataframeVideoTimes<-filter(SCPP1DataframeAll, AnimalIDVariable==AnimalIDCurrent)
-SCPP1DataframeVideoTimes<-filter(SCPP1DataframeVideoTimes, InitialisedTime>=VideoStartTime)
-    SCPP1DataframeVideoTimes<-filter(SCPP1DataframeVideoTimes, InitialisedTime<=VideoEndTime)
+  SCPPDataframeVideoTimes<-filter(SCPPDataframeAll,
+                                  AnimalIDVariable==AnimalIDCurrent)
+  SCPPDataframeVideoTimes<-filter(SCPPDataframeVideoTimes,
+                                  InitialisedTime>=VideoStartTime)
+    SCPPDataframeVideoTimes<-filter(SCPPDataframeVideoTimes, InitialisedTime<=VideoEndTime)
     
     
     #Add video score to dataframe for which video is available
     
-    SCPP1DataframeVideoTimes$SleepWake<-AddVideoScoreToSCPP1Data(SCPP1DataframeVideoTimes$InitialisedTime, VideoScoring$UnixTime, VideoScoring$SleepWake)
-    SCPP1DataframeVideoTimesAll<-rbind(SCPP1DataframeVideoTimesAll, SCPP1DataframeVideoTimes)
+    SCPPDataframeVideoTimes$SleepWake<-AddVideoScoreToSCPPData(SCPPDataframeVideoTimes$InitialisedTime, VideoScoring$UnixTime, VideoScoring$SleepWake)
+    SCPPDataframeVideoTimesAll<-rbind(SCPPDataframeVideoTimesAll, SCPPDataframeVideoTimes)
   
+    SCPPDataframeVideoTimesAll$SleepWake<-as.factor(SCPPDataframeVideoTimesAll$SleepWake)
 }
 
 ```
 
-4. Compute Theta/Delta for SCPP1DataframeJF220VideoTimes
-```{r ComputeThetaDelta, echo=FALSE, include=FALSE}
-SCPP1DataframeVideoTimesAll$ThetaOverDelta<-SCPP1DataframeVideoTimesAll$Theta/SCPP1DataframeVideoTimesAll$Delta
-```
-
-5. Exclude NAs, Loss intervals and extremes of delta power (artifacts). We exclude delta power>3 sds away from mean delta
-```{r ExcludeEpochs, echo=FALSE, include=FALSE}
-#Excluded values are omitted from Dataframe. This means that data points can no longer be coerced into time series object
-SCPP1DataframeVideoTimesAllExcluded<-ExcludeIntervals(SCPP1DataframeVideoTimesAll, 3)
-NumberOfExcludedIntervals<-nrow(SCPP1DataframeVideoTimesAll)-nrow(SCPP1DataframeVideoTimesAllExcluded)
-```
-
-No. of excluded intervals:`r NumberOfExcludedIntervals`
 
 5. Plot theta/delta and sleep wake against time. The chunk iterates through all animals and saves output plots into folder ./Output/ThetaDeltaBehavioralState
 
@@ -723,15 +737,15 @@ No. of excluded intervals:`r NumberOfExcludedIntervals`
         AnimalIDCurrent<-AnimalIDList[[FileIndex]]
         ListID<-paste(AnimalIDCurrent, as.character(FileIndex), sep="_")
       
-      ThetaPlot<-ggplot(filter(SCPP1DataframeVideoTimesAllExcluded, AnimalIDVariable==AnimalIDCurrent), aes(x=InitialisedTime, y=Theta))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])+ylim(0,100)+ggtitle(ListID)
+      ThetaPlot<-ggplot(filter(SCPPDataframeVideoTimesAll, AnimalIDVariable==AnimalIDCurrent), aes(x=InitialisedTime, y=Theta))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])+ylim(0,100)+ggtitle(ListID)
       
-      DeltaPlot<-ggplot(filter(SCPP1DataframeVideoTimesAlßlExcluded, AnimalIDVariable==AnimalIDCurrent), aes(x=InitialisedTime, y=Delta))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])+ylim(0,200)
+      DeltaPlot<-ggplot(filter(SCPPDataframeVideoTimesAll, AnimalIDVariable==AnimalIDCurrent), aes(x=InitialisedTime, y=Delta))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])+ylim(0,200)
       
-      ThetaOverDeltaPlot<-ggplot(filter(SCPP1DataframeVideoTimesAllExcluded, AnimalIDVariable==AnimalIDCurrent), aes(x=InitialisedTime, y=ThetaOverDelta))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])+ylim(0, 5)
+      ThetaOverDeltaPlot<-ggplot(filter(SCPPDataframeVideoTimesAll, AnimalIDVariable==AnimalIDCurrent), aes(x=InitialisedTime, y=ThetaOverDelta))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])+ylim(0, 5)
       
-      SpikeCountPlot<-ggplot(filter(SCPP1DataframeVideoTimesAllExcluded, AnimalIDVariable==AnimalIDCurrent), aes(x=InitialisedTime, y=SpikeCount))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])+ylim(0, 5)
+      SpikeCountPlot<-ggplot(filter(SCPPDataframeVideoTimesAll, AnimalIDVariable==AnimalIDCurrent), aes(x=InitialisedTime, y=SpikeCount))+geom_point()+xlim(AnimalIDVideoStartEnd[[ListID]])+ylim(0, 5)
       
-      SleepWakePlot<-ggplot(filter(SCPP1DataframeVideoTimesAllExcluded,
+      SleepWakePlot<-ggplot(filter(SCPPDataframeVideoTimesAll,
                                AnimalIDVariable==AnimalIDCurrent),
                         aes(x=InitialisedTime,
                             y=SleepWake)) + 
@@ -776,7 +790,7 @@ AnimalIDList<-c("JF220", "JF221")
 ETAvList<-list()
 
 #Filter dataframe for control and daylight only as a proxy for sleep
-SCPP1DataframeEventAv<-filter(SCPP1DataframeAll, 
+SCPPDataframeEventAv<-filter(SCPPDataframeAll, 
                               LightDark==TRUE, 
                               Treatment=="Control")
 
@@ -784,17 +798,17 @@ SCPP1DataframeEventAv<-filter(SCPP1DataframeAll,
 for(AnimalIndex in 1:length(AnimalIDList)){
   AnimalIDCurrent=AnimalIDList[[AnimalIndex]]
   
-  SCPP1DataframeCurrent<-filter(SCPP1DataframeEventAv, 
+  SCPPDataframeCurrent<-filter(SCPPDataframeEventAv, 
                                 AnimalIDVariable==AnimalIDCurrent)
   
   
   #Filter the current SCPP1 for intervals >= 1 spike
-  EventsDataframe<-filter(SCPP1DataframeCurrent,  SpikeCount>0)
+  EventsDataframe<-filter(SCPPDataframeCurrent,  SpikeCount>0)
   
   NumberOfEvents<-nrow(EventsDataframe)
   
   #Filter the current SCPP1 for intervals ==0 spike
-  NonEventsDataframe<-filter(SCPP1DataframeCurrent,  SpikeCount==0)
+  NonEventsDataframe<-filter(SCPPDataframeCurrent,  SpikeCount==0)
   
   
   NumberOfNonEvents<-nrow(NonEventsDataframe)
@@ -813,8 +827,8 @@ for(AnimalIndex in 1:length(AnimalIDList)){
   for(SpikeIndex in 1:NumberOfEvents){
     EventTimeCurrent<-EventsDataframe$InitialisedTime[[SpikeIndex]]
     #Extract epoch centered on IIS
-    ETW<-EventTriggeredWindow(EventTimeCurrent, WindowLengthInSecs,SCPP1DataframeCurrent$InitialisedTime, 
-                          SCPP1DataframeCurrent$ThetaOverDelta)
+    ETW<-EventTriggeredWindow(EventTimeCurrent, WindowLengthInSecs,SCPPDataframeCurrent$InitialisedTime, 
+                          SCPPDataframeCurrent$ThetaOverDelta)
     if(nrow(ETW)==NoOfIntervalsForAveraging){
       ETAv<-ETAv+ETW$TriggeredWindowData
       ETWList[[SpikeIndex]]<-ETW
@@ -837,7 +851,7 @@ for(AnimalIndex in 1:length(AnimalIDList)){
   for(SpikeIndex in 1:NumberOfNonEvents){
     NonEventTimeCurrent<-NonEventsDataframe$InitialisedTime[[SpikeIndex]]
     #Extract epoch centered on NIIS
-    NETW<-EventTriggeredWindow(NonEventTimeCurrent, WindowLengthInSecs, SCPP1DataframeCurrent$InitialisedTime, SCPP1DataframeCurrent$ThetaOverDelta)
+    NETW<-EventTriggeredWindow(NonEventTimeCurrent, WindowLengthInSecs, SCPPDataframeCurrent$InitialisedTime, SCPPDataframeCurrent$ThetaOverDelta)
     
     if(nrow(NETW)==NoOfIntervalsForAveraging){
       NETAv<-NETAv+NETW$TriggeredWindowData
