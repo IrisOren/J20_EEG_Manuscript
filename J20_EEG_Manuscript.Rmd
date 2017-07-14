@@ -770,13 +770,35 @@ for(FileIndex in 1:length(FileList)){
 
 
 ```
-To do:
 
-Create training and test data sets for theta/delta/behaviour 
-Decide on how to do IIS and theta/delta
 
 ####IIS and theta/delta
 IIS occurred in the light hours, we wanted to ask whether IIS are more prevalent in specific brain states. To this end, we used the theta signal to characterise epochs as sleep/wake and asked whether p(IIS|S)>p(IIS|W)
+
+```{r, SWPlottingChunk, include=TRUE, echo=FALSE}
+
+#Group by AnimalID and SleepWake
+SW_grouped<-group_by(SCPPDataframeVideoTimesAll, AnimalIDVariable, SleepWake)
+#Compute the mean spike rate for each animal in each behavioural state                     
+SummarySW<-summarise(SW_grouped, MeanSpikeRate=mean(SpikeCount)/8)
+
+#Plot summary plot of mean spike rate
+SWPlot<-ggplot(SummarySW, 
+               aes(x=SleepWake, 
+                   y=MeanSpikeRate, 
+                   group=AnimalIDVariable)) +
+  geom_line(aes(color=AnimalIDVariable)) +
+  geom_point(aes(color=AnimalIDVariable)) +
+  ylab("Mean spike/s") +
+  xlab("Behavioural State")
+
+
+SWPlot
+
+ggsave("Output/MeanSpikesSleepWake.png")
+
+
+```
 
 Theta/delta ratios have been used to charecterise sleep stages (Ewell et al 2016) and seizures were shown to be more prevalent following REM. We thus asked whether IIS were more prevalent during periods of elevated Theta/Delta.
 p(IIS|theta/delta>threshold)
