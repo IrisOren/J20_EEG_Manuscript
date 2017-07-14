@@ -1039,15 +1039,20 @@ ggsave("Output/DPZPMPlot.png")
 Stats
 ```{r DPZEffectStatsChunk, include=TRUE, echo=TRUE}
 
-#Unpaired t-test for DPZ-Control!=0
+#Paired t-test AM
 Fig5SummaryDataframeAM$SpikeRateDif<-Fig5SummaryDataframeAM$Control-Fig5SummaryDataframeAM$DPZ
 
-TTestAM<-t.test(Fig5SummaryDataframeAM$SpikeRateDif)
 
-#Unpaired t-test for DPZ-Control!=0
+TTestAM<-t.test(Fig5SummaryDataframeAM$Control, Fig5SummaryDataframeAM$DPZ, 
+                      paired = TRUE)
+
+
+#Paired t-test PM
 Fig5SummaryDataframePM$SpikeRateDif<-Fig5SummaryDataframePM$Control-Fig5SummaryDataframePM$DPZ
 
-TTestPM<-t.test(Fig5SummaryDataframePM$SpikeRateDif)
+TTestPM<-t.test(Fig5SummaryDataframePM$Control, Fig5SummaryDataframeAM$DPZ, 
+                      paired = TRUE)
+
 
 TTestAM
 TTestPM
