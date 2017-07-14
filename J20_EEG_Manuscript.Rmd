@@ -924,8 +924,115 @@ for(AnimalIndex in 1:length(AnimalIDList)){
 #}
 ```
 ###########
+###Fig 5: DPZ treatment and spike count
+Compare SpikeNumber in Ctrl and DPZ condition for DPZAM and DPZPM groups
 
-# AChE absorption assay
+```{r create_fig5_dataframe, ECHO=FALSE}
+  Fig5SummaryDataframe<-SummaryDataframe[, c("AnimalID", "Genotype", "TimeZone", "DrugDateTime", "Fig5_DPZAM", "Fig5_DPZPM")]
+#Remove rows with missing variables
+  Fig5SummaryDataframe<-Fig5SummaryDataframe[complete.cases(Fig5SummaryDataframe),]
+```
+  
+ Select animals that will be used in the analysis all J20 given DPZ_AM with known light dark cycles.
+```{r SelectAnimalsAMChunk, echo=FALSE, include=TRUE}
+
+Fig5SummaryDataframeAM<-filter(Fig5SummaryDataframe, Fig5_DPZAM=="YES", Genotype=="J20")
+
+```
+
+Evaluate MeanSpikeRate across all intervals in control and DPZ conditions for each animal and write to Fig5SummaryDataframeAM
+```{r SpikeRateDPZAMChunk, include=TRUE, echo=FALSE}
+for(i in 1:nrow(Fig5SummaryDataframeAM)){
+  AnimalIDCurrent<-Fig5SummaryDataframeAM$AnimalID[i]
+  #Filter for current animal in control condition
+  SCPPTemp<-filter(SCPPDataframeAll, 
+                   AnimalIDVariable==AnimalIDCurrent,
+                   Treatment=="Control")
+  #Evaluate mean spikes/8s in control 
+  Fig5SummaryDataframeAM$Control[i]<-mean(SCPPTemp$SpikeCount)
+  
+  #Filter for current animal in DPZ condition
+  SCPPTemp<-filter(SCPPDataframeAll, 
+                   AnimalIDVariable==AnimalIDCurrent,
+                   Treatment=="Drug")
+  #Evaluate mean spikes/8s in control 
+  Fig5SummaryDataframeAM$DPZ[i]<-mean(SCPPTemp$SpikeCount)
+}
+
+#Convert Fig5SummaryDataframeAM from wide to long format
+library(tidyr)
+Fig5SummaryDataframeAM_long<-gather(Fig5SummaryDataframeAM, Treatment, SpikePerInt, 7:8)
+
+#ConvertSpikePerInt to SpikeRate
+Fig5SummaryDataframeAM_long$SpikeRate<-Fig5SummaryDataframeAM_long$SpikePerInt/8
+#Plotting
+DPZAMPlot<-ggplot(Fig5SummaryDataframeAM_long, 
+                  aes(x=Treatment, 
+                      y=SpikeRate,
+                      group=AnimalID)) +
+  geom_line()+
+  geom_point()+
+  xlab("Treatment")+
+  ylab("Mean Spike/s")+
+  scale_y_continuous(limits = c(0, 0.03))
+
+DPZAMPlot
+
+ggsave("Output/DPZAMPlot.png")
+```
+
+Repeat for PM group
+
+Select animals that will be used in the analysis all J20 given DPZ_AM with known light dark cycles.
+```{r SelectAnimalsPMChunk, echo=FALSE, include=TRUE}
+
+Fig5SummaryDataframePM<-filter(Fig5SummaryDataframe, Fig5_DPZPM=="YES", Genotype=="J20")
+
+```
+
+```{r SpikeRateDPZPMChunk, include=TRUE, echo=FALSE}
+for(i in 1:nrow(Fig5SummaryDataframePM)){
+  AnimalIDCurrent<-Fig5SummaryDataframePM$AnimalID[i]
+  #Filter for current animal in control condition
+  SCPPTemp<-filter(SCPPDataframeAll, 
+                   AnimalIDVariable==AnimalIDCurrent,
+                   Treatment=="Control")
+  #Evaluate mean spikes/8s in control 
+  Fig5SummaryDataframePM$Control[i]<-mean(SCPPTemp$SpikeCount)
+  
+  #Filter for current animal in DPZ condition
+  SCPPTemp<-filter(SCPPDataframeAll, 
+                   AnimalIDVariable==AnimalIDCurrent,
+                   Treatment=="Drug")
+  #Evaluate mean spikes/8s in control 
+  Fig5SummaryDataframePM$DPZ[i]<-mean(SCPPTemp$SpikeCount)
+}
+
+#Convert Fig5SummaryDataframeAM from wide to long format
+library(tidyr)
+Fig5SummaryDataframePM_long<-gather(Fig5SummaryDataframePM, Treatment, SpikePerInt, 7:8)
+
+#ConvertSpikePerInt to SpikeRate
+Fig5SummaryDataframePM_long$SpikeRate<-Fig5SummaryDataframePM_long$SpikePerInt/8
+#Plotting
+DPZPMPlot<-ggplot(Fig5SummaryDataframePM_long, 
+                  aes(x=Treatment, 
+                      y=SpikeRate,
+                      group=AnimalID)) +
+  geom_line()+
+  geom_point()+
+  xlab("Treatment")+
+  ylab("Mean Spike/s") +
+  scale_y_continuous(limits = c(0, 0.03))
+
+DPZPMPlot
+
+ggsave("Output/DPZPMPlot.png")
+
+```
+
+
+###Fig 5 AChE absorption assay
 The activity of AChE was measured following the protocol of Ellman et al (Biochem Pharmacol 7:88-95. 1961). The thiocline production rate was compared between neocortical brain homogenates for WT and J20 with/without DPZ treatment. A positive control of WT brain homogenate treated with 10uM neostigmine was included in each preparation.
 
 ```{r AChEAbsorptionAssay, include=TRUE, echo = FALSE}
