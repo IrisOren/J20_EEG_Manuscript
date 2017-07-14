@@ -438,7 +438,7 @@ We used circular statistics to establish whether IIS were significantly-coupled 
   Fig2SummaryDataframe <- Fig2SummaryDataframe[complete.cases(Fig2SummaryDataframe),]
 ```
   
-2. Select animals that will be used in the analysis: animals with cortical or cerebellum reference recorded for in control conditions with known light dark cycles.
+2. Select animals that will be used in the analysis: animals with cortical or cerebellum reference recorded for in control conditions with known light dark cycles. J20 only
 ```{r SelectAnimalsChunk, echo=FALSE, include=TRUE}
 
 
@@ -580,7 +580,7 @@ t<-t.test(Fig2SummaryDataframe_J20$Rho)
 ```
 
 
-`r sum(Fig2SummaryDataframe_J20$RayleighP<0.05)` of `r nrow(Fig2SummaryDataframe_J20)' ) animals exhibited significant phase coupling of IIS as estimated by the Rayleigh test (p=(`r min(Fig2SummaryDataframe_J20$RayleighP) -- max(Fig2SummaryDataframe_J20$RayleighP)`. The degree of phase coupling varied between animals as can be seen in the distribution of the angular dispersion, rho= `r(round(mean(Fig2SummaryDataframe$Rho, 2) CI=t$conf.int)`.
+`r sum(Fig2SummaryDataframe_J20$RayleighP<0.05)` of `r nrow(Fig2SummaryDataframe_J20)' ) animals exhibited significant phase coupling of IIS as estimated by the Rayleigh test (p=(`r min(Fig2SummaryDataframe_J20$RayleighP) -- max(Fig2SummaryDataframe_J20$RayleighP)`. The degree of phase coupling varied between animals as can be seen in the distribution of the angular dispersion, rho= `r(round(mean(Fig2SummaryDataframe_J20$Rho, 2) CI=t$conf.int)`.
 
 
 
@@ -622,10 +622,9 @@ Across the sample of J20s, the IIS was significantly coupled to light periods (P
 
 
 #########################################################################
-##Figure 3: Probability of IIS and brain state
-Since IIS occurred preferentially in the light, we hypothesised that IIS occur preferentially during sleep. The ratio of theta to delta power has been used previously to characterise the animal's behavioural state. 
+##Figure 3/4: Probability of IIS and behavioral state
+Since IIS occurred preferentially in the light, we hypothesised that IIS occur preferentially during sleep. Analyse spikes with scored video data
 
-#### Theta/delta to characterise behavioural state
 1. Import VideoTimes.csv
 ```{r ImportVideoTimes, echo=FALSE, include=False}
 VideoTimesFilename<-"./Data/VideoTimesSummary.csv"
@@ -640,15 +639,6 @@ VideoTimes$VideoEndTimeLinux<-(as.numeric(as.POSIXct(TempTimes)))
 
 
 
-2. Make SCPP1 Dataframe for individual animals
-```{r MakeAnimalDataframe, echo=FALSE, include=FALSE}
-SCPPDataframeJF220<-filter(SCPPDataframeAll, AnimalIDVariable=="JF220")
-SCPPDataframeJF221<-filter(SCPPDataframeAll, AnimalIDVariable=="JF221")
-SCPPDataframeJF373<-filter(SCPPDataframeAll, AnimalIDVariable=="J0373")
-SCPPDataframeJF375<-filter(SCPPDataframeAll, AnimalIDVariable=="J0375")
-SCPPDataframeJF376<-filter(SCPPDataframeAll, AnimalIDVariable=="J0376")
-
-```
 
 3. Import VideoScoring dataframe and amend with UnixTime 
 ```{r MakeVideoScoringDataframe, echo=FALSE, include=FALSE}
@@ -772,7 +762,6 @@ for(FileIndex in 1:length(FileList)){
 ```
 
 
-####IIS and theta/delta
 IIS occurred in the light hours, we wanted to ask whether IIS are more prevalent in specific brain states. To this end, we used the theta signal to characterise epochs as sleep/wake and asked whether p(IIS|S)>p(IIS|W)
 
 ```{r, SWPlottingChunk, include=TRUE, echo=FALSE}
@@ -799,13 +788,48 @@ ggsave("Output/MeanSpikesSleepWake.png")
 
 
 ```
-
-Theta/delta ratios have been used to charecterise sleep stages (Ewell et al 2016) and seizures were shown to be more prevalent following REM. We thus asked whether IIS were more prevalent during periods of elevated Theta/Delta.
+######################################
+####Fig 3 IIS and theta/delta
+Theta/delta ratios have been used to characterise sleep stages (Ewell et al 2016) and seizures were shown to be more prevalent following REM. We thus asked whether IIS were more prevalent during periods of elevated Theta/Delta.
 p(IIS|theta/delta>threshold)
 
+
+```{r create_fig3_dataframe, ECHO=FALSE}
+  Fig3SummaryDataframe<-SummaryDataframe[, c("AnimalID", "Genotype", "TimeZone", "DrugDateTime", "Fig3_BrainState")]
+#Remove rows with missing variables
+  Fig3SummaryDataframe<-Fig3SummaryDataframe[complete.cases(Fig3SummaryDataframe),]
+```
+  
+2. Select animals that will be used in the analysis cerebellum reference recorded for in control conditions with known light dark cycles.
+```{r SelectAnimalsChunk, echo=FALSE, include=TRUE}
+
+Fig3SummaryDataframe<-filter(Fig3SummaryDataframe, Fig3_BrainState=="YES", Genotype=="J20" )
+
+```
+
+3. For each animal to include, in control conditions: calculate theta/delta for 0 or > 0 spikes
+```{r, ThetaOverDeltaBySpikeNumChunk, echo=FALSE, include=TRUE}
+  
+ThetaDeltaGrouped<-group_by(SCPPDataframeControl, AnimalIDVariable, SpikeCount)
+#Compute the mean spike rate for each animal in each behavioural state                     
+SummaryThetaDelta<-summarise(ThetaDeltaGrouped, MeanThetaDelta=mean(ThetaOverDelta))
+SummaryThetaDelta<-filter(SummaryThetaDelta, AnimalIDVariable %in% Fig3SummaryDataframe$AnimalID)
+SummaryThetaDelta
+  
+ThetaDeltaSpikePlot<-ggplot(SummaryThetaDelta, 
+                            aes(x=SpikeCount,
+                                y=MeanThetaDelta, 
+                                group=AnimalIDVariable)) +
+  geom_line(aes(color=AnimalIDVariable))+
+  geom_point(aes(color=AnimalIDVariable))
+
+ThetaDeltaSpikePlot
+
+ggsave("Output/ThetaDeltaSpikePlot.png")
+
+```
 ###Event-triggered averages of theta/delta 
 Event times are used for an event-triggered average for 72s around interval of event. The output of the chunk is ETList with 2 list elements per AnimalID. ETList$ETAv for that animal is event triggered average; ETList$ETW is the list of each individual event triggered window. List elements for ETW are $TriggeredWindowTime and $TriggeredWindowData.
-
 
 ```{r EventTriggeredAveragingOfThetaDelta, echo=FALSE, include=TRUE}
 AnimalIDList<-c("JF220", "JF221")
