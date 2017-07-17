@@ -124,7 +124,7 @@ if(file.exists("./Output/SCPPDataframeAll.csv")){
           
 
            # Exclude Loss and Artifact intervals which have delta power >3sd and write the number of ExcludedIntervals to ExcludedIntervalsVariable in SCPP1Dataframe
-          LossThreshold=0.2
+          LossThreshold=20
           DeltaThreshold=1000  
           
           #TotalIntervals<-nrow(SCPPDataframe)
@@ -152,7 +152,7 @@ if(file.exists("./Output/SCPPDataframeAll.csv")){
           SCPPDataframe$TimeOfDay<-as.POSIXct(SCPPDataframe$TimeOfDay)
         #Apend a Treatment variable to the dataframe, based on DrugDateTime as specified in Fig1SummaryDataframe 
           Treatment<-c()
-          Treatment[which(SCPPDataframe$TimeOfDay<strptime(DrugDateTimeCurrent, "%d/%m/%Y %H:%M:%S"))]="Control"
+          Treatment[which(SCPPDataframe$TimeOfDay<strptime(DrugDateTimeCurrent, "%d/%m/%y %H:%M:%S"))]="Control"
           #If there are more intervals than control condition ie. if drug given
           if(length(Treatment)<nrow(SCPPDataframe)){
             Treatment[length(Treatment)+1]="Unknown"
@@ -193,7 +193,7 @@ Add ThetaOverDelta
 SCPPDataframeAll$ThetaOverDelta<-SCPPDataframeAll$Theta/SCPPDataframeAll$Delta
 ```
 
-Save SCPP1DataframeAll to output directory
+Save SCPPDataframeAll to output directory
 ```{r SaveSCPPDataframeAllChunk, echo=FALSE, include = FALSE}
         write.csv(SCPPDataframeAll, "./Output/SCPPDataframeAll.csv")
   
@@ -765,7 +765,9 @@ for(FileIndex in 1:length(FileList)){
 IIS occurred in the light hours, we wanted to ask whether IIS are more prevalent in specific brain states. To this end, we used the theta signal to characterise epochs as sleep/wake and asked whether p(IIS|S)>p(IIS|W)
 
 ```{r, SWPlottingChunk, include=TRUE, echo=FALSE}
-
+if("plyr" %in% (.packages())){
+  detach("package:plyr", unload=TRUE)
+}
 #Group by AnimalID and SleepWake
 SW_grouped<-group_by(SCPPDataframeVideoTimesAll, AnimalIDVariable, SleepWake)
 #Compute the mean spike rate for each animal in each behavioural state                     
