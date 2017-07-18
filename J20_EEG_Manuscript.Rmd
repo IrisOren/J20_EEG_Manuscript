@@ -13,7 +13,8 @@ output:
 This .rmd file processes the Data to create all figures for Brown & Ying et a
 
 * Data
-  + Spike counts by SCPP3: SCPP3.tcl was run on 8s epochs of Data, with glitch=200. The processor generated text files, containing: loss| spike counts| delta power| theta power. SCPP3.tcl outputs: "ndfFilename_SCPP1V1.txt", organised in individual folders by AnimalID (Raw Data: Dropbox/Analysis/Neuroarchiver/J20EEG/SCPP1V1).
+  + Spike counts by SCPP4: SCPP4.tcl was run on 8s epochs of Data, with glitch=200. The processor generated text files, containing: loss| spike counts| burst count| delta power| theta power. SCPP4.tcl outputs: "ndfFilename_SCPP4V1.txt", organised in individual folders by AnimalID
+  (Raw Data: Dropbox/Analysis/Neuroarchiver/J20EEG/SCPP4V1).
   + Spike counts by Matthias's scripts: To be added
   + Metadata: RecordingInformationJ20_Saved180816.csv
   + Abeta load Data: to be added
