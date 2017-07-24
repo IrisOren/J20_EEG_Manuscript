@@ -59,12 +59,14 @@ Specify files and folders to be used
 ```{r VariableInitialisationChunk, ECHO=FALSE}
 NDFDataParentFolder<-"~/Dropbox/ANALYSIS/Neuroarchiver/J20EEG/SCPP4V1"
 RecordingInfoFile<-"./Data/RecordingInfo.csv"
+FalsePositiveFile<-"./Data/SCPP4V1_Performance.csv"
 #RecordingInfoFile<-"./Data/RecordingInfo_WT_VideoScoring.csv"
 OutputFolder<-"./Output"
 ```
 
 Import summary recording information dataframe
 ```{r ImportRecordingInformation, ECHO=FALSE, include=FALSE}
+FalsePositiveCutOff=0.1
 
 SummaryDataframe<-read.csv(RecordingInfoFile, na = "empty")
 SummaryDataframe$AnimalID<-as.character(SummaryDataframe$AnimalID)
@@ -75,6 +77,16 @@ SummaryDataframe$DrugDateTime<-  paste(as.character(SummaryDataframe$DrugDate)
 , as.character(SummaryDataframe$DrugTime), " ")
 SummaryDataframe$Fig1_IISRate<-as.character(SummaryDataframe$Fig1_IISRate)
 SummaryDataframe$DOB<-as.character(SummaryDataframe$DOB)
+
+#Apend the calculated false positive rate information to SummaryDataframe
+
+FalsePositives<-read.csv(file=FalsePositiveFile, header = TRUE)
+FalsePositives<-select(FalsePositives, AnimalID, FalsePositiveRateWithNa, FalsePositiveRateNoNa)
+SummaryDataframe$FalsePositiveRate<-FalsePositives$FalsePositiveRateNoNa
+
+#Select animals where false positive is < FalsePositiveThreshold
+SummaryDataframe<-filter(SummaryDataframe, FalsePositiveRate<FalsePositiveCutOff)
+
 #Select animals that will be included in MS as the subset that will be included in Fig1
 SummaryDataframe<-filter(SummaryDataframe, Fig1_IISRate=="YES")
 
@@ -85,7 +97,12 @@ SummaryDataframe$Age<-as.POSIXct(SummaryDataframe$FirstNDF, origin="1970-01-01",
 
 ```
 
-
+Apend the calculated false positive rate information to SummaryDataframe
+```{r ApendFalsePostive, include = TRUE, echo=FALSE}
+FalsePositives<-read.csv(file=FalsePositiveFile, header = TRUE)
+FalsePositives<-select(FalsePositives, AnimalID, FalsePositive)
+SummaryDataframe$FalsePositives<-FalsePositives$FalsePositive
+```
 2. For each AnimalID to be included:
   i. Set AnimalID subfolder
   ii. Create SCPPP_dataframe from all processor characteristics .txt files 
