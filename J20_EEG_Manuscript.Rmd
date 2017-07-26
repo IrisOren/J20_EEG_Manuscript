@@ -60,6 +60,8 @@ Specify files and folders to be used
 NDFDataParentFolder<-"~/Dropbox/ANALYSIS/Neuroarchiver/J20EEG/SCPP4V1"
 RecordingInfoFile<-"./Data/RecordingInfo.csv"
 FalsePositiveFile<-"./Data/SCPP4V1_Performance.csv"
+LossIntervalPercentageFile<-"./Data/LossIntervalPercentage.csv"
+
 #RecordingInfoFile<-"./Data/RecordingInfo_WT_VideoScoring.csv"
 OutputFolder<-"./Output"
 ```
@@ -84,6 +86,14 @@ FalsePositives<-read.csv(file=FalsePositiveFile, header = TRUE)
 FalsePositives<-select(FalsePositives, AnimalID, FalsePositiveRateWithNa, FalsePositiveRateNoNa)
 SummaryDataframe$FalsePositiveRate<-FalsePositives$FalsePositiveRateNoNa
 
+
+#Apend LossIntervalPercentage information to SummaryDataFrame
+
+LossIntervalPercentage<-read.csv(file=LossIntervalPercentageFile, header = TRUE)
+LossIntervalPercentage<-select(LossIntervalPercentage, AnimalID, LossIntervalPercentage)
+SummaryDataframe$LossIntervalPercentage<-LossIntervalPercentage$LossIntervalPercentage
+
+
 #Select animals where false positive is < FalsePositiveThreshold
 SummaryDataframe<-filter(SummaryDataframe, FalsePositiveRate<FalsePositiveCutOff)
 
@@ -91,18 +101,15 @@ SummaryDataframe<-filter(SummaryDataframe, FalsePositiveRate<FalsePositiveCutOff
 SummaryDataframe<-filter(SummaryDataframe, Fig1_IISRate=="YES")
 
 #Add age variable as difference of DOB and first NDF file
-SummaryDataframe$Age<-as.POSIXct(SummaryDataframe$FirstNDF, origin="1970-01-01", tz="Europe/london")-strptime(SummaryDataframe$DOB, format="%d/%m/%Y", tz="Europe/london")
+SummaryDataframe$Age<-as.POSIXct(SummaryDataframe$FirstNDF, origin="1970-01-01", tz="Europe/london")-strptime(SummaryDataframe$DOB, format="%d/%m/%y", tz="Europe/london")
+
+
 
 
 
 ```
 
-Apend the calculated false positive rate information to SummaryDataframe
-```{r ApendFalsePostive, include = TRUE, echo=FALSE}
-FalsePositives<-read.csv(file=FalsePositiveFile, header = TRUE)
-FalsePositives<-select(FalsePositives, AnimalID, FalsePositive)
-SummaryDataframe$FalsePositives<-FalsePositives$FalsePositive
-```
+
 2. For each AnimalID to be included:
   i. Set AnimalID subfolder
   ii. Create SCPPP_dataframe from all processor characteristics .txt files 
@@ -241,6 +248,7 @@ Steps:
 ```{r SelectAnimalsChunk, echo=FALSE, include=TRUE}
 
 Fig1SummaryDataframe<-filter(Fig1SummaryDataframe, Fig1_IISRate=="YES")
+
 
 ```
 
@@ -451,7 +459,7 @@ We used circular statistics to establish whether IIS were significantly-coupled 
 
 ###1. Create Fig2SummaryDataframe from recordingInformation. 
 ```{r create_fig2_dataframe, ECHO=FALSE, include=FALSE}
-  Fig2SummaryDataframe <- SummaryDataframe[, c("AnimalID", "Genotype", "TimeZone", "Fig2_CircadianCoupling")]
+  Fig2SummaryDataframe <- SummaryDataframe[, c("AnimalID", "Genotype", "TimeZone", "Fig2_CircadianCoupling", "LossIntervalPercentage")]
 #Remove rows with missing variables
   Fig2SummaryDataframe <- Fig2SummaryDataframe[complete.cases(Fig2SummaryDataframe),]
 ```
@@ -461,6 +469,9 @@ We used circular statistics to establish whether IIS were significantly-coupled 
 
 
 Fig2SummaryDataframe<-filter(Fig2SummaryDataframe, Fig2_CircadianCoupling=="YES")
+
+#Filter for Loss <5%
+Fig2SummaryDataframe<-filter(Fig2SummaryDataframe, LossIntervalPercentage<5)
 
 ```
 
