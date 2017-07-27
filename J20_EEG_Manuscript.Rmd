@@ -396,7 +396,7 @@ The number of intervals with one or more spikes was compared between genotypes u
 
 
 
-##Plotting % intervals > 0 spikes
+###Plotting % intervals > 0 spikes
 ```{r ScatterPlotChunk, echo=FALSE}
 Fig1SummaryDataframe$Genotype<-factor(Fig1SummaryDataframe$Genotype, levels = c("WT", "J20"))  #Need to reorder factor so that WT appears first in plot
 
@@ -424,19 +424,19 @@ Plot example of circadian spike probability for JF167
 
 
 #Filter SCPP1DataFrameAll to select for JF167 
-IISTimesJF167<-filter(SCPPDataframeAll, AnimalIDVariable=="JF167", Treatment=="Control")
+IISTimesExample<-filter(SCPPDataframeAll, AnimalIDVariable=="JF152", Treatment=="Control")
 # Select the relevant columns of dataframe
-IISTimesJF167<-select(IISTimesJF167, SpikeCount, TimeOfDay)
+IISTimesExample<-select(IISTimesExample, SpikeCount, TimeOfDay)
 #Filter for intervals with >0 IIS
-IISTimesJF167<-filter(IISTimesJF167, SpikeCount>0)
+IISTimesExample<-filter(IISTimesExample, SpikeCount>0)
 #Convert the to Posixlt format
-IISTimesJF167$TimeOfDay<-strptime(IISTimesJF167$TimeOfDay, "%Y-%m-%d %H:%M:%S")
+IISTimesExample$TimeOfDay<-strptime(IISTimesExample$TimeOfDay, "%Y-%m-%d %H:%M:%S")
 
 
 ## extract hour of IIS with lubridate function
-IISTimesJF167$hour_of_event <- hour(IISTimesJF167$TimeOfDay)
+IISTimesExample$hour_of_event <- hour(IISTimesExample$TimeOfDay)
 # make a new dataframe with hour appended
-EventData <- data.frame(DateTime = IISTimesJF167$TimeOfDay, EventHour = IISTimesJF167$hour_of_event)
+EventData <- data.frame(DateTime = IISTimesExample$TimeOfDay, EventHour = IISTimesExample$hour_of_event)
 # determine if event is in light hours
 EventData$Light <- EventData$EventHour %in% seq(7, 18)
 
