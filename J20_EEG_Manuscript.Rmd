@@ -294,6 +294,7 @@ for (j in 1:nrow(Fig1SummaryDataframe)){
 }
 
 write.csv(ECDFAllCtrlDataframe, "./Output/ECDFAllCtrlDataframe.csv")
+rm(ECDFCurrent)
 ```
 
 Plot ECDF for all animals in control conditions
@@ -335,11 +336,9 @@ Fig1SummaryDataframe
 
 
 
-#Summary statistics for percentage intervals with 1 or more spikes
+###Summary statistics for percentage intervals with 1 or more spikes
 ```{r SummaryStatsChunk, echo=FALSE, include=TRUE}
-####NOTE:  TO ADD NORMALITY TESTS FOR REPORTING MEAN VS MEDIAN
-#Summary statisitcs by genotype
-SummarySE(Fig1SummaryDataframe, measurevar="Grtr0SpikeCtrl", groupvars=c("Genotype"), na.rm=TRUE)
+
 
 Fig1SummaryDataframe_WT<-filter(Fig1SummaryDataframe, Genotype=="WT")
 Fig1SummaryDataframe_J20<-filter(Fig1SummaryDataframe, Genotype=="J20")
@@ -353,9 +352,17 @@ DataForTesting <-Fig1SummaryDataframe_WT$Grtr0SpikeCtrl
 DataForTesting <-Fig1SummaryDataframe_J20$Grtr0SpikeCtrl
   SW_J20<-NormTesting(DataForTesting, "QQPlot_J20")
   SW_J20
+  
+  #Summary statisitcs by genotype
+SummaryStats<-SummarySE(Fig1SummaryDataframe, measurevar="Grtr0SpikeCtrl", groupvars=c("Genotype"), na.rm=TRUE)
+
+SummaryStats$CI_L<-SummaryStats$Grtr0SpikeCtrl-SummaryStats$ci
+SummaryStats$CI_U<-SummaryStats$Grtr0SpikeCtrl+SummaryStats$ci
+
+SummaryStats
 
 ```
-#Permutation test to compare intervals with 1 or more spikes between genotypes
+###Permutation test to compare intervals with 1 or more spikes between genotypes
 
 ```{r Grtr0spike_PermutationTest_Chunk, echo=TRUE}
 
