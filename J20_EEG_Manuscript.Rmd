@@ -2,7 +2,7 @@
 ---
 title: "J20_EEG_Manuscript"
 author: "Iris Oren"
-date: "13-06-2017"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
   html_document: default
   pdf_document: default
@@ -16,10 +16,8 @@ This .rmd file processes the Data to create all figures for Brown & Ying et a
   + Spike counts by SCPP4: SCPP4.tcl was run on 8s epochs of Data, with glitch=200. The processor generated text files, containing: loss| spike counts| burst count| delta power| theta power. SCPP4.tcl outputs: "ndfFilename_SCPP4V1.txt", organised in individual folders by AnimalID
   (Raw Data: Dropbox/Analysis/Neuroarchiver/J20EEG/SCPP4V1).
   + Spike counts by Matthias's scripts: To be added
-  + Metadata: RecordingInformationJ20_Saved180816.csv
-  + Abeta load Data: to be added
-  + Chat Data: to be added
-  + AChE Data: to be added
+  + Metadata: RecordingInformation
+ 
 
 
 
@@ -148,20 +146,11 @@ if(file.exists("./Output/SCPPDataframeAll.csv")){
         
           
 
-           # Exclude Loss and Artifact intervals which have delta power >3sd and write the number of ExcludedIntervals to ExcludedIntervalsVariable in SCPP1Dataframe
+           # Exclude Loss >20 % and Artifact intervals which have delta power >1000ksq counts and write the number of ExcludedIntervals to ExcludedIntervalsVariable in SCPPDataframe
           LossThreshold=20
           DeltaThreshold=1000  
           
-          #TotalIntervals<-nrow(SCPPDataframe)
-            
-           # SCPP1Dataframe <- ExcludeIntervals(SCPPDataframe, LossThreshold, DeltaThreshold)
-           # ExcludedIntervals<-TotalIntervals-nrow(SCPP1Dataframe)
-           # TotalIntervalsVariable<-rep(TotalIntervals, nrow(SCPP1Dataframe))
-          #  SCPP1Dataframe<-cbind(SCPP1Dataframe, TotalIntervalsVariable)
-         # ExcludedIntervalsVariable<-rep(ExcludedIntervals, nrow(SCPP1Dataframe))
-         # SCPP1Dataframe<-cbind(SCPP1Dataframe, ExcludedIntervalsVariable)
-          
-
+         
            # Add Variable for ExcludeInterval: If Loss>LossThreshold or  delta power >DeltaThreshold
           
           ExcludedIntervalsVariable<-which((SCPPDataframe$Loss>LossThreshold)| (SCPPDataframe$Delta>DeltaThreshold))
@@ -175,6 +164,7 @@ if(file.exists("./Output/SCPPDataframeAll.csv")){
         #Apend time information to Data frame  
           SCPPDataframe <- GetTimeOfDayAndDate(SCPPDataframe, TimeZoneCurrent)
           SCPPDataframe$TimeOfDay<-as.POSIXct(SCPPDataframe$TimeOfDay)
+          
         #Apend a Treatment variable to the dataframe, based on DrugDateTime as specified in Fig1SummaryDataframe 
           Treatment<-c()
           Treatment[which(SCPPDataframe$TimeOfDay<strptime(DrugDateTimeCurrent, "%d/%m/%y %H:%M:%S"))]="Control"
@@ -183,11 +173,8 @@ if(file.exists("./Output/SCPPDataframeAll.csv")){
             Treatment[length(Treatment)+1]="Unknown"
             Treatment[(length(Treatment)+1):(dim(SCPPDataframe))[1]]="Drug"
           }
-          #apend Treatment variable to SCPPDataframe
-
-            
-
-            SCPPDataframe<-cbind(SCPPDataframe, Treatment)
+      #apend Treatment variable to SCPPDataframe
+      SCPPDataframe<-cbind(SCPPDataframe, Treatment)
 
          
       #Apend AnimalID variable and Genotype
@@ -219,17 +206,32 @@ SCPPDataframeAll$ThetaOverDelta<-SCPPDataframeAll$Theta/SCPPDataframeAll$Delta
 ```
 
 Save SCPPDataframeAll to output directory
-```{r SaveSCPPDataframeAllChunk, echo=FALSE, include = FALSE}
-        write.csv(SCPPDataframeAll, "./Output/SCPPDataframeAll.csv")
+```{r SaveSCPPDataframeAllChunk, echo=FALSE}
+        
+if(file.exists("./Output/SCPPDataframeAll.csv")==0){
+ 
+write.csv(SCPPDataframeAll, "./Output/SCPPDataframeAll.csv")
+}
   
 ```
 
-Make a copy of SCPP1DataFrameAllOriginal and exclude intervals from SCPP1DataframeAll
+Make a copy of SCPPDataFrameAllOriginal and exclude intervals from SCPPDataframeAll
 ```{r ExcludeIntervals, echo=FALSE, include=TRUE}
 SCPPDataframeAllOriginal<-SCPPDataframeAll
 SCPPDataframeAll<-filter(SCPPDataframeAll, ExcludeInterval==0)
 
 ```
+#######################
+
+ 
+```{r AgeOfAnimals, echo = TRUE}
+MeanAgeOfAnimals<-mean(SummaryDataframe$Age, na.rm=TRUE)
+
+SEMAgeOfAnimals<-sd(SummaryDataframe$Age, na.rm = TRUE)/nrow(SummaryDataframe)
+
+```
+Mean age of animals = `r MeanAgeOfAnimals`
+
 
 ###########################################################
 # Figure 1: Spike count measure between genotype
@@ -263,7 +265,7 @@ SCPPDataframeDrug<-filter(SCPPDataframeAll, Treatment=="Drug")
 
 
 ## Compare SpikeCount Data between animals in control condition 
-An average spike rate over the recording is not informative. The readout we use is number of spikes/8s interval which is the spikeCount variable in SCPP1Dataframe.
+An average spike rate over the recording is not informative. The readout we use is number of spikes/8s interval which is the spikeCount variable in SCPPDataframe.
 
 
 To compare between animals/genotypes, we use ECDF.
@@ -307,7 +309,7 @@ ECDFAllCtrlPlot<-ECDFAllCtrlPlot +
 
 ECDFAllCtrlPlot
 
-ggsave("Output/ECDFSpikesControl.png")
+#ggsave("Output/ECDFSpikesControl.png")
 
 
 
