@@ -245,15 +245,17 @@ This figure requires a dataframe Fig1SummaryDataframe=AnimalID|Genotype|TimeZone
 Steps:
 1. Create Fig1SummaryDataframe from recordingInformation. 
 ```{r create_fig1_dataframe, ECHO=FALSE}
-  Fig1SummaryDataframe<-SummaryDataframe[, c("AnimalID", "Genotype", "TimeZone", "DrugDateTime", "Fig1_IISRate")]
+  Fig1SummaryDataframe<-SummaryDataframe[, c("AnimalID", "Genotype", "TimeZone", "DrugDateTime", "Fig1_IISRate", "LossIntervalPercentage")]
 #Remove rows with missing variables
   Fig1SummaryDataframe<-Fig1SummaryDataframe[complete.cases(Fig1SummaryDataframe),]
 ```
   
-2. Select animals that will be used in the analysis: animals with cortical or cerebellum reference recorded for in control conditions with known light dark cycles.
+2. Select animals that will be used in the analysis: animals with cortical or cerebellum reference recorded for in control conditions with known light dark cycles and that loss<5%.
+
 ```{r SelectAnimalsChunk, echo=FALSE, include=TRUE}
 
-Fig1SummaryDataframe<-filter(Fig1SummaryDataframe, Fig1_IISRate=="YES")
+Fig1SummaryDataframe<-filter(Fig1SummaryDataframe, Fig1_IISRate=="YES", LossIntervalPercentage<5)
+
 
 
 ```
@@ -540,7 +542,7 @@ for(i in 1:nrow(Fig2SummaryDataframe)){
   Fig2SummaryDataframe_J20<-filter(Fig2SummaryDataframe, Genotype=="J20")
   
 }
-
+rm(TempTimeDataframe)
 ```
 
 
@@ -554,7 +556,10 @@ SampleMeanDateTime<-ConvertUnixSecondsToTimeOfDay(SampleMeanTimeSeconds)
 
 SampleMeanDeviation<-meandeviation(Fig2SummaryDataframe_J20$MeanAngle)
 
+SampleRayleighP<-rayleigh.test(Fig2SummaryDataframe_J20$MeanAngle)
+
 ```
+Across the sample of J20s, the IIS was significantly coupled to light periods (Phi_J20=`r SampleMeanDateTime$TimeOfDay`), Rho_20=`r SampleMeanDeviation`, RayleighP_J20=`r SampleRayleighP`.
 
 ###3. Plot polar histograms for all J20s
 ```{r SpikeHist_Chunk, echo=FALSE}
@@ -613,16 +618,19 @@ for(i in 1:nrow(Fig2SummaryDataframe_J20)){
 ###4. Determine phase coupling of strength and compare between WT and J20. Hypothesis testing
 To quantify the coupling of IIS to the day-night cycle, we calculated the circular mean angle and dispersion, and Rayleigh probability for all J20s.
 
-```{r CompareRhoBtwnGenotypes, echo=FALSE, include=FALSE}
+```{r J20SampleRho, echo=FALSE, include=FALSE}
 
 #t-test to get CI
-t<-t.test(Fig2SummaryDataframe_J20$Rho)
+MeanRho<-mean(Fig2SummaryDataframe_J20$Rho, na.rm=TRUE)
+tRho<-t.test(Fig2SummaryDataframe_J20$Rho)
+CIRho<-tRho$conf.int
+
 
 
 ```
 
 
-`r sum(Fig2SummaryDataframe_J20$RayleighP<0.05)` of `r nrow(Fig2SummaryDataframe_J20)' ) animals exhibited significant phase coupling of IIS as estimated by the Rayleigh test (p=(`r min(Fig2SummaryDataframe_J20$RayleighP) -- max(Fig2SummaryDataframe_J20$RayleighP)`. The degree of phase coupling varied between animals as can be seen in the distribution of the angular dispersion, rho= `r(round(mean(Fig2SummaryDataframe_J20$Rho, 2) CI=t$conf.int)`.
+`r sum(Fig2SummaryDataframe_J20$RayleighP<0.05)` of `r nrow(Fig2SummaryDataframe_J20)` ) animals exhibited significant phase coupling of IIS as estimated by the Rayleigh test (p=(`r min(Fig2SummaryDataframe_J20$RayleighP) -- max(Fig2SummaryDataframe_J20$RayleighP)`. The degree of phase coupling varied between animals as can be seen in the distribution of the angular dispersion, rho= `r round(MeanRho, 2)` 95%CI=`r CIRho[[1]]`, `r CIRho[[2]]`) .
 
 
 
@@ -641,8 +649,8 @@ print(SampleRhoMeanAngle)
 
 filename<-"./Output/SummaryRadialStatsControl.jpeg"
 
-jpeg(file=filename)
- radial.plot(Fig2SummaryDataframe_J20$Rho,
+
+ RadialPlot<-radial.plot(Fig2SummaryDataframe_J20$Rho,
                                 Fig2SummaryDataframe_J20$MeanAngle,
                                 start=(pi/2), clockwise = TRUE,
                                 labels=c("0/24h","6h", "12h", "18h"),
@@ -651,14 +659,17 @@ jpeg(file=filename)
                                 point.symbols = 20, 
                                 show.radial.grid = TRUE, 
                                 radial.lim = c(0, 0.5,1))
-
+jpeg(file=filename)
+RadialPlot
 dev.off()
+
+
 
 #Saved file does not have x-axis labels. NEED TO FIX THIS 13/07/17
 
 ```
 
-Across the sample of J20s, the IIS was significantly coupled to light periods (Phi_J20=`r SampleMeanDateTime$TimeOfDay`.
+
 
 
 
@@ -698,7 +709,8 @@ FileList<-c("./Data/VideoScoring/VideoScoringJF220_040416.csv",
             "./Data/VideoScoring/VideoScoringJF221_040416.csv",
             "./Data/VideoScoring/VideoScoringJF221_050416.csv",
             "./Data/VideoScoring/VideoScoringJF221_060416.csv",
-            "./Data/VideoScoring/VideoScoringJF221_080416.csv"
+            "./Data/VideoScoring/VideoScoringJF221_080416.csv",
+            "./Data/VideoScoring/VideoScoringJ0456_250517.csv"
           )
 
 
@@ -707,7 +719,8 @@ AnimalIDList<-c("JF220", "JF220", "JF220", "JF220", "JF220",
               # "J0375", "J0375", 
              # "J0376", 
               "JF221", "JF221", 
-             "JF221", "JF221"
+             "JF221", "JF221", 
+             "J0456"
             )
 SCPPDataframeVideoTimesAll<-data.frame()
 AnimalIDVideoStartEnd<-list() #A list to store Start and End times for video data. The list index is AnimalID_FileIndex eg. JF220_1
@@ -720,7 +733,7 @@ for(FileIndex in 1:length(FileList)){
    
     #Import
     VideoScoring<- read.csv(VideoScoringFilename)
-    VideoScoring<-select(VideoScoring, DateOfEEG, TimeOfEEG, Behaviour, SleepWake)
+    VideoScoring<-select(VideoScoring, DateOfEEG, TimeOfEEG,  SleepWake)
     VideoScoring$SleepWake<-as.character(VideoScoring$SleepWake) #needs to be character. "as.factor" converts to numeric factors
     
     #Add date to Time to make TimeString
