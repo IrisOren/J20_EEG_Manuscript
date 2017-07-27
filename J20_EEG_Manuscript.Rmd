@@ -125,7 +125,7 @@ if(file.exists("./Output/SCPPDataframeAll.csv")){
   } else{  #Else create SCPPDataframeAll.csv
     
       #Initialise variables all animals
-      SCPPDataframeList<-list()
+     # SCPPDataframeList<-list()
       SCPPDataframeAll<-data.frame()
       
       for(i in 1:nrow(SummaryDataframe)){     #Loop through animals
@@ -186,24 +186,18 @@ if(file.exists("./Output/SCPPDataframeAll.csv")){
        #Apend SCPPDataframe to SCPPDataframeAll. To access an animal, used "filter()" 
           SCPPDataframeAll<-rbind(SCPPDataframeAll, SCPPDataframe)
       }
-  }      
-      
-      
+  
+    #Add LightDark variable where LightDark=TRUE is lights on
+    Hour<-hour(SCPPDataframeAll$TimeOfDay)
+    SCPPDataframeAll$LightDark <- Hour %in% seq(7, 18)
+    
+    #Add ThetaOverDelta
+    SCPPDataframeAll$ThetaOverDelta<-SCPPDataframeAll$Theta/SCPPDataframeAll$Delta
+  }
+
+rm(SCPPDataframe, FalsePositives, LossIntervalPercentage, Temp)
 ```
 
-
-Add LightDark variable where LightDark=TRUE is lights on
-
-```{r LightDarkVariable, echo=FALSE, include = FALSE}
-Hour<-hour(SCPPDataframeAll$TimeOfDay)
-SCPPDataframeAll$LightDark <- Hour %in% seq(7, 18)
-
-```
-
-Add ThetaOverDelta
-```{r ThetaOverDeltaChunk, echo=FALSE, include=FALSE}
-SCPPDataframeAll$ThetaOverDelta<-SCPPDataframeAll$Theta/SCPPDataframeAll$Delta
-```
 
 Save SCPPDataframeAll to output directory
 ```{r SaveSCPPDataframeAllChunk, echo=FALSE}
@@ -225,12 +219,22 @@ SCPPDataframeAll<-filter(SCPPDataframeAll, ExcludeInterval==0)
 
  
 ```{r AgeOfAnimals, echo = TRUE}
-MeanAgeOfAnimals<-mean(SummaryDataframe$Age, na.rm=TRUE)
+MeanAgeOfAnimals<-mean(as.numeric(SummaryDataframe$Age), na.rm=TRUE)
+MeanAgeOfAnimalsMonths<-MeanAgeOfAnimals/30.5
 
-SEMAgeOfAnimals<-sd(SummaryDataframe$Age, na.rm = TRUE)/nrow(SummaryDataframe)
+SEMAgeOfAnimals<-sd(as.numeric(SummaryDataframe$Age), na.rm = TRUE)/sqrt(nrow(SummaryDataframe))
+
+MinAge<-min(as.numeric(SummaryDataframe$Age), na.rm=TRUE)/30.5
+MaxAge<-max(as.numeric(SummaryDataframe$Age), na.rm=TRUE)/30.5
 
 ```
-Mean age of animals = `r MeanAgeOfAnimals`
+Mean age of animals = `r MeanAgeOfAnimals` days
+
+Mean age of animals in months = `r MeanAgeOfAnimalsMonth` Months
+
+SEM = `r SEMAgeOfAnimals` days
+
+Age range = [`r MinAge`, `r MaxAge`] days
 
 
 ###########################################################
