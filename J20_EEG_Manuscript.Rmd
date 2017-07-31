@@ -41,6 +41,7 @@ library(readr)  #for col_skip in read.csv
 library(lme4)
 library(lsmeans)
 library(multcomp)
+library(CircOutlier)
 
 
 sourceDir <- function(path, trace = TRUE, ...) {
@@ -66,6 +67,9 @@ OutputFolder<-"./Output"
 
 Import summary recording information dataframe
 ```{r ImportRecordingInformation, ECHO=FALSE, include=FALSE}
+detach("package:dplyr", character.only = TRUE)
+library("dplyr", character.only = TRUE)
+
 FalsePositiveCutOff=0.1
 LossIntervalPercentageThreshold<-5 #Limit for percent of intervals lost to include animal in analysis
 
@@ -101,6 +105,7 @@ SummaryDataframe<-filter(SummaryDataframe, Fig1_IISRate=="YES")
 
 #Add age variable as difference of DOB and first NDF file
 SummaryDataframe$Age<-as.POSIXct(SummaryDataframe$FirstNDF, origin="1970-01-01", tz="Europe/london")-strptime(SummaryDataframe$DOB, format="%d/%m/%y", tz="Europe/london")
+
 
 
 
@@ -236,6 +241,31 @@ Mean age of animals in months = `r MeanAgeOfAnimalsMonth` Months
 SEM = `r SEMAgeOfAnimals` days
 
 Age range = [`r MinAge`, `r MaxAge`] days
+
+__________
+Calculate percentage change of spikes between first 0-24 hours and 48-72hours
+
+```{r CalcSpikeRateForEachDay, include=TRUE, echo=FALSE}
+MeanSpike1<-c()
+MeanSpike2<-c()
+MeanSpike3<-c()
+SDSpikeCount<-c()
+for(i in 1:nrow(SummaryDataframe)){
+  AnimalIDCurrent<-SummaryDataframe$AnimalID[i]
+  DataframeTemp<-filter(SCPPDataframeAll, AnimalIDVariable==AnimalIDCurrent)
+  DataframeTemp<-filter(DataframeTemp, ExcludeInterval==0)
+  MeanSpike1[i]<-mean(DataframeTemp$SpikeCount[1:(450*24)], na.rm=TRUE)
+  MeanSpike2[i]<-mean(DataframeTemp$SpikeCount[(450*24)+1:(450*48)],na.rm=TRUE)
+  MeanSpike3[i]<-mean(DataframeTemp$SpikeCount[(450*48)+1:(450*72)], na.rm=TRUE)
+  SDSpikeCount[i]<-sd(DataframeTemp$SpikeCount[(450*48)+1:(450*72)], na.rm=TRUE)
+  
+}
+
+SummaryDataframe<-cbind(SummaryDataframe, MeanSpike1, MeanSpike2, MeanSpike3, SDSpikeCount)
+SummaryDataframe$Change2<-2*(SummaryDataframe$MeanSpike2-SummaryDataframe$MeanSpike3)/(SummaryDataframe$MeanSpike2+SummaryDataframe$MeanSpike3)
+
+SummaryDataframe$Change1<-(SummaryDataframe$MeanSpike1-SummaryDataframe$MeanSpike2)/SDSpikeCount
+```
 
 
 ###########################################################
@@ -562,6 +592,7 @@ SampleRayleighP<-rayleigh.test(Fig2SummaryDataframe_J20$MeanAngle)
 ```
 Across the sample of J20s, the IIS was significantly coupled to light periods (Phi_J20=`r SampleMeanDateTime$TimeOfDay`), Rho_20=`r SampleMeanDeviation`, RayleighP_J20=`r SampleRayleighP`.
 
+
 ###3. Plot polar histograms for all J20s
 ```{r SpikeHist_Chunk, echo=FALSE}
 dir.create("./Output/SpikeHists")
@@ -633,6 +664,8 @@ CIRho<-tRho$conf.int
 
 `r sum(Fig2SummaryDataframe_J20$RayleighP<0.05)` of `r nrow(Fig2SummaryDataframe_J20)` ) animals exhibited significant phase coupling of IIS as estimated by the Rayleigh test (p=(`r min(Fig2SummaryDataframe_J20$RayleighP) -- max(Fig2SummaryDataframe_J20$RayleighP)`. The degree of phase coupling varied between animals as can be seen in the distribution of the angular dispersion, rho= `r round(MeanRho, 2)` 95%CI=`r CIRho[[1]]`, `r CIRho[[2]]`) .
 
+Range Rho=(`r min(Fig2SummaryDataframe_J20$RayleighR)`, `r max(Fig2SummaryDataframe_J20$RayleighR)`)
+
 
 
 ```{r PolarPlotRhoMeanAngleJ20, echo=FALSE, include=FALSE}
@@ -672,8 +705,25 @@ dev.off()
 
 
 
+We identify circular outliers using Abuzaid et al 2010 J Stat Comp Sim
+```{r CircularOutliers, echo = TRUE, include = TRUE}
+AngleNew<-Fig2SummaryDataframe_J20$MeanAngle-2*pi
+Outliers<-Huberized(AngleNew)
+```
 
+Set Circular Outliers
+```{r SetCircularOutlier, echo=TRUE, include=TRUE}
+CircularOutliers<-c(1, 4, 15, 16) #From Huberized
+Fig2SummaryDataframe_J20$Outliers<-0
+Fig2SummaryDataframe_J20$Outliers[CircularOutliers]<-1
+CircularOutliersAnimalID<-Fig2SummaryDataframe_J20$AnimalID[CircularOutliers]
+for(i in 1:length(CircularOutliers)){
+  OutliersIndex[i]<-which(SummaryDataframe$AnimalID==CircularOutliersAnimalID[i])
+}
 
+SummaryDataframe$Outliers<-0
+SummaryDataframe$Outliers[OutliersIndex]<-1
+```
 
 #########################################################################
 ##Figure 3/4: Probability of IIS and behavioral state
@@ -710,8 +760,9 @@ FileList<-c("./Data/VideoScoring/VideoScoringJF220_040416.csv",
             "./Data/VideoScoring/VideoScoringJF221_040416.csv",
             "./Data/VideoScoring/VideoScoringJF221_050416.csv",
             "./Data/VideoScoring/VideoScoringJF221_060416.csv",
-            "./Data/VideoScoring/VideoScoringJF221_080416.csv"#,
+            "./Data/VideoScoring/VideoScoringJF221_080416.csv",
            # "./Data/VideoScoring/VideoScoringJ0456_260417.csv"
+          "./Data/VideoScoring/VideoScoringJ0460_210517.csv"
           )
 
 
@@ -720,8 +771,8 @@ AnimalIDList<-c("JF220", "JF220", "JF220", "JF220", "JF220",
               # "J0375", "J0375", 
              # "J0376", 
               "JF221", "JF221", 
-             "JF221", "JF221"#, 
-             #"J0456"
+             "JF221", "JF221", 
+             "J0460"
             )
 SCPPDataframeVideoTimesAll<-data.frame()
 AnimalIDVideoStartEnd<-list() #A list to store Start and End times for video data. The list index is AnimalID_FileIndex eg. JF220_1
@@ -744,7 +795,7 @@ for(FileIndex in 1:length(FileList)){
     
     #Convert to UnixTime
     VideoScoring$UnixTime<-(as.numeric(as.POSIXct(VideoScoring$DateTime)))
-    
+    #VideoScoring<-VideoScoring[complete.cases(VideoScoring)]
     #Determine Start and End time of video file for particular day
     VideoStartTime<-VideoScoring$UnixTime[1]
     VideoEndTime<-VideoScoring$UnixTime[nrow(VideoScoring)]
