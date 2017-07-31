@@ -67,6 +67,7 @@ OutputFolder<-"./Output"
 Import summary recording information dataframe
 ```{r ImportRecordingInformation, ECHO=FALSE, include=FALSE}
 FalsePositiveCutOff=0.1
+LossIntervalPercentageThreshold<-5 #Limit for percent of intervals lost to include animal in analysis
 
 SummaryDataframe<-read.csv(RecordingInfoFile, na = "empty")
 SummaryDataframe$AnimalID<-as.character(SummaryDataframe$AnimalID)
@@ -254,7 +255,7 @@ Steps:
 
 ```{r SelectAnimalsChunk, echo=FALSE, include=TRUE}
 
-Fig1SummaryDataframe<-filter(Fig1SummaryDataframe, Fig1_IISRate=="YES", LossIntervalPercentage<5)
+Fig1SummaryDataframe<-filter(Fig1SummaryDataframe, Fig1_IISRate=="YES", LossIntervalPercentage<LossIntervalPercentageThreshold)
 
 
 
@@ -486,7 +487,7 @@ We used circular statistics to establish whether IIS were significantly-coupled 
 Fig2SummaryDataframe<-filter(Fig2SummaryDataframe, Fig2_CircadianCoupling=="YES")
 
 #Filter for Loss <5%
-Fig2SummaryDataframe<-filter(Fig2SummaryDataframe, LossIntervalPercentage<5)
+Fig2SummaryDataframe<-filter(Fig2SummaryDataframe, LossIntervalPercentage<LossIntervalPercentageThreshold)
 
 ```
 
@@ -869,7 +870,7 @@ p(IIS|theta/delta>threshold)
 
 
 ```{r create_fig3_dataframe, ECHO=FALSE}
-  Fig3SummaryDataframe<-SummaryDataframe[, c("AnimalID", "Genotype", "TimeZone", "DrugDateTime", "Fig3_BrainState")]
+  Fig3SummaryDataframe<-SummaryDataframe[, c("AnimalID", "Genotype", "TimeZone", "DrugDateTime", "Fig3_BrainState", "LossIntervalPercentage")]
 #Remove rows with missing variables
   Fig3SummaryDataframe<-Fig3SummaryDataframe[complete.cases(Fig3SummaryDataframe),]
 ```
@@ -877,7 +878,7 @@ p(IIS|theta/delta>threshold)
 2. Select animals that will be used in the analysis cerebellum reference recorded for in control conditions with known light dark cycles.
 ```{r SelectAnimalsChunk, echo=FALSE, include=TRUE}
 
-Fig3SummaryDataframe<-filter(Fig3SummaryDataframe, Fig3_BrainState=="YES", Genotype=="J20" )
+Fig3SummaryDataframe<-filter(Fig3SummaryDataframe, Fig3_BrainState=="YES", Genotype=="J20", LossIntervalPercentage<LossIntervalPercentageThreshold  )
 
 ```
 
@@ -895,7 +896,9 @@ ThetaDeltaSpikePlot<-ggplot(SummaryThetaDelta,
                                 y=MeanThetaDelta, 
                                 group=AnimalIDVariable)) +
   geom_line(aes(color=AnimalIDVariable))+
-  geom_point(aes(color=AnimalIDVariable))
+  geom_point(aes(color=AnimalIDVariable)) +
+  scale_x_continuous(name = "Spike Count/8s", breaks=seq(0,12,2)) +
+  theme(legend.position = "none")
 
 ThetaDeltaSpikePlot
 
