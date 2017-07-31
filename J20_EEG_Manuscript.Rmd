@@ -709,8 +709,8 @@ FileList<-c("./Data/VideoScoring/VideoScoringJF220_040416.csv",
             "./Data/VideoScoring/VideoScoringJF221_040416.csv",
             "./Data/VideoScoring/VideoScoringJF221_050416.csv",
             "./Data/VideoScoring/VideoScoringJF221_060416.csv",
-            "./Data/VideoScoring/VideoScoringJF221_080416.csv",
-            "./Data/VideoScoring/VideoScoringJ0456_250517.csv"
+            "./Data/VideoScoring/VideoScoringJF221_080416.csv"#,
+           # "./Data/VideoScoring/VideoScoringJ0456_260417.csv"
           )
 
 
@@ -719,8 +719,8 @@ AnimalIDList<-c("JF220", "JF220", "JF220", "JF220", "JF220",
               # "J0375", "J0375", 
              # "J0376", 
               "JF221", "JF221", 
-             "JF221", "JF221", 
-             "J0456"
+             "JF221", "JF221"#, 
+             #"J0456"
             )
 SCPPDataframeVideoTimesAll<-data.frame()
 AnimalIDVideoStartEnd<-list() #A list to store Start and End times for video data. The list index is AnimalID_FileIndex eg. JF220_1
@@ -826,22 +826,39 @@ if("plyr" %in% (.packages())){
 #Group by AnimalID and SleepWake
 SW_grouped<-group_by(SCPPDataframeVideoTimesAll, AnimalIDVariable, SleepWake)
 #Compute the mean spike rate for each animal in each behavioural state                     
-SummarySW<-summarise(SW_grouped, MeanSpikeRate=mean(SpikeCount)/8)
+SummarySW<-summarise(SW_grouped,
+                     MeanSpikeRate=mean(SpikeCount)/8,
+                     num=n(),
+                     
+                  SEM=sd(SpikeCount)/sqrt(n()))
 
 #Plot summary plot of mean spike rate
+#SWPlot<-ggplot(SummarySW, 
+#               aes(x=SleepWake, 
+#                   y=MeanSpikeRate, 
+#                   group=AnimalIDVariable)) +
+#  geom_line(aes(color=AnimalIDVariable)) +
+#  geom_point(aes(color=AnimalIDVariable)) +
+#  geom_errorbar(aes(ymin=MeanSpikeRate, ymax=MeanSpikeRate+SEM))+
+#  ylab("Mean spike/s") +
+#  xlab("Behavioural State")
+
 SWPlot<-ggplot(SummarySW, 
                aes(x=SleepWake, 
-                   y=MeanSpikeRate, 
-                   group=AnimalIDVariable)) +
+                   y=MeanSpikeRate)) +
+                 facet_grid(.~AnimalIDVariable) +
   geom_line(aes(color=AnimalIDVariable)) +
   geom_point(aes(color=AnimalIDVariable)) +
+  geom_errorbar(aes(ymin=MeanSpikeRate-SEM, ymax=MeanSpikeRate+SEM, width=0.4))+
   ylab("Mean spike/s") +
-  xlab("Behavioural State")
+  xlab("Behavioural State") +
+  theme(legend.position = "none")
 
 
 SWPlot
 
 ggsave("Output/MeanSpikesSleepWake.png")
+
 
 
 ```
