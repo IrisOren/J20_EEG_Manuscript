@@ -1073,42 +1073,94 @@ for(AnimalIndex in 1:length(AnimalIDList)){
   )
   ETAvDataframe<-rbind(ETAvDataframe, ETAvDataframeTemp)
   
+  rm(ETAv, ETAvDataframeTemp, ETW)
+``` 
 
-  
- # NETWList<-list()
- # NETAv<-rep(0,NoOfIntervalsForAveraging+1)   #Initialise vector for NonEvent-Triggered average 
+Create null event-triggered average by sampling specified number of intervals to sample
+```{r NonEventTriggeredAveragingOfThetaDelta, echo=FALSE, include=TRUE}}
+NoIntervalsToSample<-2000
 
-   #Filter the current SCPP1 for intervals ==0 spike
- # NonEventsDataframe<-filter(SCPPDataframeCurrent,  SpikeCount==0)
+ AnimalIDList<-c("JF218", "JF220", "JF221",
+               "J0456", "J0460"
+                )
+
+#Filter dataframe for control and daylight only as a proxy for sleep
+SCPPDataframeEventAv<-filter(SCPPDataframeAll, 
+                              LightDark==TRUE, 
+                              Treatment=="Control")
+
+#For each animal, we are going to loop through each epoch with IIS to create an average ThetaOverDelta for 64+8s interval around the IIS time (9 * 8s intervals)
+
+  #Initialise dataframe to store event triggered average for each animal
+  NETAvDataframe<-data.frame(
+    AnimalIDIndex=factor(),
+    Time=integer(),
+    AvThetaDelta=double()
+  )
+ #Initialise dataframe to store event-triggered sweeps for each animal 
+  NETSweepsDataframe<-data.frame(
+    AnimalIDIndex=factor(),
+    TimeForAv=integer(), 
+    Time=integer(),
+    SpikeCount=integer(),
+    ThetaDelta=double()
+    )
   
+  for(AnimalIndex in 1:length(AnimalIDList)){
+  #ETWList<-list()
+  AnimalIDCurrent=AnimalIDList[[AnimalIndex]]
   
-  #NumberOfNonEvents<-nrow(NonEventsDataframe)
+  SCPPDataframeCurrent<-filter(SCPPDataframeEventAv, 
+                                AnimalIDVariable==AnimalIDCurrent)
   
+  #Initialise variables and objects for evaluating within animal triggered averages
+  NoOfIntervalsForAveraging<-20
+  WindowLengthInSecs<-NoOfIntervalsForAveraging*8
+  
+  NETAv<-rep(0,NoOfIntervalsForAveraging+1)   #Initialise vector for Event-Triggered average 
+  
+ 
+  #Loop through all events and compute event triggered average
+  SpikeCounterForAveraging<-0
+  for(SpikeIndex in 1:NoIntervalsToSample){
+    #Event time is a random sample of all intervals so might include spikes
+    EventTimeCurrent<-sample(SCPPDataframeCurrent$InitialisedTime, 1)
+    #Extract epoch centered on IIS
+    NETW<-EventTriggeredWindow(EventTimeCurrent, WindowLengthInSecs,SCPPDataframeCurrent$InitialisedTime, 
+                          SCPPDataframeCurrent$ThetaOverDelta)
     
-  
- # SpikeCounterForAveraging<-0
-  #Loop through all nonevents and compute event triggered average
- # for(SpikeIndex in 1:NumberOfNonEvents){
- #  NonEventTimeCurrent<-NonEventsDataframe$InitialisedTime[[SpikeIndex]]
-    #Extract epoch centered on NIIS
- #   NETW<-EventTriggeredWindow(NonEventTimeCurrent, WindowLengthInSecs, SCPPDataframeCurrent$InitialisedTime, SCPPDataframeCurrent$ThetaOverDelta)
+    if(nrow(NETW)==NoOfIntervalsForAveraging+1){
+      NETAv<-NETAv+NETW$TriggeredWindowData
+     # ETWList[[SpikeIndex]]<-ETW
+      SpikeCounterForAveraging<-SpikeCounterForAveraging+1
+      
+      #Append ETSweepsDataframe with current EventTriggeredSweep
+        AnimalIDIndex<-rep(AnimalIDCurrent, NoOfIntervalsForAveraging+1)
+        TimeForAv<-seq(-(NoOfIntervalsForAveraging*8)/2, (NoOfIntervalsForAveraging*8)/2, 8)
+        Time<-NETW$TriggeredWindowTime
+        SpikeCount<-rep(SpikeCounterForAveraging, NoOfIntervalsForAveraging+1)
+        ThetaDelta<-NETW$TriggeredWindowData
+        
+        NETSweepsTemp<-data.frame(AnimalIDIndex, TimeForAv, Time, SpikeCount, ThetaDelta)
+        
+        NETSweepsDataframe<-rbind(NETSweepsDataframe, NETSweepsTemp)
     
-   # if(nrow(NETW)==NoOfIntervalsForAveraging+1){
-   #    NETAv<-NETAv+NETW$TriggeredWindowData
-   #    NETWList[[SpikeIndex]]<-NETW
-   #    SpikeCounterForAveraging<-SpikeCounterForAveraging+1
-  #  }else{
-  #   # print(SpikeIndex)
-   # }
-#  }
- # if(SpikeCounterForAveraging>0){
-  #  NETAv<-NETAv/SpikeCounterForAveraging
- # }
- # NETList$NETAv[[AnimalIDCurrent]]<-NETAv
- # NETList$NETW[[AnimalIDCurrent]]<-NETWList
-}
-rm(ETAvDataframeTemp, ETSweepsTemp, ETW, ETAv, EventsDataframe, NumberOfEvents)
-  
+    }else{
+      #print(SpikeIndex)
+    }
+  }
+  if(SpikeCounterForAveraging>0){
+    NETAv<-NETAv/SpikeCounterForAveraging
+  }
+  #Append ETAvDataframe
+  NETAvDataframeTemp<-data.frame(
+    AnimalIDIndex=rep(AnimalIDCurrent, NoOfIntervalsForAveraging+1),
+    Time=seq(-(NoOfIntervalsForAveraging*8)/2,(NoOfIntervalsForAveraging*8)/2, 8),
+    AvThetaDelta=NETAv
+  )
+  NETAvDataframe<-rbind(NETAvDataframe, NETAvDataframeTemp)
+  }
+rm(NETAv, NETAvDataframeTemp, NETW)
 ```
 
 Plotting Event-triggered averages
@@ -1136,13 +1188,24 @@ MeanThetaDeltaForAnimal<-summarise(MeanThetaDeltaForAnimal, MeanThetaDelta=mean(
 MeansData<-data.frame(MeanThetaDelta=MeanThetaDeltaForAnimal$MeanThetaDelta, AnimalIDIndex=c("JF218", "JF220", "JF221",
                 "J0456", "J0460")
                 )
-
+#Combine ETSweepsDataframe and NETSweepsDataframe
 
 ThetaDeltaGrp<-group_by(ETSweepsDataframe, AnimalIDIndex, TimeForAv) 
  ThetaDeltaGrp<-summarise(ThetaDeltaGrp, MeanThetaDelta=mean(ThetaDelta),
                         CI_U=CI(ThetaDelta)[1],
                        CI_L=CI(ThetaDelta)[3]
                        )
+ 
+    #ThetaDeltaGrp<-mutate(ThetaDeltaGrp, Event="E")
+ #Repeat for Non Events
+    #NEThetaDeltaGrp<-group_by(NETSweepsDataframe, AnimalIDIndex, TimeForAv) 
+    #NEThetaDeltaGrp<-summarise(NEThetaDeltaGrp, MeanThetaDelta=mean(ThetaDelta),
+            #            CI_U=CI(ThetaDelta)[1],
+            #           CI_L=CI(ThetaDelta)[3]
+            #           )
+      #NEThetaDeltaGrp<-mutate(NEThetaDeltaGrp, Event="N")
+ 
+ #ThetaDeltaGrp<-rbind(ThetaDeltaGrp, NEThetaDeltaGrp)
 
 #Plotting
 ETPlot<-ggplot(ThetaDeltaGrp, aes(x=TimeForAv, y=MeanThetaDelta))+
@@ -1153,9 +1216,8 @@ ETPlot<-ggplot(ThetaDeltaGrp, aes(x=TimeForAv, y=MeanThetaDelta))+
     width=0.2)+
   facet_grid(AnimalIDIndex~., scales="free_y")+
   xlab("Time (s)")+
-  ylab("Theta/Delta")
-
-
+  ylab(expression(paste(theta, "/", delta)))+
+  theme(strip.text = element_blank())
 
 ETPlot<-ETPlot+geom_hline(aes(yintercept=MeanThetaDelta), MeansData, colour="red")
 
