@@ -26,6 +26,8 @@ This .rmd file processes the Data to create all figures for Brown & Ying et a
 First, load packages and source files
 ```{r LoadPackages_Chunk, echo=FALSE, include=FALSE}
 library(lubridate)
+library(plyr)
+library(Rmisc)
 library(dplyr)
 library(lazyeval) #Needed for using ggplot2 library
 library(ggplot2)
@@ -985,8 +987,9 @@ Event times are used for an event-triggered average for 72s around interval of e
 
 #This chunk has been tested using the following test ETAvTest,R
 
-AnimalIDList<-c("JF218")#, "JF220", "JF221", "J0456", "J0460")
-ETAvList<-list()
+AnimalIDList<-c("JF218", "JF220", "JF221",
+                "J0456", "J0460"
+                )
 
 #Filter dataframe for control and daylight only as a proxy for sleep
 SCPPDataframeEventAv<-filter(SCPPDataframeAll, 
@@ -995,10 +998,6 @@ SCPPDataframeEventAv<-filter(SCPPDataframeAll,
 
 #For each animal, we are going to loop through each epoch with IIS to create an average ThetaOverDelta for 64+8s interval around the IIS time (9 * 8s intervals)
 
-  
- 
-
-  
   #Initialise dataframe to store event triggered average for each animal
   ETAvDataframe<-data.frame(
     AnimalIDIndex=factor(),
@@ -1027,15 +1026,9 @@ for(AnimalIndex in 1:length(AnimalIDList)){
   
   NumberOfEvents<-nrow(EventsDataframe)
   
-  #Filter the current SCPP1 for intervals ==0 spike
-  NonEventsDataframe<-filter(SCPPDataframeCurrent,  SpikeCount==0)
-  
-  
-  NumberOfNonEvents<-nrow(NonEventsDataframe)
-  
-  
+ 
   #Initialise variables and objects for evaluating within animal triggered averages
-  NoOfIntervalsForAveraging<-12
+  NoOfIntervalsForAveraging<-20
   WindowLengthInSecs<-NoOfIntervalsForAveraging*8
   
   ETAv<-rep(0,NoOfIntervalsForAveraging+1)   #Initialise vector for Event-Triggered average 
@@ -1056,7 +1049,7 @@ for(AnimalIndex in 1:length(AnimalIDList)){
       
       #Append ETSweepsDataframe with current EventTriggeredSweep
         AnimalIDIndex<-rep(AnimalIDCurrent, NoOfIntervalsForAveraging+1)
-        TimeForAv<-seq(1,NoOfIntervalsForAveraging+1, 1)
+        TimeForAv<-seq(-(NoOfIntervalsForAveraging*8)/2, (NoOfIntervalsForAveraging*8)/2, 8)
         Time<-ETW$TriggeredWindowTime
         SpikeCount<-rep(SpikeCounterForAveraging, NoOfIntervalsForAveraging+1)
         ThetaDelta<-ETW$TriggeredWindowData
@@ -1075,7 +1068,7 @@ for(AnimalIndex in 1:length(AnimalIDList)){
   #Append ETAvDataframe
   ETAvDataframeTemp<-data.frame(
     AnimalIDIndex=rep(AnimalIDCurrent, NoOfIntervalsForAveraging+1),
-    Time=seq(1, 1+NoOfIntervalsForAveraging, 1),
+    Time=seq(-(NoOfIntervalsForAveraging*8)/2,(NoOfIntervalsForAveraging*8)/2, 8),
     AvThetaDelta=ETAv
   )
   ETAvDataframe<-rbind(ETAvDataframe, ETAvDataframeTemp)
@@ -1084,7 +1077,14 @@ for(AnimalIndex in 1:length(AnimalIDList)){
   
  # NETWList<-list()
  # NETAv<-rep(0,NoOfIntervalsForAveraging+1)   #Initialise vector for NonEvent-Triggered average 
+
+   #Filter the current SCPP1 for intervals ==0 spike
+ # NonEventsDataframe<-filter(SCPPDataframeCurrent,  SpikeCount==0)
   
+  
+  #NumberOfNonEvents<-nrow(NonEventsDataframe)
+  
+    
   
  # SpikeCounterForAveraging<-0
   #Loop through all nonevents and compute event triggered average
@@ -1107,20 +1107,64 @@ for(AnimalIndex in 1:length(AnimalIDList)){
  # NETList$NETAv[[AnimalIDCurrent]]<-NETAv
  # NETList$NETW[[AnimalIDCurrent]]<-NETWList
 }
-rm(ETAvDataframeTemp, ETSweepsTemp, ETW)
+rm(ETAvDataframeTemp, ETSweepsTemp, ETW, ETAv, EventsDataframe, NumberOfEvents)
   
-#plot(seq(1, 13, 1), ETList$ETAv[["JF220"]])
-# plot(seq(1, 13, 1), ETList$ETAv[["JF221"]])
-# plot(seq(1, 13, 1), NETList$NETAv[["JF221"]])
-# plot(seq(1, 13, 1), NETList$NETAv[["JF220"]])
-
-#To test length of window
-#for(i in 1:length(ETWList)){
-#  if(nrow(ETWList[[i]])!=9){
-#    print(i)
-#  }
-#}
 ```
+
+Plotting Event-triggered averages
+
+```{r PlotEventTiggeredAverage, echo=FALSE, include=TRUE}
+#Need to ensure the order of packages loaded correctly for summarise to work with Rmisc package
+
+detach("package:dplyr"); library(plyr); library(Rmisc); library(dplyr)
+
+#Filter dataframe for control and daylight only as a proxy for sleep
+SCPPDataframeEventAv<-filter(SCPPDataframeAll, 
+                              LightDark==TRUE, 
+                              Treatment=="Control")
+#Filter for animals
+
+AnimalIDIndex=c("JF218", "JF220", "JF221","J0456", "J0460")
+
+SCPPDataframeEventAv<-filter(SCPPDataframeEventAv, AnimalIDVariable %in% AnimalIDList)
+
+#Determine MeanThetaDelta for each animal
+MeanThetaDeltaForAnimal<-group_by(SCPPDataframeEventAv, 
+                                  AnimalIDVariable)
+MeanThetaDeltaForAnimal<-summarise(MeanThetaDeltaForAnimal, MeanThetaDelta=mean(ThetaOverDelta))
+
+MeansData<-data.frame(MeanThetaDelta=MeanThetaDeltaForAnimal$MeanThetaDelta, AnimalIDIndex=c("JF218", "JF220", "JF221",
+                "J0456", "J0460")
+                )
+
+
+ThetaDeltaGrp<-group_by(ETSweepsDataframe, AnimalIDIndex, TimeForAv) 
+ ThetaDeltaGrp<-summarise(ThetaDeltaGrp, MeanThetaDelta=mean(ThetaDelta),
+                        CI_U=CI(ThetaDelta)[1],
+                       CI_L=CI(ThetaDelta)[3]
+                       )
+
+#Plotting
+ETPlot<-ggplot(ThetaDeltaGrp, aes(x=TimeForAv, y=MeanThetaDelta))+
+  geom_line()+
+  geom_point()+
+  geom_errorbar(
+    aes(ymin=CI_L, ymax=CI_U),
+    width=0.2)+
+  facet_grid(AnimalIDIndex~., scales="free_y")+
+  xlab("Time (s)")+
+  ylab("Theta/Delta")
+
+
+
+ETPlot<-ETPlot+geom_hline(aes(yintercept=MeanThetaDelta), MeansData, colour="red")
+
+ETPlot
+
+
+```
+
+
 ###########
 ###Fig 5: DPZ treatment and spike count
 Compare SpikeNumber in Ctrl and DPZ condition for DPZAM and DPZPM groups
