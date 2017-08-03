@@ -272,7 +272,36 @@ SummaryDataframe$Change1<-(SummaryDataframe$MeanSpike1-SummaryDataframe$MeanSpik
 
 ###########################################################
 # Figure 1: Spike count measure between genotype
+######
+###Fig 1A: Example of IIS
+```{r ExampleIIS, echo=TRUE, include=TRUE}
+IISFilename<-"./Data/M1495229694_Chan2.csv" #From J0460 tmin=688s
+IISTrace<-read.csv(IISFilename, header = FALSE)
+IISTrace$mV<-IISTrace$V1*400*10^(-6)
+IISTrace$Time<-seq(from=0,to=((nrow(IISTrace)-1)/512), by=1/512)
+IISPlot<-ggplot(IISTrace, aes(x=Time, y=mV))+
+  geom_line() +
+  scale_y_continuous(limits=c(16.7, 18))+
+  geom_segment(x=25, xend=30, y=16.75, yend=16.75)+
+  geom_segment(x=25, xend=25, y=16.75, yend=17) +
+  geom_text(x=27.5, y=16.7, label="5 s") +
+  geom_text(x=28, y=16.88, label = "0.25 mV")+
+  theme(axis.title.x = element_blank(), 
+        axis.text.x = element_blank(), 
+        axis.ticks.x = element_blank(), 
+        axis.line.x = element_blank(),
+        axis.title.y = element_blank(), 
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.line.y = element_blank())
+  
 
+IISPlot
+
+ggsave("Output/Fig1A.pdf", device="pdf")
+
+```
+#####
 This figure requires a dataframe Fig1SummaryDataframe=AnimalID|Genotype|TimeZone|Spike rate measure = Number of intervals greater than 0 spikes
 
 Steps:
