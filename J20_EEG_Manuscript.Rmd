@@ -284,8 +284,8 @@ IISPlot<-ggplot(IISTrace, aes(x=Time, y=mV))+
   scale_y_continuous(limits=c(16.7, 18))+
   geom_segment(x=25, xend=30, y=16.75, yend=16.75)+
   geom_segment(x=25, xend=25, y=16.75, yend=17) +
-  geom_text(x=27.5, y=16.7, label="5 s") +
-  geom_text(x=28, y=16.88, label = "0.25 mV")+
+  #geom_text(x=27.5, y=16.7, label="5 s") +
+  #geom_text(x=28, y=16.88, label = "0.25 mV")+
   theme(axis.title.x = element_blank(), 
         axis.text.x = element_blank(), 
         axis.ticks.x = element_blank(), 
@@ -298,7 +298,7 @@ IISPlot<-ggplot(IISTrace, aes(x=Time, y=mV))+
 
 IISPlot
 
-ggsave("Output/Fig1A.pdf", device="pdf")
+ggsave("Output/Figures/Fig1/Fig1A.png", device="png")
 
 ```
 #####
@@ -327,7 +327,7 @@ Select for control/drug treatment condition
 
 
 SCPPDataframeControl<-filter(SCPPDataframeAll, Treatment=="Control")
-SCPPDataframeDrug<-filter(SCPPDataframeAll, Treatment=="Drug")
+#SCPPDataframeDrug<-filter(SCPPDataframeAll, Treatment=="Drug")
 
 ```
 
@@ -370,15 +370,15 @@ ECDFAllCtrlPlot<-ECDFAllCtrlPlot +
   xlab("Number of spikes") + 
   ylab("Cumulative frequency") + 
   facet_wrap(~Genotype) + 
-  ggtitle("ECDF Spike count/8s interval - control") +
-  theme(legend.position = "none")
+  theme(legend.position = "none")+
+  scale_x_continuous(breaks=seq(0, 12, 2))
 
 
 #http://blog.amitsharma.in/2015/09/13/cumulative-distribution-plots-for-frequency-Data-in-r/
 
 ECDFAllCtrlPlot
 
-#ggsave("Output/ECDFSpikesControl.png")
+ggsave("Output/Figures/Fig1/Fig1B.pdf", device="pdf")
 
 
 
@@ -396,6 +396,8 @@ for(i in 1:nrow(Fig1SummaryDataframe)){
   Fig1SummaryDataframe$Grtr0SpikeCtrl[i]<-1-(ECDFCurrent$CumFrequency[1]) 
 }
 Fig1SummaryDataframe
+
+
 ```
 
 
@@ -467,13 +469,13 @@ Fig1SummaryDataframe$Genotype<-factor(Fig1SummaryDataframe$Genotype, levels = c(
 Grtr0SpikePlot<- ggplot(Fig1SummaryDataframe, aes(x=Genotype, y=Grtr0SpikeCtrl))
 
 Grtr0SpikePlot <- Grtr0SpikePlot+
-  geom_point()+
+  geom_point(size=2)+
   xlab("Genotype")+
   ylab("Prop intervals > 0 spikes")
  
 Grtr0SpikePlot 
 
-ggsave("Output/Grtr0Spike.png")
+ggsave("Output/Figures/Fig1/Fig1C.pdf", device="pdf")
 
 ```
 
