@@ -28,7 +28,6 @@ First, load packages and source files
 library(lubridate)
 library(plyr)
 library(Rmisc)
-library(dplyr)
 library(lazyeval) #Needed for using ggplot2 library
 library(ggplot2)
 library(grid)
@@ -44,6 +43,7 @@ library(lme4)
 library(lsmeans)
 library(multcomp)
 library(CircOutlier)
+library(dplyr)
 
 
 sourceDir <- function(path, trace = TRUE, ...) {
@@ -88,14 +88,14 @@ SummaryDataframe$DOB<-as.character(SummaryDataframe$DOB)
 #Apend the calculated false positive rate information to SummaryDataframe
 
 FalsePositives<-read.csv(file=FalsePositiveFile, header = TRUE)
-FalsePositives<-select(FalsePositives, AnimalID, FalsePositiveRateWithNa, FalsePositiveRateNoNa)
+FalsePositives<-dplyr::select(FalsePositives, AnimalID, FalsePositiveRateWithNa, FalsePositiveRateNoNa)
 SummaryDataframe$FalsePositiveRate<-FalsePositives$FalsePositiveRateNoNa
 
 
 #Apend LossIntervalPercentage information to SummaryDataFrame
 
 LossIntervalPercentage<-read.csv(file=LossIntervalPercentageFile, header = TRUE)
-LossIntervalPercentage<-select(LossIntervalPercentage, AnimalID, LossIntervalPercentage)
+LossIntervalPercentage<-dplyr::select(LossIntervalPercentage, AnimalID, LossIntervalPercentage)
 SummaryDataframe$LossIntervalPercentage<-LossIntervalPercentage$LossIntervalPercentage
 
 
@@ -130,6 +130,7 @@ SummaryDataframe$Age<-as.POSIXct(SummaryDataframe$FirstNDF, origin="1970-01-01",
 ```{r ImportAndTransformNDFOutput_chunk, ECHO=FALSE}
 if(file.exists("./Output/SCPPDataframeAll.csv")){
   SCPPDataframeAll<-read.csv("./Output/SCPPDataframeAll.csv")
+  RemoveOption<-0
   } else{  #Else create SCPPDataframeAll.csv
     
       #Initialise variables all animals
@@ -201,9 +202,12 @@ if(file.exists("./Output/SCPPDataframeAll.csv")){
     
     #Add ThetaOverDelta
     SCPPDataframeAll$ThetaOverDelta<-SCPPDataframeAll$Theta/SCPPDataframeAll$Delta
-  }
+  RemoveOption<-1
+    }
 
-rm(SCPPDataframe, FalsePositives, LossIntervalPercentage, Temp)
+if(RemoveOption==1){
+    rm(SCPPDataframe, FalsePositives, LossIntervalPercentage, Temp, Treatment, Genotype)
+}
 ```
 
 
@@ -211,16 +215,20 @@ Save SCPPDataframeAll to output directory
 ```{r SaveSCPPDataframeAllChunk, echo=FALSE}
         
 if(file.exists("./Output/SCPPDataframeAll.csv")==0){
- 
-write.csv(SCPPDataframeAll, "./Output/SCPPDataframeAll.csv")
+        write.csv(SCPPDataframeAll,"./Output/SCPPDataframeAll.csv")
 }
   
+
 ```
 
-Make a copy of SCPPDataFrameAllOriginal and exclude intervals from SCPPDataframeAll
+Make a copy of SCPPDataFrameAllOriginal and save to disk and exclude intervals from SCPPDataframeAll
 ```{r ExcludeIntervals, echo=FALSE, include=TRUE}
 SCPPDataframeAllOriginal<-SCPPDataframeAll
 SCPPDataframeAll<-filter(SCPPDataframeAll, ExcludeInterval==0)
+if(file.exists("./Output/SCPPDataframeAllOriginal.csv")==0){
+          write.csv(SCPPDataframeAllOriginal,"./Output/SCPPDataframeOriginal.csv")
+}
+rm(SCPPDataframeAllOriginal)
 
 ```
 #######################
@@ -244,30 +252,6 @@ SEM = `r SEMAgeOfAnimals` days
 
 Age range = [`r MinAge`, `r MaxAge`] days
 
-__________
-Calculate percentage change of spikes between first 0-24 hours and 48-72hours
-
-```{r CalcSpikeRateForEachDay, include=TRUE, echo=FALSE}
-MeanSpike1<-c()
-MeanSpike2<-c()
-MeanSpike3<-c()
-SDSpikeCount<-c()
-for(i in 1:nrow(SummaryDataframe)){
-  AnimalIDCurrent<-SummaryDataframe$AnimalID[i]
-  DataframeTemp<-filter(SCPPDataframeAll, AnimalIDVariable==AnimalIDCurrent)
-  DataframeTemp<-filter(DataframeTemp, ExcludeInterval==0)
-  MeanSpike1[i]<-mean(DataframeTemp$SpikeCount[1:(450*24)], na.rm=TRUE)
-  MeanSpike2[i]<-mean(DataframeTemp$SpikeCount[(450*24)+1:(450*48)],na.rm=TRUE)
-  MeanSpike3[i]<-mean(DataframeTemp$SpikeCount[(450*48)+1:(450*72)], na.rm=TRUE)
-  SDSpikeCount[i]<-sd(DataframeTemp$SpikeCount[(450*48)+1:(450*72)], na.rm=TRUE)
-  
-}
-
-SummaryDataframe<-cbind(SummaryDataframe, MeanSpike1, MeanSpike2, MeanSpike3, SDSpikeCount)
-SummaryDataframe$Change2<-2*(SummaryDataframe$MeanSpike2-SummaryDataframe$MeanSpike3)/(SummaryDataframe$MeanSpike2+SummaryDataframe$MeanSpike3)
-
-SummaryDataframe$Change1<-(SummaryDataframe$MeanSpike1-SummaryDataframe$MeanSpike2)/SDSpikeCount
-```
 
 
 ###########################################################
@@ -322,7 +306,7 @@ IISPlotZoom
 
 ggsave("Output/Figures/Fig1/Fig1AZoom.png", device="png", dpi=600 )
 
-#rm(IISPlot, IISPlotZoom)
+rm(IISTrace, IISTraceZoom)
 ```
 #####
 This figure requires a dataframe Fig1SummaryDataframe=AnimalID|Genotype|TimeZone|Spike rate measure = Number of intervals greater than 0 spikes
@@ -350,7 +334,7 @@ Select for control/drug treatment condition
 
 
 SCPPDataframeControl<-filter(SCPPDataframeAll, Treatment=="Control")
-#SCPPDataframeDrug<-filter(SCPPDataframeAll, Treatment=="Drug")
+
 
 ```
 
@@ -381,7 +365,7 @@ for (j in 1:nrow(Fig1SummaryDataframe)){
 }
 
 write.csv(ECDFAllCtrlDataframe, "./Output/ECDFAllCtrlDataframe.csv")
-rm(ECDFCurrent)
+rm(ECDFCurrent, DataframeCurrent, SCPPDataframeControl)
 ```
 
 Plot ECDF for all animals in control conditions
@@ -390,7 +374,7 @@ Plot ECDF for all animals in control conditions
 ECDFAllCtrlPlot<-ggplot(ECDFAllCtrlDataframe, aes(x=SpikeCount, y=CumFrequency, color=AnimalIDVariable))
 ECDFAllCtrlPlot<-ECDFAllCtrlPlot +
   geom_step() + 
-  xlab("Number of spikes") + 
+  xlab("Number of spikes/8s") + 
   ylab("Cumulative frequency") + 
   facet_wrap(~Genotype) + 
   theme(legend.position = "none")+
@@ -420,7 +404,7 @@ for(i in 1:nrow(Fig1SummaryDataframe)){
 }
 Fig1SummaryDataframe
 
-
+rm(ECDFCurrent, ECDFAllCtrlDataframe)
 ```
 
 
@@ -443,12 +427,13 @@ DataForTesting <-Fig1SummaryDataframe_J20$Grtr0SpikeCtrl
   SW_J20
   
   #Summary statisitcs by genotype
-SummaryStats<-SummarySE(Fig1SummaryDataframe, measurevar="Grtr0SpikeCtrl", groupvars=c("Genotype"), na.rm=TRUE)
+SummaryStatsGrtr0Spikes<-SummarySE(Fig1SummaryDataframe, measurevar="Grtr0SpikeCtrl", groupvars=c("Genotype"), na.rm=TRUE)
 
-SummaryStats$CI_L<-SummaryStats$Grtr0SpikeCtrl-SummaryStats$ci
-SummaryStats$CI_U<-SummaryStats$Grtr0SpikeCtrl+SummaryStats$ci
+SummaryStatsGrtr0Spikes$CI_L<-SummaryStatsGrtr0Spikes$Grtr0SpikeCtrl-SummaryStats$ci
+SummaryStatsGrtr0Spikes$CI_U<-SummaryStatsGrtr0Spikes$Grtr0SpikeCtrl+SummaryStats$ci
 
-SummaryStats
+SummaryStatsGrtr0Spikes
+rm(DataForTesting, Fig1SummaryDataframe_J20, Fig1SummaryDataframe_WT)
 
 ```
 ###Permutation test to compare intervals with 1 or more spikes between genotypes
@@ -478,6 +463,7 @@ pPCLT<-PermutationResults_pclt$p.value
 PrintVector<-data.frame("pCE"=pCE, "pEMC"=pEMC,"pEN"=pEN, "pCLT"=pPCLT)
 PrintVector
 
+rm(Data, Group, PermutationResults_exact.ce, PermutationResults_exact.mc, PermutationResults_exact.network, PermutationResults_pclt)
 
 ```
 The number of intervals with one or more spikes was compared between genotypes using a permutation test. There was a significant difference between genotypes in the % intervals with 1 or more spikes:
@@ -512,10 +498,10 @@ Plot example of circadian spike probability for JF167
 ```{r Fig2AIISTimesExample, echo=FALSE}
 
 
-#Filter SCPP1DataFrameAll to select for JF167 
+#Filter SCPP1DataFrameAll to select for JF152 
 IISTimesExample<-filter(SCPPDataframeAll, AnimalIDVariable=="JF152", Treatment=="Control")
 # Select the relevant columns of dataframe
-IISTimesExample<-select(IISTimesExample, SpikeCount, TimeOfDay)
+IISTimesExample<-dplyr::select(IISTimesExample, SpikeCount, TimeOfDay)
 #Filter for intervals with >0 IIS
 IISTimesExample<-filter(IISTimesExample, SpikeCount>0)
 #Convert the to Posixlt format
@@ -552,8 +538,8 @@ Fig2A<-ggplot(EventData, aes(x = EventHourShifted, fill = Light)) +
 
 print(Fig2A)
 
-ggsave("Output/Fig2A.png")
-
+ggsave("Output/Figures/Fig2/Fig2A.pdf", device="pdf")
+rm(IISTimesExample, EventData)
 ```
 
 Figure 2B:
@@ -582,7 +568,7 @@ Select for control/drug treatment condition
 
 
 SCPPDataframeControl<-filter(SCPPDataframeAll, Treatment=="Control")
-SCPPDataframeDrug<-filter(SCPPDataframeAll, Treatment=="Drug")
+
 
 ```
 
@@ -629,7 +615,7 @@ for(i in 1:nrow(Fig2SummaryDataframe)){
   Fig2SummaryDataframe_J20<-filter(Fig2SummaryDataframe, Genotype=="J20")
   
 }
-rm(TempTimeDataframe)
+rm(TempTimeDataframe, SCPPDataframeControl, AnimalIDCurrent,IISTimesCurrent,SummaryCircStatsCurrent)
 ```
 
 
@@ -658,7 +644,7 @@ for(i in 1:nrow(Fig2SummaryDataframe_J20)){
     #Filter SCPP1DataFrameAll to select for JF167 
     IISTimesCurrent<-filter(SCPPDataframeAll, AnimalIDVariable==AnimalIDCurrent)
     # Select the relevant columns of dataframe
-    IISTimesCurrent<-select(IISTimesCurrent, SpikeCount, TimeOfDay)
+    IISTimesCurrent<-dplyr::select(IISTimesCurrent, SpikeCount, TimeOfDay)
     #Filter for intervals with >0 IIS
     IISTimesCurrent<-filter(IISTimesCurrent, SpikeCount>0)
     #Convert the to Posixlt format
@@ -678,10 +664,10 @@ for(i in 1:nrow(Fig2SummaryDataframe_J20)){
     EventData$EventHourShifted<-EventData$EventHour+0.5
     
     #Make circular plot
-    fontsize=18
+    fontsize=10
     #Filename for saving
     names<-Fig2SummaryDataframe_J20$AnimalID
-    filename<-paste("./Output/SpikeHists/", names[i],"_SpikeHist",".jpg", sep="")
+    filename<-paste("./Output/SpikeHists/", names[i],"_SpikeHist",".pdf", sep="")
     
     SpikeHist<-ggplot(EventData, aes(x = EventHourShifted, fill = Light)) +
       geom_histogram(breaks = seq(0,   24), binwidth = 2, colour = "grey") +   coord_polar(start = 0) + 
@@ -697,10 +683,10 @@ for(i in 1:nrow(Fig2SummaryDataframe_J20)){
     
     
     
-    jpeg(file=filename)
-    print(SpikeHist)
-    dev.off()
+    ggsave(file=filename, device="pdf")
 }
+
+rm(IISTimesCurrent, IISTimes, EventData)
 ```
 
 ###4. Determine phase coupling of strength and compare between WT and J20. Hypothesis testing
@@ -725,7 +711,7 @@ Range Rho=(`r min(Fig2SummaryDataframe_J20$RayleighR)`, `r max(Fig2SummaryDatafr
 
 
 ```{r PolarPlotRhoMeanAngleJ20, echo=FALSE, include=FALSE}
-SampleRhoMeanAngle<-radial.plot(Fig2SummaryDataframe_J20$Rho,
+radial.plot(Fig2SummaryDataframe_J20$Rho,
                                 Fig2SummaryDataframe_J20$MeanAngle,
                                 start=(pi/2), clockwise = TRUE,
                                 labels=c("0/24h","6h", "12h", "18h"),
@@ -735,12 +721,12 @@ SampleRhoMeanAngle<-radial.plot(Fig2SummaryDataframe_J20$Rho,
                                 show.radial.grid = TRUE, 
                                 radial.lim = c(0, 0.5,1))
 
-print(SampleRhoMeanAngle)
+#print(SampleRhoMeanAngle)
 
-filename<-"./Output/SummaryRadialStatsControl.jpeg"
+filename<-"./Output/Figures/Fig2/Fig2B.pdf"
 
-
- RadialPlot<-radial.plot(Fig2SummaryDataframe_J20$Rho,
+pdf(file=filename)
+radial.plot(Fig2SummaryDataframe_J20$Rho,
                                 Fig2SummaryDataframe_J20$MeanAngle,
                                 start=(pi/2), clockwise = TRUE,
                                 labels=c("0/24h","6h", "12h", "18h"),
@@ -748,9 +734,10 @@ filename<-"./Output/SummaryRadialStatsControl.jpeg"
                                 label.prop=2, rp.type = "s",
                                 point.symbols = 20, 
                                 show.radial.grid = TRUE, 
-                                radial.lim = c(0, 0.5,1))
-jpeg(file=filename)
-RadialPlot
+                                radial.lim = c(0,0.5,1) 
+              )
+
+
 dev.off()
 
 
@@ -769,6 +756,7 @@ Outliers<-Huberized(AngleNew)
 
 Set Circular Outliers
 ```{r SetCircularOutlier, echo=TRUE, include=TRUE}
+OutliersIndex<-c()
 CircularOutliers<-c(1, 4, 15, 16) #From Huberized
 Fig2SummaryDataframe_J20$Outliers<-0
 Fig2SummaryDataframe_J20$Outliers[CircularOutliers]<-1
@@ -780,6 +768,13 @@ for(i in 1:length(CircularOutliers)){
 SummaryDataframe$Outliers<-0
 SummaryDataframe$Outliers[OutliersIndex]<-1
 ```
+
+
+
+
+
+
+
 
 #########################################################################
 ##Figure 3/4: Probability of IIS and behavioral state
@@ -817,7 +812,7 @@ FileList<-c("./Data/VideoScoring/VideoScoringJF220_040416.csv",
             "./Data/VideoScoring/VideoScoringJF221_050416.csv",
             "./Data/VideoScoring/VideoScoringJF221_060416.csv",
             "./Data/VideoScoring/VideoScoringJF221_080416.csv",
-           # "./Data/VideoScoring/VideoScoringJ0456_260417.csv"
+           "./Data/VideoScoring/VideoScoringJ0456_260417.csv",
           "./Data/VideoScoring/VideoScoringJ0460_210517.csv"
           )
 
@@ -828,7 +823,7 @@ AnimalIDList<-c("JF220", "JF220", "JF220", "JF220", "JF220",
              # "J0376", 
               "JF221", "JF221", 
              "JF221", "JF221", 
-             "J0460"
+             "J0456", "J0460"
             )
 SCPPDataframeVideoTimesAll<-data.frame()
 AnimalIDVideoStartEnd<-list() #A list to store Start and End times for video data. The list index is AnimalID_FileIndex eg. JF220_1
@@ -841,7 +836,7 @@ for(FileIndex in 1:length(FileList)){
    
     #Import
     VideoScoring<- read.csv(VideoScoringFilename)
-    VideoScoring<-select(VideoScoring, DateOfEEG, TimeOfEEG,  SleepWake)
+    VideoScoring<-dplyr::select(VideoScoring, DateOfEEG, TimeOfEEG,  SleepWake)
     VideoScoring$SleepWake<-as.character(VideoScoring$SleepWake) #needs to be character. "as.factor" converts to numeric factors
     
     #Add date to Time to make TimeString
@@ -879,6 +874,7 @@ for(FileIndex in 1:length(FileList)){
     SCPPDataframeVideoTimesAll$SleepWake<-as.factor(SCPPDataframeVideoTimesAll$SleepWake)
 }
 
+rm(SCPPDataframeVideoTimes, VideoScoring, VideoTimes)
 ```
 
 
@@ -906,22 +902,44 @@ for(FileIndex in 1:length(FileList)){
         xlim(AnimalIDVideoStartEnd[[ListID]])
       
       
-      FileName<-paste("./Output/ThetaDeltaBehaviouralState/", "ThetaDeltaBehaviouralState",ListID,".jpg", sep="")
+      FileName<-paste("./Output/ThetaDeltaBehaviouralState/", "ThetaDeltaBehaviouralState",ListID,".pdf", sep="")
 
     PlotGridSave<-plot_grid(ThetaPlot, DeltaPlot, ThetaOverDeltaPlot, SpikeCountPlot, SleepWakePlot, align = "v", nrow = 5)
   
  if(dir.exists("./Output/ThetaDeltaBehaviouralState")==FALSE) {
    dir.create("./Output/ThetaDeltaBehaviouralState")
  }
-  jpeg(filename=FileName)
+  pdf(filename=FileName)
   print(PlotGridSave)
   dev.off()
       
 }
 
-#
+```
 
+Sleep wake example
 
+```{r SleepWakeExample, include=TRUE, echo=FALSE}
+AnimalID<-"JF220"
+StartTime<-AnimalIDVideoStartEnd$JF220_1[[1]]
+EndTime<-AnimalIDVideoStartEnd$JF220_1[[2]]
+SleepWakeSpikeCountData<-filter(SCPPDataframeVideoTimesAll, InitialisedTime>StartTime & InitialisedTime<EndTime)
+SleepWakeSpikeCountData$ZeroTime<-SleepWakeSpikeCountData$InitialisedTime-min(SleepWakeSpikeCountData$InitialisedTime)
+SleepWakeSpikeCountPlot<-ggplot(SleepWakeSpikeCountData,
+                                aes(x=ZeroTime, 
+                                    y=SpikeCount,
+                                    color=SleepWake)) +
+  scale_colour_grey() +
+  geom_point() +
+  xlab("Time (s)") +
+  ylab("Spike Count/8s")+
+  ylim(c(0,8))+
+  xlim(c(0, 7200))
+
+SleepWakeSpikeCountPlot
+
+ggsave("Output/Figures/Fig3/Fig3A.pdf", device="pdf")
+rm(SleepWakeSpikeCountData)
 ```
 
 
@@ -965,9 +983,9 @@ SWPlot<-ggplot(SummarySW,
 
 SWPlot
 
-ggsave("Output/MeanSpikesSleepWake.png")
+ggsave("Output/MeanSpikesSleepWake.pdf", device="pdf")
 
-
+rm(SCPPDataframeVideoTimesAll)
 
 ```
 ######################################
@@ -991,7 +1009,9 @@ Fig3SummaryDataframe<-filter(Fig3SummaryDataframe, Fig3_BrainState=="YES", Genot
 
 3. For each animal to include, in control conditions: calculate theta/delta for 0 or > 0 spikes
 ```{r, ThetaOverDeltaBySpikeNumChunk, echo=FALSE, include=TRUE}
-  
+ 
+SCPPDataframeControl<-filter(SCPPDataframeAll, Treatment=="Control") 
+
 ThetaDeltaGrouped<-group_by(SCPPDataframeControl, AnimalIDVariable, SpikeCount)
 #Compute the mean spike rate for each animal in each behavioural state                     
 SummaryThetaDelta<-summarise(ThetaDeltaGrouped, MeanThetaDelta=mean(ThetaOverDelta))
@@ -1005,11 +1025,14 @@ ThetaDeltaSpikePlot<-ggplot(SummaryThetaDelta,
   geom_line(aes(color=AnimalIDVariable))+
   geom_point(aes(color=AnimalIDVariable)) +
   scale_x_continuous(name = "Spike Count/8s", breaks=seq(0,12,2)) +
-  theme(legend.position = "none")
+  theme(legend.position = "none") +
+  scale_color_brewer(palette="Set1")
 
 ThetaDeltaSpikePlot
 
-ggsave("Output/ThetaDeltaSpikePlot.png")
+ggsave("Output/Figures/Fig4/Fig4B.pdf", device="pdf")
+
+rm(ThetaDeltaGrouped)
 
 ```
 
@@ -1032,6 +1055,7 @@ summary(SpikesBinary.model)
 SpikesBinary.null<-lmer(ThetaOverDelta~ (1|AnimalIDVariable), data=ThetaDeltaLMEDataframe, REML = FALSE)
 anova(SpikesBinary.model, SpikesBinary.null)
 
+rm(SCPPDataframeControl, ThetaDeltaLMEDataframe)
 ```
 
 ###Event-triggered averages of theta/delta 
@@ -1040,181 +1064,194 @@ Event times are used for an event-triggered average for 72s around interval of e
 ```{r EventTriggeredAveragingOfThetaDelta, echo=FALSE, include=TRUE}
 
 #This chunk has been tested using the following test ETAvTest,R
-
-AnimalIDList<-c("JF218", "JF220", "JF221",
-                "J0456", "J0460"
-                )
-
-#Filter dataframe for control and daylight only as a proxy for sleep
-SCPPDataframeEventAv<-filter(SCPPDataframeAll, 
-                              LightDark==TRUE, 
-                              Treatment=="Control")
-
-#For each animal, we are going to loop through each epoch with IIS to create an average ThetaOverDelta for 64+8s interval around the IIS time (9 * 8s intervals)
-
-  #Initialise dataframe to store event triggered average for each animal
-  ETAvDataframe<-data.frame(
-    AnimalIDIndex=factor(),
-    Time=integer(),
-    AvThetaDelta=double()
-  )
- #Initialise dataframe to store event-triggered sweeps for each animal 
-  ETSweepsDataframe<-data.frame(
-    AnimalIDIndex=factor(),
-    TimeForAv=integer(), 
-    Time=integer(),
-    SpikeCount=integer(),
-    ThetaDelta=double()
+ETAvFilename<-"Ouput/ETAvDataframe.csv"
+if(file.exists(ETAvFilename)==1){
+  ETAvDataframe<-read.csv(ETAvFilename)
+}else{
+  AnimalIDList<-c("JF218", "JF220", "JF221",
+                  "J0456", "J0460"
+                  )
+  
+  #Filter dataframe for control and daylight only as a proxy for sleep
+  SCPPDataframeEventAv<-filter(SCPPDataframeAll, 
+                                LightDark==TRUE, 
+                                Treatment=="Control")
+  
+  #For each animal, we are going to loop through each epoch with IIS to create an average ThetaOverDelta for 64+8s interval around the IIS time (9 * 8s intervals)
+  
+    #Initialise dataframe to store event triggered average for each animal
+    ETAvDataframe<-data.frame(
+      AnimalIDIndex=factor(),
+      Time=integer(),
+      AvThetaDelta=double()
     )
-  
-for(AnimalIndex in 1:length(AnimalIDList)){
-  #ETWList<-list()
-  AnimalIDCurrent=AnimalIDList[[AnimalIndex]]
-  
-  SCPPDataframeCurrent<-filter(SCPPDataframeEventAv, 
-                                AnimalIDVariable==AnimalIDCurrent)
-  
-  
-  #Filter the current SCPP1 for intervals >= 1 spike
-  EventsDataframe<-filter(SCPPDataframeCurrent,  SpikeCount>0)
-  
-  NumberOfEvents<-nrow(EventsDataframe)
-  
- 
-  #Initialise variables and objects for evaluating within animal triggered averages
-  NoOfIntervalsForAveraging<-20
-  WindowLengthInSecs<-NoOfIntervalsForAveraging*8
-  
-  ETAv<-rep(0,NoOfIntervalsForAveraging+1)   #Initialise vector for Event-Triggered average 
-  
- 
-  #Loop through all events and compute event triggered average
-  SpikeCounterForAveraging<-0
-  for(SpikeIndex in 1:NumberOfEvents){
-    EventTimeCurrent<-EventsDataframe$InitialisedTime[[SpikeIndex]]
-    #Extract epoch centered on IIS
-    ETW<-EventTriggeredWindow(EventTimeCurrent, WindowLengthInSecs,SCPPDataframeCurrent$InitialisedTime, 
-                          SCPPDataframeCurrent$ThetaOverDelta)
+   #Initialise dataframe to store event-triggered sweeps for each animal 
+    ETSweepsDataframe<-data.frame(
+      AnimalIDIndex=factor(),
+      TimeForAv=integer(), 
+      Time=integer(),
+      SpikeCount=integer(),
+      ThetaDelta=double()
+      )
     
-    if(nrow(ETW)==NoOfIntervalsForAveraging+1){
-      ETAv<-ETAv+ETW$TriggeredWindowData
-     # ETWList[[SpikeIndex]]<-ETW
-      SpikeCounterForAveraging<-SpikeCounterForAveraging+1
+  for(AnimalIndex in 1:length(AnimalIDList)){
+    #ETWList<-list()
+    AnimalIDCurrent=AnimalIDList[[AnimalIndex]]
+    
+    SCPPDataframeCurrent<-filter(SCPPDataframeEventAv, 
+                                  AnimalIDVariable==AnimalIDCurrent)
+    
+    
+    #Filter the current SCPP1 for intervals >= 1 spike
+    EventsDataframe<-filter(SCPPDataframeCurrent,  SpikeCount>0)
+    
+    NumberOfEvents<-nrow(EventsDataframe)
+    
+   
+    #Initialise variables and objects for evaluating within animal triggered averages
+    NoOfIntervalsForAveraging<-20
+    WindowLengthInSecs<-NoOfIntervalsForAveraging*8
+    
+    ETAv<-rep(0,NoOfIntervalsForAveraging+1)   #Initialise vector for Event-Triggered average 
+    
+   
+    #Loop through all events and compute event triggered average
+    SpikeCounterForAveraging<-0
+    for(SpikeIndex in 1:NumberOfEvents){
+      EventTimeCurrent<-EventsDataframe$InitialisedTime[[SpikeIndex]]
+      #Extract epoch centered on IIS
+      ETW<-EventTriggeredWindow(EventTimeCurrent, WindowLengthInSecs,SCPPDataframeCurrent$InitialisedTime, 
+                            SCPPDataframeCurrent$ThetaOverDelta)
       
-      #Append ETSweepsDataframe with current EventTriggeredSweep
-        AnimalIDIndex<-rep(AnimalIDCurrent, NoOfIntervalsForAveraging+1)
-        TimeForAv<-seq(-(NoOfIntervalsForAveraging*8)/2, (NoOfIntervalsForAveraging*8)/2, 8)
-        Time<-ETW$TriggeredWindowTime
-        SpikeCount<-rep(SpikeCounterForAveraging, NoOfIntervalsForAveraging+1)
-        ThetaDelta<-ETW$TriggeredWindowData
+      if(nrow(ETW)==NoOfIntervalsForAveraging+1){
+        ETAv<-ETAv+ETW$TriggeredWindowData
+       # ETWList[[SpikeIndex]]<-ETW
+        SpikeCounterForAveraging<-SpikeCounterForAveraging+1
         
-        ETSweepsTemp<-data.frame(AnimalIDIndex, TimeForAv, Time, SpikeCount, ThetaDelta)
-        
-        ETSweepsDataframe<-rbind(ETSweepsDataframe, ETSweepsTemp)
-    
-    }else{
-      #print(SpikeIndex)
+        #Append ETSweepsDataframe with current EventTriggeredSweep
+          AnimalIDIndex<-rep(AnimalIDCurrent, NoOfIntervalsForAveraging+1)
+          TimeForAv<-seq(-(NoOfIntervalsForAveraging*8)/2, (NoOfIntervalsForAveraging*8)/2, 8)
+          Time<-ETW$TriggeredWindowTime
+          SpikeCount<-rep(SpikeCounterForAveraging, NoOfIntervalsForAveraging+1)
+          ThetaDelta<-ETW$TriggeredWindowData
+          
+          ETSweepsTemp<-data.frame(AnimalIDIndex, TimeForAv, Time, SpikeCount, ThetaDelta)
+          
+          ETSweepsDataframe<-rbind(ETSweepsDataframe, ETSweepsTemp)
+      
+      }else{
+        #print(SpikeIndex)
+      }
     }
+    if(SpikeCounterForAveraging>0){
+      ETAv<-ETAv/SpikeCounterForAveraging
+    }
+    #Append ETAvDataframe
+    ETAvDataframeTemp<-data.frame(
+      AnimalIDIndex=rep(AnimalIDCurrent, NoOfIntervalsForAveraging+1),
+      Time=seq(-(NoOfIntervalsForAveraging*8)/2,(NoOfIntervalsForAveraging*8)/2, 8),
+      AvThetaDelta=ETAv
+    )
+    ETAvDataframe<-rbind(ETAvDataframe, ETAvDataframeTemp)
   }
-  if(SpikeCounterForAveraging>0){
-    ETAv<-ETAv/SpikeCounterForAveraging
-  }
-  #Append ETAvDataframe
-  ETAvDataframeTemp<-data.frame(
-    AnimalIDIndex=rep(AnimalIDCurrent, NoOfIntervalsForAveraging+1),
-    Time=seq(-(NoOfIntervalsForAveraging*8)/2,(NoOfIntervalsForAveraging*8)/2, 8),
-    AvThetaDelta=ETAv
-  )
-  ETAvDataframe<-rbind(ETAvDataframe, ETAvDataframeTemp)
-  
-  rm(ETAv, ETAvDataframeTemp, ETW)
+    rm(ETAv, ETAvDataframeTemp, ETW, SCPPDataframeEventAv)
+    
+    write.csv(ETAvDataframe, ETAvFilename)
+}
 ``` 
 
 Create null event-triggered average by sampling specified number of intervals to sample
-```{r NonEventTriggeredAveragingOfThetaDelta, echo=FALSE, include=TRUE}}
+```{r NonEventTriggeredAveragingOfThetaDelta, echo=FALSE, include=TRUE}
+NETAvFilename<-"Output/NETAvDataframe.csv"
+if(file.exists(NETAvFilename)==1){
+  NETAvDataframe<-read.csv(NETAvFilename)
+}else{
 NoIntervalsToSample<-2000
-
- AnimalIDList<-c("JF218", "JF220", "JF221",
-               "J0456", "J0460"
-                )
-
-#Filter dataframe for control and daylight only as a proxy for sleep
-SCPPDataframeEventAv<-filter(SCPPDataframeAll, 
-                              LightDark==TRUE, 
-                              Treatment=="Control")
-
-#For each animal, we are going to loop through each epoch with IIS to create an average ThetaOverDelta for 64+8s interval around the IIS time (9 * 8s intervals)
-
-  #Initialise dataframe to store event triggered average for each animal
-  NETAvDataframe<-data.frame(
-    AnimalIDIndex=factor(),
-    Time=integer(),
-    AvThetaDelta=double()
-  )
- #Initialise dataframe to store event-triggered sweeps for each animal 
-  NETSweepsDataframe<-data.frame(
-    AnimalIDIndex=factor(),
-    TimeForAv=integer(), 
-    Time=integer(),
-    SpikeCount=integer(),
-    ThetaDelta=double()
+  
+   AnimalIDList<-c("JF218", "JF220", "JF221",
+                 "J0456", "J0460"
+                  )
+  
+  #Filter dataframe for control and daylight only as a proxy for sleep
+  SCPPDataframeEventAv<-filter(SCPPDataframeAll, 
+                                LightDark==TRUE, 
+                                Treatment=="Control")
+  
+  #For each animal, we are going to loop through each epoch with IIS to create an average ThetaOverDelta for 64+8s interval around the IIS time (9 * 8s intervals)
+  
+    #Initialise dataframe to store event triggered average for each animal
+    NETAvDataframe<-data.frame(
+      AnimalIDIndex=factor(),
+      Time=integer(),
+      AvThetaDelta=double()
     )
-  
-  for(AnimalIndex in 1:length(AnimalIDList)){
-  #ETWList<-list()
-  AnimalIDCurrent=AnimalIDList[[AnimalIndex]]
-  
-  SCPPDataframeCurrent<-filter(SCPPDataframeEventAv, 
-                                AnimalIDVariable==AnimalIDCurrent)
-  
-  #Initialise variables and objects for evaluating within animal triggered averages
-  NoOfIntervalsForAveraging<-20
-  WindowLengthInSecs<-NoOfIntervalsForAveraging*8
-  
-  NETAv<-rep(0,NoOfIntervalsForAveraging+1)   #Initialise vector for Event-Triggered average 
-  
- 
-  #Loop through all events and compute event triggered average
-  SpikeCounterForAveraging<-0
-  for(SpikeIndex in 1:NoIntervalsToSample){
-    #Event time is a random sample of all intervals so might include spikes
-    EventTimeCurrent<-sample(SCPPDataframeCurrent$InitialisedTime, 1)
-    #Extract epoch centered on IIS
-    NETW<-EventTriggeredWindow(EventTimeCurrent, WindowLengthInSecs,SCPPDataframeCurrent$InitialisedTime, 
-                          SCPPDataframeCurrent$ThetaOverDelta)
+   #Initialise dataframe to store event-triggered sweeps for each animal 
+    NETSweepsDataframe<-data.frame(
+      AnimalIDIndex=factor(),
+      TimeForAv=integer(), 
+      Time=integer(),
+      SpikeCount=integer(),
+      ThetaDelta=double()
+      )
     
-    if(nrow(NETW)==NoOfIntervalsForAveraging+1){
-      NETAv<-NETAv+NETW$TriggeredWindowData
-     # ETWList[[SpikeIndex]]<-ETW
-      SpikeCounterForAveraging<-SpikeCounterForAveraging+1
+    for(AnimalIndex in 1:length(AnimalIDList)){
+    #ETWList<-list()
+    AnimalIDCurrent=AnimalIDList[[AnimalIndex]]
+    
+    SCPPDataframeCurrent<-filter(SCPPDataframeEventAv, 
+                                  AnimalIDVariable==AnimalIDCurrent)
+    
+    #Initialise variables and objects for evaluating within animal triggered averages
+    NoOfIntervalsForAveraging<-20
+    WindowLengthInSecs<-NoOfIntervalsForAveraging*8
+    
+    NETAv<-rep(0,NoOfIntervalsForAveraging+1)   #Initialise vector for Event-Triggered average 
+    
+   
+    #Loop through all events and compute event triggered average
+    SpikeCounterForAveraging<-0
+    for(SpikeIndex in 1:NoIntervalsToSample){
+      #Event time is a random sample of all intervals so might include spikes
+      EventTimeCurrent<-sample(SCPPDataframeCurrent$InitialisedTime, 1)
+      #Extract epoch centered on IIS
+      NETW<-EventTriggeredWindow(EventTimeCurrent, WindowLengthInSecs,SCPPDataframeCurrent$InitialisedTime, 
+                            SCPPDataframeCurrent$ThetaOverDelta)
       
-      #Append ETSweepsDataframe with current EventTriggeredSweep
-        AnimalIDIndex<-rep(AnimalIDCurrent, NoOfIntervalsForAveraging+1)
-        TimeForAv<-seq(-(NoOfIntervalsForAveraging*8)/2, (NoOfIntervalsForAveraging*8)/2, 8)
-        Time<-NETW$TriggeredWindowTime
-        SpikeCount<-rep(SpikeCounterForAveraging, NoOfIntervalsForAveraging+1)
-        ThetaDelta<-NETW$TriggeredWindowData
+      if(nrow(NETW)==NoOfIntervalsForAveraging+1){
+        NETAv<-NETAv+NETW$TriggeredWindowData
+       # ETWList[[SpikeIndex]]<-ETW
+        SpikeCounterForAveraging<-SpikeCounterForAveraging+1
         
-        NETSweepsTemp<-data.frame(AnimalIDIndex, TimeForAv, Time, SpikeCount, ThetaDelta)
-        
-        NETSweepsDataframe<-rbind(NETSweepsDataframe, NETSweepsTemp)
-    
-    }else{
-      #print(SpikeIndex)
+        #Append ETSweepsDataframe with current EventTriggeredSweep
+          AnimalIDIndex<-rep(AnimalIDCurrent, NoOfIntervalsForAveraging+1)
+          TimeForAv<-seq(-(NoOfIntervalsForAveraging*8)/2, (NoOfIntervalsForAveraging*8)/2, 8)
+          Time<-NETW$TriggeredWindowTime
+          SpikeCount<-rep(SpikeCounterForAveraging, NoOfIntervalsForAveraging+1)
+          ThetaDelta<-NETW$TriggeredWindowData
+          
+          NETSweepsTemp<-data.frame(AnimalIDIndex, TimeForAv, Time, SpikeCount, ThetaDelta)
+          
+          NETSweepsDataframe<-rbind(NETSweepsDataframe, NETSweepsTemp)
+      
+      }else{
+        #print(SpikeIndex)
+      }
     }
-  }
-  if(SpikeCounterForAveraging>0){
-    NETAv<-NETAv/SpikeCounterForAveraging
-  }
-  #Append ETAvDataframe
-  NETAvDataframeTemp<-data.frame(
-    AnimalIDIndex=rep(AnimalIDCurrent, NoOfIntervalsForAveraging+1),
-    Time=seq(-(NoOfIntervalsForAveraging*8)/2,(NoOfIntervalsForAveraging*8)/2, 8),
-    AvThetaDelta=NETAv
-  )
-  NETAvDataframe<-rbind(NETAvDataframe, NETAvDataframeTemp)
-  }
-rm(NETAv, NETAvDataframeTemp, NETW)
+    if(SpikeCounterForAveraging>0){
+      NETAv<-NETAv/SpikeCounterForAveraging
+    }
+    #Append ETAvDataframe
+    NETAvDataframeTemp<-data.frame(
+      AnimalIDIndex=rep(AnimalIDCurrent, NoOfIntervalsForAveraging+1),
+      Time=seq(-(NoOfIntervalsForAveraging*8)/2,(NoOfIntervalsForAveraging*8)/2, 8),
+      AvThetaDelta=NETAv
+    )
+    NETAvDataframe<-rbind(NETAvDataframe, NETAvDataframeTemp)
+    }
+  rm(NETAv, NETAvDataframeTemp, NETW, SCPPDataframeEventAv)
+  
+  write.csv(NETAvDataframe, NETAvFilename)
+}
 ```
 
 Plotting Event-triggered averages
@@ -1250,19 +1287,20 @@ ThetaDeltaGrp<-group_by(ETSweepsDataframe, AnimalIDIndex, TimeForAv)
                        CI_L=CI(ThetaDelta)[3]
                        )
  
-    #ThetaDeltaGrp<-mutate(ThetaDeltaGrp, Event="E")
- #Repeat for Non Events
-    #NEThetaDeltaGrp<-group_by(NETSweepsDataframe, AnimalIDIndex, TimeForAv) 
-    #NEThetaDeltaGrp<-summarise(NEThetaDeltaGrp, MeanThetaDelta=mean(ThetaDelta),
-            #            CI_U=CI(ThetaDelta)[1],
-            #           CI_L=CI(ThetaDelta)[3]
-            #           )
-      #NEThetaDeltaGrp<-mutate(NEThetaDeltaGrp, Event="N")
+    ThetaDeltaGrp<-mutate(ThetaDeltaGrp, Event="E")
+ #Repeat for Non Events but set CI_U and CI_L to the mean to not plot error bars
+    NEThetaDeltaGrp<-group_by(NETSweepsDataframe, AnimalIDIndex, TimeForAv) 
+    NEThetaDeltaGrp<-summarise(NEThetaDeltaGrp,
+                               MeanThetaDelta=mean(ThetaDelta),
+                      CI_U=mean(ThetaDelta),
+                   CI_L=mean(ThetaDelta)
+                    )
+      NEThetaDeltaGrp<-mutate(NEThetaDeltaGrp, Event="N")
  
- #ThetaDeltaGrp<-rbind(ThetaDeltaGrp, NEThetaDeltaGrp)
+ ThetaDeltaGrp<-rbind(ThetaDeltaGrp, NEThetaDeltaGrp)
 
 #Plotting
-ETPlot<-ggplot(ThetaDeltaGrp, aes(x=TimeForAv, y=MeanThetaDelta))+
+ETPlot<-ggplot(ThetaDeltaGrp, aes(x=TimeForAv, y=MeanThetaDelta, color=Event))+
   geom_line()+
   geom_point()+
   geom_errorbar(
@@ -1271,12 +1309,16 @@ ETPlot<-ggplot(ThetaDeltaGrp, aes(x=TimeForAv, y=MeanThetaDelta))+
   facet_grid(AnimalIDIndex~., scales="free_y")+
   xlab("Time (s)")+
   ylab(expression(paste(theta, "/", delta)))+
-  theme(strip.text = element_blank())
+  theme(strip.text = element_blank()) +
+  scale_color_grey() +
+  theme(legend.position = "none")
 
-ETPlot<-ETPlot+geom_hline(aes(yintercept=MeanThetaDelta), MeansData, colour="red")
+#ETPlot<-ETPlot+geom_hline(aes(yintercept=MeanThetaDelta), MeansData, colour="red")
 
 ETPlot
 
+ggsave("Output/Figures/Fig4/Fig4C.pdf", device="pdf")
+rm(SCPPDataframeEventAv)
 
 ```
 
