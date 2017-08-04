@@ -276,14 +276,17 @@ SummaryDataframe$Change1<-(SummaryDataframe$MeanSpike1-SummaryDataframe$MeanSpik
 ###Fig 1A: Example of IIS
 ```{r ExampleIIS, echo=TRUE, include=TRUE}
 IISFilename<-"./Data/M1495229694_Chan2.csv" #From J0460 tmin=688s
+xZoomStart=4.125
+xZoomEnd=4.375
 IISTrace<-read.csv(IISFilename, header = FALSE)
 IISTrace$mV<-IISTrace$V1*400*10^(-6)
 IISTrace$Time<-seq(from=0,to=((nrow(IISTrace)-1)/512), by=1/512)
 IISPlot<-ggplot(IISTrace, aes(x=Time, y=mV))+
   geom_line() +
-  scale_y_continuous(limits=c(16.7, 18))+
+  scale_y_continuous(limits=c(16.7, 18.05))+
   geom_segment(x=25, xend=30, y=16.75, yend=16.75)+
   geom_segment(x=25, xend=25, y=16.75, yend=17) +
+  geom_text(x=((xZoomStart+xZoomEnd)/2), y=18, label="*", size=8)+
   #geom_text(x=27.5, y=16.7, label="5 s") +
   #geom_text(x=28, y=16.88, label = "0.25 mV")+
   theme(axis.title.x = element_blank(), 
@@ -298,8 +301,28 @@ IISPlot<-ggplot(IISTrace, aes(x=Time, y=mV))+
 
 IISPlot
 
-ggsave("Output/Figures/Fig1/Fig1A.png", device="png")
+ggsave("Output/Figures/Fig1/Fig1A.png", device="png", dpi=600)
 
+#Zoomed expansion 250ms
+
+IISTraceZoom<-filter(IISTrace, Time>xZoomStart & Time<xZoomEnd)
+IISPlotZoom<-ggplot(IISTraceZoom, aes(x=Time, y=mV))+
+  geom_line() +
+  #scale_y_continuous(limits=c(16.7, 17.5))+
+  theme(axis.title.x = element_blank(), 
+        axis.text.x = element_blank(), 
+        axis.ticks.x = element_blank(), 
+        axis.line.x = element_blank(),
+        axis.title.y = element_blank(), 
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.line.y = element_blank())
+
+IISPlotZoom
+
+ggsave("Output/Figures/Fig1/Fig1AZoom.png", device="png", dpi=600 )
+
+#rm(IISPlot, IISPlotZoom)
 ```
 #####
 This figure requires a dataframe Fig1SummaryDataframe=AnimalID|Genotype|TimeZone|Spike rate measure = Number of intervals greater than 0 spikes
