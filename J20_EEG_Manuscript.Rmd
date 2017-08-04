@@ -963,17 +963,20 @@ rm(SleepWakeSpikeCountData)
 IIS occurred in the light hours, we wanted to ask whether IIS are more prevalent in specific brain states. To this end, we used the theta signal to characterise epochs as sleep/wake and asked whether p(IIS|S)>p(IIS|W)
 
 ```{r, SWPlottingChunk, include=TRUE, echo=FALSE}
-if("plyr" %in% (.packages())){
-  detach("package:plyr", unload=TRUE)
-}
+#if("plyr" %in% (.packages())){
+ # detach("package:plyr", unload=TRUE)
+#}
 #Group by AnimalID and SleepWake
-SW_grouped<-group_by(SCPPDataframeVideoTimesAll, AnimalIDVariable, SleepWake)
+SW_grouped<-dplyr::group_by(SCPPDataframeVideoTimesAll, AnimalIDVariable, SleepWake)
 #Compute the mean spike rate for each animal in each behavioural state                     
-SummarySW<-summarise(SW_grouped,
+SummarySW<-dplyr::summarise(SW_grouped,
                      MeanSpikeRate=mean(SpikeCount)/8,
                      num=n(),
-                     
-                  SEM=sd(SpikeCount)/sqrt(n()))
+                     SEM=sd(SpikeCount)/sqrt(n()),
+                     CI_L=CI(SpikeCount)[1]/8,
+                     CI_U=CI(SpikeCount)[3]/8)
+PhaseCoupling<-c(rep("Weak", 4), rep("Strong", 4))
+SummarySW$PhaseCoupling<- PhaseCoupling
 
 #Plot summary plot of mean spike rate
 #SWPlot<-ggplot(SummarySW, 
@@ -989,20 +992,22 @@ SummarySW<-summarise(SW_grouped,
 SWPlot<-ggplot(SummarySW, 
                aes(x=SleepWake, 
                    y=MeanSpikeRate)) +
-                 facet_grid(.~AnimalIDVariable) +
-  geom_line(aes(color=AnimalIDVariable)) +
-  geom_point(aes(color=AnimalIDVariable)) +
-  geom_errorbar(aes(ymin=MeanSpikeRate-SEM, ymax=MeanSpikeRate+SEM, width=0.4))+
+              facet_grid(.~PhaseCoupling) +
+  geom_line(aes(group=AnimalIDVariable)) +
+  geom_point(aes(group=AnimalIDVariable)) +
+  geom_errorbar(aes(ymin=CI_L, ymax=CI_U, width=0.4))+
   ylab("Mean spike/s") +
   xlab("Behavioural State") +
-  theme(legend.position = "none")
+  theme(legend.position = "none")#+
+  #scale_color_brewer(palette = "Set1")
 
 
 SWPlot
 
-ggsave("Output/MeanSpikesSleepWake.pdf", device="pdf")
+ggsave("Output/Figures/Fig3/Fig3B.pdf", device="pdf")
 
-rm(SCPPDataframeVideoTimesAll)
+
+#rm(SCPPDataframeVideoTimesAll)
 
 ```
 ######################################
