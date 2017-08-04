@@ -488,6 +488,12 @@ ggsave("Output/Figures/Fig1/Fig1C.pdf", device="pdf")
 
 ```
 
+
+Write Fig1 Summaries
+```{r WriteFig1Summary, echo=FALSE}
+write.csv(Fig1SummaryDataframe, "Fig1SummaryDataframe.csv")
+
+```
 #########################################################################
 #Figure 2: IIS and time of day
 Figure 2A: Example of circadian fluctuations in IIS from JF167
@@ -767,8 +773,19 @@ for(i in 1:length(CircularOutliers)){
 
 SummaryDataframe$Outliers<-0
 SummaryDataframe$Outliers[OutliersIndex]<-1
+
+
 ```
 
+
+```{r WriteFig2Summaries, echo=FALSE}
+write.csv(SummaryDataframe, "Output/SummaryDataframe.csv")
+
+write.csv(Fig2SummaryDataframe_J20, "/Ouput/Fig2SummaryDataframe_J20.csv")
+
+write.csv(Fig2SummaryDataframe, "/Ouput/Fig2SummaryDataframe.csv")
+
+```
 
 
 
@@ -989,21 +1006,21 @@ rm(SCPPDataframeVideoTimesAll)
 
 ```
 ######################################
-####Fig 3 IIS and theta/delta
+####Fig 4 IIS and theta/delta
 Theta/delta ratios have been used to characterise sleep stages (Ewell et al 2016) and seizures were shown to be more prevalent following REM. We thus asked whether IIS were more prevalent during periods of elevated Theta/Delta.
 p(IIS|theta/delta>threshold)
 
 
 ```{r create_fig3_dataframe, ECHO=FALSE}
-  Fig3SummaryDataframe<-SummaryDataframe[, c("AnimalID", "Genotype", "TimeZone", "DrugDateTime", "Fig3_BrainState", "LossIntervalPercentage")]
+  Fig4SummaryDataframe<-SummaryDataframe[, c("AnimalID", "Genotype", "TimeZone", "DrugDateTime", "Fig4_BrainState", "LossIntervalPercentage")]
 #Remove rows with missing variables
-  Fig3SummaryDataframe<-Fig3SummaryDataframe[complete.cases(Fig3SummaryDataframe),]
+  Fig4SummaryDataframe<-Fig4SummaryDataframe[complete.cases(Fig4SummaryDataframe),]
 ```
   
 2. Select animals that will be used in the analysis cerebellum reference recorded for in control conditions with known light dark cycles.
 ```{r SelectAnimalsChunk, echo=FALSE, include=TRUE}
 
-Fig3SummaryDataframe<-filter(Fig3SummaryDataframe, Fig3_BrainState=="YES", Genotype=="J20", LossIntervalPercentage<LossIntervalPercentageThreshold  )
+Fig4SummaryDataframe<-filter(Fig4SummaryDataframe, Fig3_BrainState=="YES", Genotype=="J20", LossIntervalPercentage<LossIntervalPercentageThreshold  )
 
 ```
 
@@ -1015,7 +1032,7 @@ SCPPDataframeControl<-filter(SCPPDataframeAll, Treatment=="Control")
 ThetaDeltaGrouped<-group_by(SCPPDataframeControl, AnimalIDVariable, SpikeCount)
 #Compute the mean spike rate for each animal in each behavioural state                     
 SummaryThetaDelta<-summarise(ThetaDeltaGrouped, MeanThetaDelta=mean(ThetaOverDelta))
-SummaryThetaDelta<-filter(SummaryThetaDelta, AnimalIDVariable %in% Fig3SummaryDataframe$AnimalID)
+SummaryThetaDelta<-filter(SummaryThetaDelta, AnimalIDVariable %in% Fig4SummaryDataframe$AnimalID)
 SummaryThetaDelta
   
 ThetaDeltaSpikePlot<-ggplot(SummaryThetaDelta, 
@@ -1059,12 +1076,13 @@ rm(SCPPDataframeControl, ThetaDeltaLMEDataframe)
 ```
 
 ###Event-triggered averages of theta/delta 
-Event times are used for an event-triggered average for 72s around interval of event. The output of the chunk is ETList with 2 list elements per AnimalID. ETList$ETAv for that animal is event triggered average; ETList$ETW is the list of each individual event triggered window. List elements for ETW are $TriggeredWindowTime and $TriggeredWindowData.
+Event times are used for an event-triggered average for +-80s around interval of event. The output of the chunk is ETList with 2 list elements per AnimalID. ETList$ETAv for that animal is event triggered average; ETList$ETW is the list of each individual event triggered window. List elements for ETW are $TriggeredWindowTime and $TriggeredWindowData.
 
 ```{r EventTriggeredAveragingOfThetaDelta, echo=FALSE, include=TRUE}
 
 #This chunk has been tested using the following test ETAvTest,R
 ETAvFilename<-"Ouput/ETAvDataframe.csv"
+ETSweepsDataframeFilename<-"Output/ETSweepsDataframeFile.csv"
 if(file.exists(ETAvFilename)==1){
   ETAvDataframe<-read.csv(ETAvFilename)
 }else{
@@ -1102,7 +1120,7 @@ if(file.exists(ETAvFilename)==1){
                                   AnimalIDVariable==AnimalIDCurrent)
     
     
-    #Filter the current SCPP1 for intervals >= 1 spike
+    #Filter the current SCPP for intervals >= 1 spike
     EventsDataframe<-filter(SCPPDataframeCurrent,  SpikeCount>0)
     
     NumberOfEvents<-nrow(EventsDataframe)
@@ -1154,15 +1172,19 @@ if(file.exists(ETAvFilename)==1){
     )
     ETAvDataframe<-rbind(ETAvDataframe, ETAvDataframeTemp)
   }
-    rm(ETAv, ETAvDataframeTemp, ETW, SCPPDataframeEventAv)
+   
     
     write.csv(ETAvDataframe, ETAvFilename)
+    write.csv(ETSweepsDataframe, ETSweepsDataframeFilename)
+    
+    rm(SCPPDataframeCurrent, ETAv, ETAvDataframeTemp, ETW, SCPPDataframeEventAv, ETSweepsDataframe)
 }
 ``` 
 
 Create null event-triggered average by sampling specified number of intervals to sample
 ```{r NonEventTriggeredAveragingOfThetaDelta, echo=FALSE, include=TRUE}
 NETAvFilename<-"Output/NETAvDataframe.csv"
+NETSweepsDataframeFilename<-"Output/NETSweepsDataframeFile.csv"
 if(file.exists(NETAvFilename)==1){
   NETAvDataframe<-read.csv(NETAvFilename)
 }else{
@@ -1248,9 +1270,13 @@ NoIntervalsToSample<-2000
     )
     NETAvDataframe<-rbind(NETAvDataframe, NETAvDataframeTemp)
     }
-  rm(NETAv, NETAvDataframeTemp, NETW, SCPPDataframeEventAv)
   
-  write.csv(NETAvDataframe, NETAvFilename)
+  
+#Write Nonevent-triggered average and individual sweeps to csv files
+      write.csv(NETAvDataframe, NETAvFilename)
+  write.csv(NETSweepsDataframe, NETSweepsDataframeFilename)
+  
+  rm(NETAv, NETAvDataframeTemp, NETW, SCPPDataframeEventAv, NETSweepsDataframe, SCPPDataframeCurrent)
 }
 ```
 
