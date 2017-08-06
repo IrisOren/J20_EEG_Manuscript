@@ -532,14 +532,16 @@ Fig2A<-ggplot(EventData, aes(x = EventHourShifted, fill = Light)) +
   geom_histogram(breaks = seq(0,   24), binwidth = 2, colour = "grey") + 
   coord_polar(start = 0) + 
   theme_minimal() + 
-  scale_fill_grey(labels=c("Off", "On")) + 
+  scale_fill_grey(start=0.1, end=0.9, labels=c("Off", "On")) + 
   ylab("Count") + 
   ggtitle("IIS by Time of day") + 
   theme(plot.title = element_text (size = fontsize))+
   theme(axis.title.y=element_text (size = fontsize))+
   theme(axis.text.y =element_text (size = fontsize))+
   theme(axis.text.x =element_text (size = fontsize))+
-  scale_x_continuous("", limits = c(0, 24), breaks = seq(0, 24), labels = seq(0,24))
+  scale_x_continuous("", limits = c(0, 24), breaks = seq(0, 24, 2), labels = seq(0,24, 2))+
+  theme(panel.grid.minor =   element_line(colour = "grey40",size=0.2),
+        panel.grid.major =   element_line(colour = "grey40",size=0.2))
 
 
 print(Fig2A)
@@ -678,14 +680,17 @@ for(i in 1:nrow(Fig2SummaryDataframe_J20)){
     SpikeHist<-ggplot(EventData, aes(x = EventHourShifted, fill = Light)) +
       geom_histogram(breaks = seq(0,   24), binwidth = 2, colour = "grey") +   coord_polar(start = 0) + 
       theme_minimal() + 
-      scale_fill_grey(labels=c("Off", "On")) + 
+      scale_fill_grey(start=0.1, end=0.9, labels=c("Off", "On")) + 
       ylab("Count") + 
       ggtitle(paste(AnimalIDCurrent, as.character(round(Fig2SummaryDataframe$RayleighP[i], 3)), as.character(round(Fig2SummaryDataframe$RayleighR[i], 3)))) + 
       theme(plot.title = element_text (size = fontsize))+
       theme(axis.title.y=element_text (size = fontsize))+
       theme(axis.text.y =element_text (size = fontsize))+
       theme(axis.text.x =element_text (size = fontsize))+
-      scale_x_continuous("", limits = c(0, 24), breaks = seq(0, 24), labels = seq(0,24))
+      scale_x_continuous("", limits = c(0, 24), breaks = seq(0, 24, 2), labels = seq(0,24, 2))+
+  theme(panel.grid.minor =   element_line(colour = "grey40",size=0.2),
+        panel.grid.major =   element_line(colour = "grey40",size=0.2))
+
     
     
     
