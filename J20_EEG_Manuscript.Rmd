@@ -729,6 +729,7 @@ radial.plot(Fig2SummaryDataframe_J20$Rho,
                                 label.pos = c(0, (pi/2), pi, (3*pi/2)), 
                                 label.prop=1.4, rp.type = "s",
                                 point.symbols = 20, 
+                                cex=2.5,
                                 show.radial.grid = TRUE, 
                                 radial.lim = c(0, 0.5,1))
 
@@ -744,6 +745,7 @@ radial.plot(Fig2SummaryDataframe_J20$Rho,
                                 label.pos = c(0, (pi/2), pi, (3*pi/2)), 
                                 label.prop=2, rp.type = "s",
                                 point.symbols = 20, 
+                                cex=2.5,
                                 show.radial.grid = TRUE, 
                                 radial.lim = c(0,0.5,1) 
               )
@@ -947,6 +949,7 @@ StartTime<-AnimalIDVideoStartEnd$JF220_1[[1]]
 EndTime<-AnimalIDVideoStartEnd$JF220_1[[2]]
 SleepWakeSpikeCountData<-filter(SCPPDataframeVideoTimesAll, InitialisedTime>StartTime & InitialisedTime<EndTime)
 SleepWakeSpikeCountData$ZeroTime<-SleepWakeSpikeCountData$InitialisedTime-min(SleepWakeSpikeCountData$InitialisedTime)
+SleepWakeSpikeCountData$PerSec<-SleepWakeSpikeCountData$SpikeCount/8
 SleepWakeSpikeCountPlot<-ggplot(SleepWakeSpikeCountData,
                                 aes(x=ZeroTime, 
                                     y=SpikeCount,
@@ -960,7 +963,7 @@ SleepWakeSpikeCountPlot<-ggplot(SleepWakeSpikeCountData,
 
 SleepWakeSpikeCountPlot
 
-ggsave("Output/Figures/Fig3/Fig3A.pdf", device="pdf")
+ggsave("Output/Figures/Fig3/Fig3A.pdf", device="pdf", width=10, height=5, units="cm")
 rm(SleepWakeSpikeCountData)
 ```
 
@@ -979,7 +982,8 @@ SummarySW<-dplyr::summarise(SW_grouped,
                      num=n(),
                      SEM=sd(SpikeCount)/sqrt(n()),
                      CI_L=CI(SpikeCount)[1]/8,
-                     CI_U=CI(SpikeCount)[3]/8)
+                     CI_U=CI(SpikeCount)[3]/8, 
+                     SleepWakeFull=if(SleepWake=="S") "Sleep" else "Wake")
 PhaseCoupling<-c(rep("Weak", 4), rep("Strong", 4))
 SummarySW$PhaseCoupling<- PhaseCoupling
 
@@ -995,7 +999,7 @@ SummarySW$PhaseCoupling<- PhaseCoupling
 #  xlab("Behavioural State")
 
 SWPlot<-ggplot(SummarySW, 
-               aes(x=SleepWake, 
+               aes(x=SleepWakeFull, 
                    y=MeanSpikeRate)) +
               facet_grid(.~PhaseCoupling) +
   geom_line(aes(group=AnimalIDVariable)) +
@@ -1003,13 +1007,14 @@ SWPlot<-ggplot(SummarySW,
   geom_errorbar(aes(ymin=CI_L, ymax=CI_U, width=0.4))+
   ylab("Mean spike/s") +
   xlab("Behavioural State") +
-  theme(legend.position = "none")#+
+  theme(legend.position = "none") +
+  theme(axis.text.x = element_text(angle=60, hjust=1))#+
   #scale_color_brewer(palette = "Set1")
 
 
 SWPlot
 
-ggsave("Output/Figures/Fig3/Fig3B.pdf", device="pdf")
+ggsave("Output/Figures/Fig3/Fig3B.pdf", device="pdf", width=8, height=5, units="cm")
 
 
 #rm(SCPPDataframeVideoTimesAll)
