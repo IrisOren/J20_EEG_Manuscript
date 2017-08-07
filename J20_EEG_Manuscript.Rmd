@@ -933,7 +933,7 @@ rm(SCPPDataframeVideoTimes, VideoScoring, VideoTimes)
  if(dir.exists("./Output/ThetaDeltaBehaviouralState")==FALSE) {
    dir.create("./Output/ThetaDeltaBehaviouralState")
  }
-  pdf(filename=FileName)
+  pdf(file=FileName)
   print(PlotGridSave)
   dev.off()
       
@@ -1026,6 +1026,75 @@ Theta/delta ratios have been used to characterise sleep stages (Ewell et al 2016
 p(IIS|theta/delta>threshold)
 
 
+Example of theta/delta and spike count
+```{r SpikeCountThetaDeltaExample, echo=FALSE}
+
+AnimalIDCurrent<-"JF220"
+StartTime<-AnimalIDVideoStartEnd$JF220_1[[1]]
+EndTime<-AnimalIDVideoStartEnd$JF220_1[[2]]
+
+SleepWakeSpikeCountData<-filter(SCPPDataframeVideoTimesAll, InitialisedTime>StartTime & InitialisedTime<EndTime)
+
+
+SleepWakeSpikeCountData$ZeroTime<-SleepWakeSpikeCountData$InitialisedTime-min(SleepWakeSpikeCountData$InitialisedTime)
+#SleepWakeSpikeCountData$PerSec<-SleepWakeSpikeCountData$SpikeCount/8
+SleepWakeSpikeCountPlot<-ggplot(SleepWakeSpikeCountData,
+                                aes(x=ZeroTime, 
+                                    y=SpikeCount,
+                                    color=SleepWake)) +
+  scale_colour_grey() +
+  geom_point() +
+  xlab("Time (s)") +
+  ylab("Spike Count/8s")+
+  ylim(c(0,8))+
+  xlim(c(0, 7200))+
+  theme(legend.position = "none")
+
+       
+      
+      ThetaPlot<-ggplot(SleepWakeSpikeCountData, aes(x=ZeroTime, y=Theta)) +
+        geom_point() + 
+        ylim(0,100) +
+        xlab("Time (s)") +
+  ylab(expression(theta)) +
+  xlim(c(0, 7200))+ 
+        theme(axis.title.x=element_blank(), 
+              axis.text.x=element_blank(), 
+              axis.ticks.x = element_blank())
+      
+      
+      DeltaPlot<-ggplot(SleepWakeSpikeCountData, aes(x=ZeroTime, y=Delta)) +
+        geom_point()+
+        ylim(0,200)+
+        ylab(expression(delta))+
+        xlim(c(0, 7200))+
+        theme(axis.title.x=element_blank(), 
+              axis.text.x=element_blank(), 
+              axis.ticks.x = element_blank())
+      
+      ThetaOverDeltaPlot<-ggplot(SleepWakeSpikeCountData, aes(x=ZeroTime, y=ThetaOverDelta)) +
+        geom_point() +
+        ylim(0, 5) +
+        ylab(expression(paste(theta, "/", delta)))+
+        xlim(c(0, 7200))+
+        theme(axis.title.x=element_blank(), 
+              axis.text.x=element_blank(), 
+              axis.ticks.x = element_blank())
+      
+      
+      
+     
+
+    SleepWakeThetaDelta<-plot_grid(ThetaPlot, DeltaPlot, ThetaOverDeltaPlot,SleepWakeSpikeCountPlot,  align = "v", nrow = 4)
+  
+ SleepWakeThetaDelta
+ 
+ggsave("Output/Figures/Fig4/Fig4A.png",device="png", dpi=300)      
+
+
+```
+
+
 ```{r create_fig3_dataframe, ECHO=FALSE}
   Fig4SummaryDataframe<-SummaryDataframe[, c("AnimalID", "Genotype", "TimeZone", "DrugDateTime", "Fig4_BrainState", "LossIntervalPercentage")]
 #Remove rows with missing variables
@@ -1035,7 +1104,7 @@ p(IIS|theta/delta>threshold)
 2. Select animals that will be used in the analysis cerebellum reference recorded for in control conditions with known light dark cycles.
 ```{r SelectAnimalsChunk, echo=FALSE, include=TRUE}
 
-Fig4SummaryDataframe<-filter(Fig4SummaryDataframe, Fig3_BrainState=="YES", Genotype=="J20", LossIntervalPercentage<LossIntervalPercentageThreshold  )
+Fig4SummaryDataframe<-filter(Fig4SummaryDataframe, Fig4_BrainState=="YES", Genotype=="J20", LossIntervalPercentage<LossIntervalPercentageThreshold  )
 
 ```
 
@@ -1048,21 +1117,28 @@ ThetaDeltaGrouped<-group_by(SCPPDataframeControl, AnimalIDVariable, SpikeCount)
 #Compute the mean spike rate for each animal in each behavioural state                     
 SummaryThetaDelta<-summarise(ThetaDeltaGrouped, MeanThetaDelta=mean(ThetaOverDelta))
 SummaryThetaDelta<-filter(SummaryThetaDelta, AnimalIDVariable %in% Fig4SummaryDataframe$AnimalID)
+SummaryThetaDelta$Coupling<-ifelse((SummaryThetaDelta$AnimalIDVariable=="J0456"|SummaryThetaDelta$AnimalIDVariable=="J0460"),"Weak", "Strong")
 SummaryThetaDelta
   
 ThetaDeltaSpikePlot<-ggplot(SummaryThetaDelta, 
                             aes(x=SpikeCount,
                                 y=MeanThetaDelta, 
                                 group=AnimalIDVariable)) +
-  geom_line(aes(color=AnimalIDVariable))+
-  geom_point(aes(color=AnimalIDVariable)) +
+  geom_line()+
+  geom_point(aes(shape=Coupling)) +
   scale_x_continuous(name = "Spike Count/8s", breaks=seq(0,12,2)) +
-  theme(legend.position = "none") +
-  scale_color_brewer(palette="Set1")
+  scale_shape_manual(values=c(16,1))+
+  theme(legend.position = c(0.7, 0.9), 
+        axis.text.x = element_text(size=10),
+        axis.text.y = element_text(size=10), 
+        axis.title.x = element_text(size=10),
+        axis.title.y = element_text(size=10)) +
+  ylab(expression(paste(theta, "/", delta))) +
+  scale_color_grey() 
 
 ThetaDeltaSpikePlot
 
-ggsave("Output/Figures/Fig4/Fig4B.pdf", device="pdf")
+ggsave("Output/Figures/Fig4/Fig4B.pdf", device="pdf", height=6, width=8, units="cm")
 
 rm(ThetaDeltaGrouped)
 
@@ -1352,13 +1428,17 @@ ETPlot<-ggplot(ThetaDeltaGrp, aes(x=TimeForAv, y=MeanThetaDelta, color=Event))+
   ylab(expression(paste(theta, "/", delta)))+
   theme(strip.text = element_blank()) +
   scale_color_grey() +
-  theme(legend.position = "none")
+  theme(legend.position = "none", 
+        axis.text.x = element_text(size=10),
+        axis.text.y = element_text(size=10), 
+        axis.title.x = element_text(size=10),
+        axis.title.y = element_text(size=10))
 
 #ETPlot<-ETPlot+geom_hline(aes(yintercept=MeanThetaDelta), MeansData, colour="red")
 
 ETPlot
 
-ggsave("Output/Figures/Fig4/Fig4C.pdf", device="pdf")
+ggsave("Output/Figures/Fig4/Fig4C.pdf", device="pdf", height=12, width=8, units="cm")
 rm(SCPPDataframeEventAv)
 
 ```
