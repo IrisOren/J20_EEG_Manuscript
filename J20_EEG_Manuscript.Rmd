@@ -1143,7 +1143,16 @@ ggsave("Output/Figures/Fig4/Fig4B.pdf", device="pdf", height=6, width=8, units="
 rm(ThetaDeltaGrouped)
 
 ```
+Export for GLME and MCMC analysis
+```{r ExportForGLME_MCMC, echo=FALSE}
+#This chunk exports the data, for 5 animals with CBLM reference, loss and artifacts excluded, in control conditions to csv for Crispin to analyse 
+SpikesThetaDeltaExport<-dplyr::select(SCPPDataframeControl, SpikeCount, ThetaOverDelta, AnimalIDVariable, InitialisedTime)
+SpikesThetaDeltaExport<-dplyr::filter(SpikesThetaDeltaExport, AnimalIDVariable %in% Fig4SummaryDataframe$AnimalID)
+write.csv(SpikesThetaDeltaExport, "Output/SpikesThetaDeltaExport.csv")
+rm(SpikesThetaDeltaExport)
 
+
+```
 Stats for theta/delta and IIS
 ```{r SpikesCountBinaryThetaDeltaLMM, include=TRUE, echo=FALSE}
 
