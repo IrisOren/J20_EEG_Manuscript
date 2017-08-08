@@ -827,11 +827,11 @@ FileList<-c("./Data/VideoScoring/VideoScoringJF220_040416.csv",
             "./Data/VideoScoring/VideoScoringJF220_060416.csv",  
             "./Data/VideoScoring/VideoScoringJF220_070416.csv",
             "./Data/VideoScoring/VideoScoringJF220_080416.csv", 
-           #"./Data/VideoScoring/VideoScoringJ0373_030816Day.csv",
-           # "./Data/VideoScoring/VideoScoringJ0373_030816Night.csv",
-           # "./Data/VideoScoring/VideoScoringJ0375_120816Day.csv",
-          #  "./Data/VideoScoring/VideoScoringJ0375_120816Night.csv",
-          #  "./Data/VideoScoring/VideoScoringJ0376_140816Day.csv",
+           "./Data/VideoScoring/VideoScoringJ0373_030816Day.csv",
+            "./Data/VideoScoring/VideoScoringJ0373_030816Night.csv",
+            "./Data/VideoScoring/VideoScoringJ0375_120816Day.csv",
+            "./Data/VideoScoring/VideoScoringJ0375_120816Night.csv",
+            "./Data/VideoScoring/VideoScoringJ0376_140816Day.csv",
             "./Data/VideoScoring/VideoScoringJF221_040416.csv",
             "./Data/VideoScoring/VideoScoringJF221_050416.csv",
             "./Data/VideoScoring/VideoScoringJF221_060416.csv",
@@ -842,9 +842,9 @@ FileList<-c("./Data/VideoScoring/VideoScoringJF220_040416.csv",
 
 
 AnimalIDList<-c("JF220", "JF220", "JF220", "JF220", "JF220",
-               #"J0373", "J0373",
-              #"J0375", "J0375", 
-              #"J0376", 
+               "J0373", "J0373",
+              "J0375", "J0375", 
+              "J0376", 
               "JF221", "JF221", 
              "JF221", "JF221", 
              "J0456", "J0460"
@@ -941,6 +941,8 @@ rm(SCPPDataframeVideoTimes, VideoScoring, VideoTimes)
 
 ```
 
+
+######
 Sleep wake example
 
 ```{r SleepWakeExample, include=TRUE, echo=FALSE}
