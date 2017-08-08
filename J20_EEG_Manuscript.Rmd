@@ -1111,12 +1111,14 @@ Fig4SummaryDataframe<-filter(Fig4SummaryDataframe, Fig4_BrainState=="YES", Genot
 3. For each animal to include, in control conditions: calculate theta/delta for 0 or > 0 spikes
 ```{r, ThetaOverDeltaBySpikeNumChunk, echo=FALSE, include=TRUE}
  
-SCPPDataframeControl<-filter(SCPPDataframeAll, Treatment=="Control") 
+SCPPDataframeControl<-dplyr::filter(SCPPDataframeAll, Treatment=="Control") 
 
-ThetaDeltaGrouped<-group_by(SCPPDataframeControl, AnimalIDVariable, SpikeCount)
+ThetaDeltaGrouped<-dplyr::group_by(SCPPDataframeControl, AnimalIDVariable, SpikeCount)
 #Compute the mean spike rate for each animal in each behavioural state                     
-SummaryThetaDelta<-summarise(ThetaDeltaGrouped, MeanThetaDelta=mean(ThetaOverDelta))
-SummaryThetaDelta<-filter(SummaryThetaDelta, AnimalIDVariable %in% Fig4SummaryDataframe$AnimalID)
+SummaryThetaDelta<-dplyr::summarise(ThetaDeltaGrouped, MeanThetaDelta=mean(ThetaOverDelta, na.rm = TRUE),
+                             CI_L=Rmisc::CI(ThetaOverDelta)[1],
+                             CI_U=Rmisc::CI(ThetaOverDelta)[3])
+SummaryThetaDelta<-dplyr::filter(SummaryThetaDelta, AnimalIDVariable %in% Fig4SummaryDataframe$AnimalID)
 SummaryThetaDelta$Coupling<-ifelse((SummaryThetaDelta$AnimalIDVariable=="J0456"|SummaryThetaDelta$AnimalIDVariable=="J0460"),"Weak", "Strong")
 SummaryThetaDelta
   
@@ -1124,17 +1126,23 @@ ThetaDeltaSpikePlot<-ggplot(SummaryThetaDelta,
                             aes(x=SpikeCount,
                                 y=MeanThetaDelta, 
                                 group=AnimalIDVariable)) +
-  geom_line()+
-  geom_point(aes(shape=Coupling)) +
+  geom_line(aes(colour=AnimalIDVariable))+
+  geom_point(aes(colour=AnimalIDVariable, shape=Coupling)) +
+  geom_errorbar(aes(ymin=CI_L, ymax=CI_U, colour=AnimalIDVariable)) +
   scale_x_continuous(name = "Spike Count/8s", breaks=seq(0,12,2)) +
   scale_shape_manual(values=c(16,1))+
   theme(legend.position = c(0.7, 0.9), 
         axis.text.x = element_text(size=10),
         axis.text.y = element_text(size=10), 
         axis.title.x = element_text(size=10),
-        axis.title.y = element_text(size=10)) +
+        axis.title.y = element_text(size=10), 
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        panel.background = element_blank(), 
+        axis.line = element_line(colour="black")) +
   ylab(expression(paste(theta, "/", delta))) +
-  scale_color_grey() 
+  scale_color_brewer(palette="Set1", guide=FALSE) +
+  ylim(0, 3)
 
 ThetaDeltaSpikePlot
 
