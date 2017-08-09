@@ -1028,7 +1028,7 @@ Theta/delta ratios have been used to characterise sleep stages (Ewell et al 2016
 p(IIS|theta/delta>threshold)
 
 
-Example of theta/delta and spike count
+Example of theta/delta and spike count for J20
 ```{r SpikeCountThetaDeltaExample, echo=FALSE}
 
 AnimalIDCurrent<-"JF220"
@@ -1040,58 +1040,92 @@ SleepWakeSpikeCountData<-filter(SCPPDataframeVideoTimesAll, InitialisedTime>Star
 
 SleepWakeSpikeCountData$ZeroTime<-SleepWakeSpikeCountData$InitialisedTime-min(SleepWakeSpikeCountData$InitialisedTime)
 #SleepWakeSpikeCountData$PerSec<-SleepWakeSpikeCountData$SpikeCount/8
+
+SleepWakeSpikeCountData$ThetauVolts<-SleepWakeSpikeCountData$Theta*160
+
+
+SleepWakeSpikeCountData$DeltauVolts<-SleepWakeSpikeCountData$Delta*160
+
+PtSize=0.5
+FontSize=10
+
 SleepWakeSpikeCountPlot<-ggplot(SleepWakeSpikeCountData,
                                 aes(x=ZeroTime, 
                                     y=SpikeCount,
                                     color=SleepWake)) +
   scale_colour_grey() +
-  geom_point() +
+  geom_point(size=PtSize) +
   xlab("Time (s)") +
-  ylab("Spike Count/8s")+
-  ylim(c(0,8))+
+  ylab("Spikes/8s")+
+  scale_y_continuous(limits=c(0,8), breaks=seq(0, 8, 4))+
   xlim(c(0, 7200))+
-  theme(legend.position = "none")
+  theme(legend.position = "none")+
+  theme(axis.text.x = element_text(size=FontSize),
+        axis.title.x = element_text(size=FontSize),
+        axis.text.y = element_text(size=FontSize),
+        axis.title.y = element_text(size=FontSize))
 
        
       
-      ThetaPlot<-ggplot(SleepWakeSpikeCountData, aes(x=ZeroTime, y=Theta)) +
-        geom_point() + 
-        ylim(0,100) +
+      ThetaPlot<-ggplot(SleepWakeSpikeCountData, 
+                        aes(x=ZeroTime, 
+                            y=ThetauVolts, 
+                            color=SleepWake)) +
+        scale_colour_grey() +
+        geom_point(size=PtSize) + 
+        scale_y_continuous(limits=c(0,20000), breaks=seq(0, 20000, 10000))+
         xlab("Time (s)") +
-  ylab(expression(theta)) +
+  ylab(expression(paste(theta, " (", mu, V^{2}, ")"))) +
   xlim(c(0, 7200))+ 
         theme(axis.title.x=element_blank(), 
               axis.text.x=element_blank(), 
-              axis.ticks.x = element_blank())
+              axis.ticks.x = element_blank(), 
+              legend.position = "none")+
+        theme(axis.text.y = element_text(size=FontSize),
+        axis.title.y = element_text(size=FontSize))
       
       
-      DeltaPlot<-ggplot(SleepWakeSpikeCountData, aes(x=ZeroTime, y=Delta)) +
-        geom_point()+
-        ylim(0,200)+
-        ylab(expression(delta))+
+      DeltaPlot<-ggplot(SleepWakeSpikeCountData, 
+                        aes(x=ZeroTime, 
+                            y=DeltauVolts, 
+                            color=SleepWake)) +
+        scale_colour_grey() +
+        geom_point(size=PtSize)+
+        ylab(expression(paste(delta, " (", mu, V^{2}, ")"))) +
+        scale_y_continuous(limits=c(0,40000), breaks=seq(0, 40000, 20000))+
         xlim(c(0, 7200))+
         theme(axis.title.x=element_blank(), 
               axis.text.x=element_blank(), 
-              axis.ticks.x = element_blank())
+              axis.ticks.x = element_blank(), 
+              legend.position = "none")+
+      theme(axis.text.y = element_text(size=FontSize),
+        axis.title.y = element_text(size=FontSize))
       
-      ThetaOverDeltaPlot<-ggplot(SleepWakeSpikeCountData, aes(x=ZeroTime, y=ThetaOverDelta)) +
-        geom_point() +
-        ylim(0, 5) +
+      ThetaOverDeltaPlot<-ggplot(SleepWakeSpikeCountData, 
+                                 aes(x=ZeroTime, 
+                                     y=ThetaOverDelta, 
+                                     color=SleepWake)) +
+        scale_colour_grey() +
+        geom_point(size=PtSize) +
+        scale_y_continuous(limits=c(0,5), breaks=seq(0, 5, 2.5))+
         ylab(expression(paste(theta, "/", delta)))+
         xlim(c(0, 7200))+
         theme(axis.title.x=element_blank(), 
               axis.text.x=element_blank(), 
-              axis.ticks.x = element_blank())
+              axis.ticks.x = element_blank(), 
+              legend.position = "none")+
+        theme(axis.text.y = element_text(size=FontSize),
+        axis.title.y = element_text(size=FontSize))
       
       
       
      
 
-    SleepWakeThetaDelta<-plot_grid(ThetaPlot, DeltaPlot, ThetaOverDeltaPlot,SleepWakeSpikeCountPlot,  align = "v", nrow = 4)
+    SleepWakeThetaDelta<-plot_grid(DeltaPlot,ThetaPlot,  ThetaOverDeltaPlot,SleepWakeSpikeCountPlot,  align = "v", nrow = 4, rel_heights = c(1,1,1,1.4))
   
  SleepWakeThetaDelta
  
-ggsave("Output/Figures/Fig4/Fig4A.png",device="png", dpi=300)      
+ggsave("Output/Figures/Fig4/Fig4A.png",device="png", dpi=300, width=8, height=12, units="cm")      
 
 
 ```
@@ -1463,6 +1497,52 @@ rm(SCPPDataframeEventAv)
 ```
 
 
+
+Example of theta/delta and spike count for WT
+```{r SpikeCountThetaDeltaExample, echo=FALSE}
+
+AnimalIDCurrent<-"J0373"
+StartTime<-AnimalIDVideoStartEnd$J0373_6[[2]]-7200
+EndTime<-AnimalIDVideoStartEnd$J0373_6[[2]]
+
+SleepWakeSpikeCountData<-filter(SCPPDataframeVideoTimesAll, InitialisedTime>StartTime & InitialisedTime<EndTime)
+
+SleepWakeSpikeCountData$ZeroTime<-SleepWakeSpikeCountData$InitialisedTime-min(SleepWakeSpikeCountData$InitialisedTime)
+
+
+
+
+PtSize=0.5
+FontSize=10
+
+   
+      ThetaOverDeltaPlot<-ggplot(SleepWakeSpikeCountData, 
+                                 aes(x=ZeroTime, 
+                                     y=ThetaOverDelta, 
+                                     color=SleepWake)) +
+        scale_colour_grey() +
+        geom_point(size=PtSize) +
+        scale_y_continuous(limits=c(0,5), breaks=seq(0, 5, 2.5))+
+        ylab(expression(paste(theta, "/", delta)))+
+        xlab("Time (s)")+
+        xlim(c(0, 7200))+
+        theme(axis.title.x=element_text(size=FontSize), 
+              axis.text.x=element_text(size=FontSize), 
+              legend.position = "none", 
+              axis.text.y = element_text(size=FontSize),
+        axis.title.y = element_text(size=FontSize))
+      
+      
+      
+     
+
+   
+ ThetaOverDeltaPlot
+ 
+ggsave("Output/Figures/Fig4/Fig4D.png",device="png", dpi=300, width=8, height=3, units="cm")      
+
+
+```
 ###########
 ###Fig 5: DPZ treatment and spike count
 Compare SpikeNumber in Ctrl and DPZ condition for DPZAM and DPZPM groups
