@@ -1780,3 +1780,34 @@ AChEAbsorptionPlot
 
 ggsave("ThioclineRate.png")
 ```
+########
+###CHAT quantification
+The data was imported from Anne-Laure's github:https://github.com/AnneLaureHemonnot/ChAT_Analysis. The data in that project was saved into ChAT_Analysis/Output. Here, I import the csv
+
+```{r CHATQuantification, echo=FALSE}
+CHATDataFile<-"~/Dropbox/ANALYSIS/CHAT_staining/ChAT_Analysis/Output/DataAll.csv"
+
+FigureFilename<-"Output/Figures/Fig5/Fig5B.pdf"
+
+CHATData<-read.csv(CHATDataFile, sep=";", header=TRUE)
+CHATData$GenotypeCombined<- ifelse(CHATData$Genotype=="AD - Donepezil", "J20", "WT")
+
+FontSize=10
+
+CHATPlot<-ggplot(CHATData, 
+                 aes(x=GenotypeCombined, 
+                     y=EstPopUserDefThickness))+
+  geom_point()+
+  facet_grid(.~RegionVar)+
+  ylab("Estimated count")+
+  scale_y_continuous(limits=c(0, 6000), breaks=seq(0, 6000, 2000))+
+  xlab("Genotype")+
+  theme(axis.title.y=element_text (size = FontSize))+
+  theme(axis.title.x=element_text (size = FontSize))+
+  theme(axis.text.y =element_text (size = FontSize))+
+  theme(axis.text.x =element_text (size = FontSize))
+
+CHATPlot
+
+ggsave(FigureFilename, device="pdf", height=6, width=6, units="cm")
+```
