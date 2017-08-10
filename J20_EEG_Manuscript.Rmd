@@ -946,6 +946,9 @@ rm(SCPPDataframeVideoTimes, VideoScoring, VideoTimes)
 Sleep wake example
 
 ```{r SleepWakeExample, include=TRUE, echo=FALSE}
+PtSize<-0.5
+FontSize<-10
+
 AnimalID<-"JF220"
 StartTime<-AnimalIDVideoStartEnd$JF220_1[[1]]
 EndTime<-AnimalIDVideoStartEnd$JF220_1[[2]]
@@ -957,11 +960,15 @@ SleepWakeSpikeCountPlot<-ggplot(SleepWakeSpikeCountData,
                                     y=SpikeCount,
                                     color=SleepWake)) +
   scale_colour_grey() +
-  geom_point() +
+  geom_point(size=PtSize) +
   xlab("Time (s)") +
   ylab("Spike Count/8s")+
   ylim(c(0,8))+
-  xlim(c(0, 7200))
+  xlim(c(0, 7200))+
+  theme(axis.text.x = element_text(size=FontSize),
+        axis.text.y = element_text(size=FontSize),
+        axis.title.x = element_text(size=FontSize),
+        axis.title.y = element_text(size=FontSize))
 
 SleepWakeSpikeCountPlot
 
@@ -1793,7 +1800,7 @@ The data was imported from Anne-Laure's github:https://github.com/AnneLaureHemon
 ```{r CHATQuantification, echo=FALSE}
 CHATDataFile<-"~/Dropbox/ANALYSIS/CHAT_staining/ChAT_Analysis/Output/DataAll.csv"
 
-FigureFilename<-"Output/Figures/Fig5/Fig5B.pdf"
+FigureFilename<-"Output/Figures/Fig5/Fig5A.pdf"
 
 CHATData<-read.csv(CHATDataFile, sep=";", header=TRUE)
 CHATData$GenotypeCombined<- ifelse(CHATData$Genotype=="AD - Donepezil", "J20", "WT")
