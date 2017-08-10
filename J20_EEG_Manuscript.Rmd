@@ -1567,7 +1567,10 @@ for(i in 1:nrow(Fig5SummaryDataframeAM)){
   #Filter for current animal in control condition
   SCPPTemp<-filter(SCPPDataframeAll, 
                    AnimalIDVariable==AnimalIDCurrent,
-                   Treatment=="Control")
+                   Treatment=="Control") 
+  #Filter for last 24hours before end of recording in control
+  
+  SCPPTemp<-filter(SCPPTemp, InitialisedTime>(max(InitialisedTime)-86400))
   #Evaluate mean spikes/8s in control 
   Fig5SummaryDataframeAM$Control[i]<-mean(SCPPTemp$SpikeCount)
   
@@ -1575,6 +1578,11 @@ for(i in 1:nrow(Fig5SummaryDataframeAM)){
   SCPPTemp<-filter(SCPPDataframeAll, 
                    AnimalIDVariable==AnimalIDCurrent,
                    Treatment=="Drug")
+  
+  #Filter for last -48- -24hours of recording in control conditions
+  
+  SCPPTemp<-filter(SCPPTemp, (InitialisedTime<(max(InitialisedTime)-86400))&(InitialisedTime>(max(InitialisedTime)-2*86400)))
+  
   #Evaluate mean spikes/8s in control 
   Fig5SummaryDataframeAM$DPZ[i]<-mean(SCPPTemp$SpikeCount)
 }
@@ -1620,6 +1628,11 @@ for(i in 1:nrow(Fig5SummaryDataframePM)){
   SCPPTemp<-filter(SCPPDataframeAll, 
                    AnimalIDVariable==AnimalIDCurrent,
                    Treatment=="Control")
+  
+  #Filter for last 24hours of recording in control conditions
+  
+  SCPPTemp<-filter(SCPPTemp, InitialisedTime>(max(InitialisedTime)-86400))
+  
   #Evaluate mean spikes/8s in control 
   Fig5SummaryDataframePM$Control[i]<-mean(SCPPTemp$SpikeCount)
   
@@ -1627,6 +1640,9 @@ for(i in 1:nrow(Fig5SummaryDataframePM)){
   SCPPTemp<-filter(SCPPDataframeAll, 
                    AnimalIDVariable==AnimalIDCurrent,
                    Treatment=="Drug")
+  #Filter for last 24hours of recording in control conditions
+  
+  SCPPTemp<-filter(SCPPTemp, (InitialisedTime<(max(InitialisedTime)-86400))&(InitialisedTime>(max(InitialisedTime)-2*86400)))
   #Evaluate mean spikes/8s in control 
   Fig5SummaryDataframePM$DPZ[i]<-mean(SCPPTemp$SpikeCount)
 }
@@ -1658,32 +1674,20 @@ ggsave("Output/DPZPMPlot.png")
 
 Stats
 ```{r DPZEffectStatsChunk, include=TRUE, echo=TRUE}
-
+#Combine AM and PM Dataframe
+Fig5SummaryDataframeWide<-rbind(Fig5SummaryDataframeAM, Fig5SummaryDataframePM)
+rm(Fig5SummaryDataframeAM, Fig5SummaryDataframePM)
 #Paired t-test AM
-Fig5SummaryDataframeAM$SpikeRateDif<-Fig5SummaryDataframeAM$Control-Fig5SummaryDataframeAM$DPZ
+Fig5SummaryDataframeWide$SpikeRateDif<-Fig5SummaryDataframeWide$Control-Fig5SummaryDataframeWide$DPZ
 
 #Test assumptions
-SW_DPZAM<-NormTesting(Fig5SummaryDataframeAM$SpikeRateDif, "QQ_DPZAM")
-SW_DPZAM
+SW_DPZ<-NormTesting(Fig5SummaryDataframeWide$SpikeRateDif, "QQ_DPZAM")
+SW_DPZ
 
-TTestAM<-t.test(Fig5SummaryDataframeAM$Control, Fig5SummaryDataframeAM$DPZ, 
+DPZTTest<-t.test(Fig5SummaryDataframeWide$Control, Fig5SummaryDataframeWide$DPZ, 
                       paired = TRUE)
 
-
-#Paired t-test PM
-Fig5SummaryDataframePM$SpikeRateDif<-Fig5SummaryDataframePM$Control-Fig5SummaryDataframePM$DPZ
-
-#Test assumptions
-SW_DPZPM<-NormTesting(Fig5SummaryDataframePM$SpikeRateDif, "QQ_DPZPM")
-SW_DPZPM
-
-
-TTestPM<-t.test(Fig5SummaryDataframePM$Control, Fig5SummaryDataframeAM$DPZ, 
-                      paired = TRUE)
-
-
-TTestAM
-TTestPM
+DPZTTest
 ```
 
 ###Fig 5 AChE absorption assay
@@ -1697,6 +1701,8 @@ AChEAbsorption$RepeatID<-as.factor(AChEAbsorption$RepeatID)
 #Select the window for looking at slope
 AChEAbsorption<-filter(AChEAbsorption, Time==20)
 ```
+
+
 
 Fit Linear mixed models with GenotypeTreatment as fixed effect and RepeatID as random variable
 ```{r AChEAbsorptionLME, include=TRUE, echo= TRUE}
@@ -1810,4 +1816,28 @@ CHATPlot<-ggplot(CHATData,
 CHATPlot
 
 ggsave(FigureFilename, device="pdf", height=6, width=6, units="cm")
+```
+
+LME for ChAT:
+```{r LME_ChAT, include=TRUE, echo=TRUE}
+
+CHAT.model<-lmer(EstPopUserDefThickness~ GenotypeCombined + RegionVar+(1|ID), data=CHATData, REML = FALSE)
+
+#Plot residuals
+plot(fitted(CHAT.model), residuals(CHAT.model))
+
+#QQ plot
+
+qqnorm(residuals(CHAT.model))
+
+#No large deviations from model assumptions
+
+summary(CHAT.model)
+coef(CHAT.model)
+#Null model
+CHAT.null<-lmer(EstPopUserDefThickness~  RegionVar+(1|ID), data=CHATData, REML = FALSE)
+
+anova(CHAT.null,CHAT.model)
+
+
 ```
