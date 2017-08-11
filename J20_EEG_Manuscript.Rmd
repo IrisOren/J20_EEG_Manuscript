@@ -950,8 +950,8 @@ PtSize<-0.5
 FontSize<-10
 
 AnimalID<-"JF220"
-StartTime<-AnimalIDVideoStartEnd$JF220_1[[1]]
-EndTime<-AnimalIDVideoStartEnd$JF220_1[[2]]
+StartTime<-AnimalIDVideoStartEnd$JF220_3[[1]]
+EndTime<-AnimalIDVideoStartEnd$JF220_3[[2]]
 SleepWakeSpikeCountData<-filter(SCPPDataframeVideoTimesAll, InitialisedTime>StartTime & InitialisedTime<EndTime)
 SleepWakeSpikeCountData$ZeroTime<-SleepWakeSpikeCountData$InitialisedTime-min(SleepWakeSpikeCountData$InitialisedTime)
 SleepWakeSpikeCountData$PerSec<-SleepWakeSpikeCountData$SpikeCount/8
@@ -963,7 +963,7 @@ SleepWakeSpikeCountPlot<-ggplot(SleepWakeSpikeCountData,
   geom_point(size=PtSize) +
   xlab("Time (s)") +
   ylab("Spike Count/8s")+
-  ylim(c(0,8))+
+  ylim(c(0,4))+
   xlim(c(0, 7200))+
   theme(axis.text.x = element_text(size=FontSize),
         axis.text.y = element_text(size=FontSize),
@@ -1132,7 +1132,7 @@ SleepWakeSpikeCountPlot<-ggplot(SleepWakeSpikeCountData,
   
  SleepWakeThetaDelta
  
-ggsave("Output/Figures/Fig4/Fig4A.png",device="png", dpi=300, width=8, height=12, units="cm")      
+ggsave("Output/Figures/Fig4/Fig4A.pdf",device="pdf",  width=8, height=12, units="cm")      
 
 
 ```
@@ -1546,7 +1546,7 @@ FontSize=10
    
  ThetaOverDeltaPlot
  
-ggsave("Output/Figures/Fig4/Fig4D.png",device="png", dpi=300, width=8, height=3, units="cm")      
+ggsave("Output/Figures/Fig4/Fig4D.pdf",device="pdf",  width=8, height=3, units="cm")      
 
 
 ```
@@ -1697,7 +1697,7 @@ DPZTTest<-t.test(Fig5SummaryDataframeWide$Control, Fig5SummaryDataframeWide$DPZ,
 DPZTTest
 ```
 
-###Fig 5 AChE absorption assay
+###Fig 6 AChE absorption assay
 The activity of AChE was measured following the protocol of Ellman et al (Biochem Pharmacol 7:88-95. 1961). The thiocline production rate was compared between neocortical brain homogenates for WT and J20 with/without DPZ treatment. A positive control of WT brain homogenate treated with 10uM neostigmine was included in each preparation.
 
 ```{r AChEAbsorptionAssay, include=TRUE, echo = FALSE}
@@ -1709,6 +1709,36 @@ AChEAbsorption$RepeatID<-as.factor(AChEAbsorption$RepeatID)
 AChEAbsorption<-filter(AChEAbsorption, Time==20)
 ```
 
+First, do a t-test for genotype in control condition
+```{r AChEGenotype, include=TRUE, echo=TRUE}
+AChEAbsorptionGenotype<-filter(AChEAbsorption, Treatment=="Ctrl")
+#Test normality assumption
+DataForTesting <-AChEAbsorptionGenotype$ThioclineRate
+  SW_AChE<-NormTesting(DataForTesting, "QQPlot_Thiocline")
+  SW_AChE
+
+
+WTThioclineRate<-filter(AChEAbsorptionTTestData,Genotype=="WT")  
+J20ThioclineRate<-filter(AChEAbsorptionTTestData,Genotype=="J20")
+
+#Test normality of differences
+  DataForTesting<-WTThioclineRate$ThioclineRate-J20ThioclineRate$ThioclineRate
+  
+  
+  SW_AChEDif<-NormTesting(DataForTesting, "QQPlot_ThioclineDif")
+
+  SW_AChEDif
+  
+  #The differences are not normally distributed
+  
+  AChEWilcox<-wilcox.test(WTThioclineRate$ThioclineRate, J20ThioclineRate$ThioclineRate, 
+                      paired = TRUE)
+
+AChEWilcox
+
+
+
+```
 
 
 Fit Linear mixed models with GenotypeTreatment as fixed effect and RepeatID as random variable
@@ -1771,27 +1801,42 @@ summary(glht(AChEAbsorption.model, linfct = mcp(GenotypeTreatment = "Tukey"), al
 ```{r AChEAbsorptionPlot, include=TRUE, echo=FALSE}
 
 #Plotting
+Filename<-"./Output/Figures/Fig5/Fig5B.pdf"
+
+FontSize<-10
 
 #Reorder the factor variables
 AChEAbsorption$GenotypeTreatment<-as.factor(AChEAbsorption$GenotypeTreatment)
-AChEAbsorption$GenotypeTreatment<-factor(AChEAbsorption$GenotypeTreatment, levels=c("WT_Ctrl", "WT_DPZ", "J20_Ctrl", "J20_DPZ", "WT_NSTG"))
+AChEAbsorption$GenotypeTreatment<-factor(AChEAbsorption$GenotypeTreatment, levels=c("WT_Ctrl","J20_Ctrl","WT_DPZ", "J20_DPZ", "WT_NSTG"))
 
-AChEAbsorptionPlot<-ggplot(AChEAbsorption, aes(x=GenotypeTreatment, y=ThioclineRate, shape=RepeatID, group=RepeatID)) + geom_point() +
-  geom_line(color="grey") +
-  ylab(" Thiocline production rate (nMol/min)") +
+AChEAbsorptionPlot<-ggplot(AChEAbsorption, 
+                           aes(x=GenotypeTreatment,
+                               y=ThioclineRate,
+                               color=RepeatID,
+                               group=RepeatID)) +     
+  geom_point() +
+  geom_line() +
+  ylab("Thiocline prod rate (nMol/min)") +
   xlab("") 
   
 AChEAbsorptionPlot<- AChEAbsorptionPlot +
   theme_bw() +
+  scale_x_discrete(labels=c("WT Ctrl",  "J20 Ctrl", "WT DPZ","J20 DPZ", "WT NSTG"))+
+  scale_y_continuous(limits=c(-0.5,2))+
   theme(panel.border=element_blank(), 
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(), 
     axis.line=element_line(colour = "black"), 
-    axis.text.x = element_text(angle=90))
+    axis.text.x = element_text(angle=90, size=FontSize),
+    axis.text.y = element_text(size=FontSize),
+    axis.title.x = element_text(size=FontSize),
+    axis.title.y = element_text(size=FontSize),
+    legend.position = "none", 
+    plot.margin=unit(c(1.2,1,1,1),  "cm"))
 
 AChEAbsorptionPlot
 
-ggsave("ThioclineRate.png")
+ggsave(Filename, device="pdf", height=8, width=8, units="cm")
 ```
 ########
 ###CHAT quantification
@@ -1804,6 +1849,8 @@ FigureFilename<-"Output/Figures/Fig5/Fig5A.pdf"
 
 CHATData<-read.csv(CHATDataFile, sep=";", header=TRUE)
 CHATData$GenotypeCombined<- ifelse(CHATData$Genotype=="AD - Donepezil", "J20", "WT")
+CHATData$GenotypeCombined<-as.factor(CHATData$GenotypeCombined)
+CHATData$GenotypeCombined<-factor(CHATData$GenotypeCombined, level=c("WT", "J20"))
 
 FontSize=10
 
