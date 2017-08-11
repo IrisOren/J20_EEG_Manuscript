@@ -438,7 +438,7 @@ rm(DataForTesting, Fig1SummaryDataframe_J20, Fig1SummaryDataframe_WT)
 ```
 ###Permutation test to compare intervals with 1 or more spikes between genotypes
 
-```{r Grtr0spike_PermutationTest_Chunk, echo=TRUE}
+```{r Grtr0spike_Compare, echo=TRUE}
 
 
 
@@ -447,23 +447,25 @@ rm(DataForTesting, Fig1SummaryDataframe_J20, Fig1SummaryDataframe_WT)
 Data<-Fig1SummaryDataframe$Grtr0SpikeCtrl
 Group<-Fig1SummaryDataframe$Genotype
 
+WilcoxTestGrtr0Spike<-wilcox.test(Data~Group)
+WilcoxTestGrtr0Spike
 #Permutation tests, two-sided hypothesis, with 4 methods of sampling
 
 
-PermutationResults_exact.ce<-permTS(Data~Group,alternative="two.sided",method="exact.ce")
-PermutationResults_exact.mc<-permTS(Data~Group,alternative="two.sided",method="exact.mc")
-PermutationResults_exact.network<-permTS(Data~Group,alternative="two.sided",method="exact.network")
-PermutationResults_pclt<-permTS(Data~Group,alternative="two.sided",method="pclt")
+#PermutationResults_exact.ce<-permTS(Data~Group,alternative="two.sided",method="exact.ce")
+#PermutationResults_exact.mc<-permTS(Data~Group,alternative="two.sided",method="exact.mc")
+#PermutationResults_exact.network<-permTS(Data~Group,alternative="two.sided",method="exact.network")
+#PermutationResults_pclt<-permTS(Data~Group,alternative="two.sided",method="pclt")
 
-pCE<-PermutationResults_exact.ce$p.value
-pEMC<-PermutationResults_exact.mc$p.value
-pEN<-PermutationResults_exact.network$p.value
-pPCLT<-PermutationResults_pclt$p.value
+#pCE<-PermutationResults_exact.ce$p.value
+#pEMC<-PermutationResults_exact.mc$p.value
+#pEN<-PermutationResults_exact.network$p.value
+#pPCLT<-PermutationResults_pclt$p.value
 
-PrintVector<-data.frame("pCE"=pCE, "pEMC"=pEMC,"pEN"=pEN, "pCLT"=pPCLT)
-PrintVector
+#PrintVector<-data.frame("pCE"=pCE, "pEMC"=pEMC,"pEN"=pEN, "pCLT"=pPCLT)
+#PrintVector
 
-rm(Data, Group, PermutationResults_exact.ce, PermutationResults_exact.mc, PermutationResults_exact.network, PermutationResults_pclt)
+#rm(Data, Group, PermutationResults_exact.ce, PermutationResults_exact.mc, PermutationResults_exact.network, PermutationResults_pclt)
 
 ```
 The number of intervals with one or more spikes was compared between genotypes using a permutation test. There was a significant difference between genotypes in the % intervals with 1 or more spikes:
