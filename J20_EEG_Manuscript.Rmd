@@ -98,6 +98,11 @@ LossIntervalPercentage<-read.csv(file=LossIntervalPercentageFile, header = TRUE)
 LossIntervalPercentage<-dplyr::select(LossIntervalPercentage, AnimalID, LossIntervalPercentage)
 SummaryDataframe$LossIntervalPercentage<-LossIntervalPercentage$LossIntervalPercentage
 
+#Append recording protocol information
+RecordingProtocol<-read.csv(file=LossIntervalPercentageFile, header = TRUE)
+RecordingProtocol<-dplyr::select(RecordingProtocol, AnimalID, Protocol)
+SummaryDataframe$Protocol<-RecordingProtocol$Protocol
+
 
 #Select animals where false positive is < FalsePositiveThreshold
 SummaryDataframe<-filter(SummaryDataframe, FalsePositiveRate<FalsePositiveCutOff)
@@ -557,7 +562,7 @@ We used circular statistics to establish whether IIS were significantly-coupled 
 
 ###1. Create Fig2SummaryDataframe from recordingInformation. 
 ```{r create_fig2_dataframe, ECHO=FALSE, include=FALSE}
-  Fig2SummaryDataframe <- SummaryDataframe[, c("AnimalID", "Genotype", "TimeZone", "Fig2_CircadianCoupling", "LossIntervalPercentage")]
+  Fig2SummaryDataframe <- SummaryDataframe[, c("AnimalID", "Genotype", "TimeZone", "Fig2_CircadianCoupling", "LossIntervalPercentage", "Protocol")]
 #Remove rows with missing variables
   Fig2SummaryDataframe <- Fig2SummaryDataframe[complete.cases(Fig2SummaryDataframe),]
 ```
@@ -790,13 +795,25 @@ SummaryDataframe$Outliers[OutliersIndex]<-1
 ```{r WriteFig2Summaries, echo=FALSE}
 write.csv(SummaryDataframe, "Output/SummaryDataframe.csv")
 
-write.csv(Fig2SummaryDataframe_J20, "/Ouput/Fig2SummaryDataframe_J20.csv")
+write.csv(Fig2SummaryDataframe_J20, "Output/Fig2SummaryDataframe_J20.csv")
 
-write.csv(Fig2SummaryDataframe, "/Ouput/Fig2SummaryDataframe.csv")
+write.csv(Fig2SummaryDataframe, "Output/Fig2SummaryDataframe.csv")
 
 ```
 
+#########
+###Relate spike count to recording protocol
+We want to ask whether the poor phase coupling can result from time after surgery. C= 3 day continuous recording protocol. B=Broken protocol with recordings on days 1, 5,6
+```{r RhoVsProtocolGrp, include=TRUE, echo=FALSE}
+RhoProtocolPlot<-ggplot(Fig2SummaryDataframe_J20, 
+                        aes(x=Protocol, 
+                            y=Rho))+
+  geom_point()
 
+RhoProtocolPlot
+
+
+```
 
 
 
@@ -1477,15 +1494,19 @@ ThetaDeltaGrp<-group_by(ETSweepsDataframe, AnimalIDIndex, TimeForAv)
       NEThetaDeltaGrp<-mutate(NEThetaDeltaGrp, Event="N")
  
  ThetaDeltaGrp<-rbind(ThetaDeltaGrp, NEThetaDeltaGrp)
+ ThetaDeltaGrp<-mutate(ThetaDeltaGrp, Coupling="Strong")
+ 
+ThetaDeltaGrp$Coupling<-ifelse((ThetaDeltaGrp$AnimalIDIndex=="J0456"|ThetaDeltaGrp$AnimalIDIndex=="J0460"),"Weak", "Strong")
 
 #Plotting
 ETPlot<-ggplot(ThetaDeltaGrp, aes(x=TimeForAv, y=MeanThetaDelta, color=Event))+
   geom_line()+
-  geom_point()+
+  geom_point(aes(shape=Coupling))+
   geom_errorbar(
     aes(ymin=CI_L, ymax=CI_U),
     width=0.2)+
   facet_grid(AnimalIDIndex~., scales="free_y")+
+  scale_shape_manual(values=c(16,1)) +
   xlab("Time (s)")+
   ylab(expression(paste(theta, "/", delta)))+
   theme(strip.text = element_blank()) +
@@ -1897,3 +1918,4 @@ anova(CHAT.null,CHAT.model)
 
 
 ```
+
