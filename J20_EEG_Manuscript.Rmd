@@ -257,7 +257,9 @@ SEM = `r SEMAgeOfAnimals` days
 
 Age range = [`r MinAge`, `r MaxAge`] days
 
-
+```{r MeanFalsePositiveRate}
+MeanFalsePositiveRate<-mean(SummaryDataframe$FalsePositiveRate)
+```
 
 ###########################################################
 # Figure 1: Spike count measure between genotype
@@ -328,7 +330,7 @@ Steps:
 
 ```{r SelectAnimalsChunk, echo=FALSE, include=TRUE}
 
-Fig1SummaryDataframe<-filter(Fig1SummaryDataframe, Fig1_IISRate=="YES", LossIntervalPercentage<LossIntervalPercentageThreshold)
+Fig1SummaryDataframe<-filter(Fig1SummaryDataframe, Fig1_IISRate=="YES") #, LossIntervalPercentage<LossIntervalPercentageThreshold)
 
 
 
@@ -380,14 +382,20 @@ rm(ECDFCurrent, DataframeCurrent, SCPPDataframeControl)
 
 Plot ECDF for all animals in control conditions
 
-```{r ECDF_PlotChunk, echo=TRUE, include=TRUE}  
+```{r ECDF_PlotChunk, echo=TRUE, include=TRUE} 
+
+FontSize=10
 ECDFAllCtrlPlot<-ggplot(ECDFAllCtrlDataframe, aes(x=SpikeCount, y=CumFrequency, color=AnimalIDVariable))
 ECDFAllCtrlPlot<-ECDFAllCtrlPlot +
   geom_step() + 
   xlab("Number of spikes/8s") + 
   ylab("Cumulative frequency") + 
   facet_wrap(~Genotype) + 
-  theme(legend.position = "none")+
+  theme(legend.position = "none", 
+        axis.text.x = element_text(size=FontSize),
+        axis.text.y = element_text(size=FontSize),
+        axis.title.x = element_text(size=FontSize),
+        axis.title.y = element_text(size=FontSize))+
   scale_x_continuous(breaks=seq(0, 12, 2))
 
 
@@ -395,7 +403,7 @@ ECDFAllCtrlPlot<-ECDFAllCtrlPlot +
 
 ECDFAllCtrlPlot
 
-ggsave("Output/Figures/Fig1/Fig1B.pdf", device="pdf")
+ggsave("Output/Figures/Fig1/Fig1B.pdf", device="pdf", height = 6, width=8, units="cm")
 
 
 
@@ -439,14 +447,14 @@ DataForTesting <-Fig1SummaryDataframe_J20$Grtr0SpikeCtrl
   #Summary statisitcs by genotype
 SummaryStatsGrtr0Spikes<-SummarySE(Fig1SummaryDataframe, measurevar="Grtr0SpikeCtrl", groupvars=c("Genotype"), na.rm=TRUE)
 
-SummaryStatsGrtr0Spikes$CI_L<-SummaryStatsGrtr0Spikes$Grtr0SpikeCtrl-SummaryStats$ci
-SummaryStatsGrtr0Spikes$CI_U<-SummaryStatsGrtr0Spikes$Grtr0SpikeCtrl+SummaryStats$ci
+SummaryStatsGrtr0Spikes$CI_L<-SummaryStatsGrtr0Spikes$Grtr0SpikeCtrl-SummaryStatsGrtr0Spikes$ci
+SummaryStatsGrtr0Spikes$CI_U<-SummaryStatsGrtr0Spikes$Grtr0SpikeCtrl+SummaryStatsGrtr0Spikes$ci
 
 SummaryStatsGrtr0Spikes
 rm(DataForTesting, Fig1SummaryDataframe_J20, Fig1SummaryDataframe_WT)
 
 ```
-###Permutation test to compare intervals with 1 or more spikes between genotypes
+###Mann-Whitney test to compare intervals with 1 or more spikes between genotypes
 
 ```{r Grtr0spike_Compare, echo=TRUE}
 
@@ -503,7 +511,7 @@ Grtr0SpikePlot <- Grtr0SpikePlot+
  
 Grtr0SpikePlot 
 
-ggsave("Output/Figures/Fig1/Fig1C.pdf", device="pdf", width=4.5, height = 6, units="cm")
+ggsave("Output/Figures/Fig1/Fig1C.pdf", device="pdf", width=4.5, height = 5, units="cm")
 
 ```
 
