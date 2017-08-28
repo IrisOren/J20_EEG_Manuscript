@@ -334,6 +334,11 @@ Fig1SummaryDataframe<-filter(Fig1SummaryDataframe, Fig1_IISRate=="YES", LossInte
 
 ```
 
+
+```{r CalculateMeanLossIntervalPercentage}
+MeanLossIntervalPercentage<-mean(Fig1SummaryDataframe$LossIntervalPercentage)
+```
+
 Select for control/drug treatment condition
 ```{r SelectTreatmentCondition_Chunk, echo=FALSE}
 
@@ -482,16 +487,23 @@ The number of intervals with one or more spikes was compared between genotypes u
 ```{r ScatterPlotChunk, echo=FALSE}
 Fig1SummaryDataframe$Genotype<-factor(Fig1SummaryDataframe$Genotype, levels = c("WT", "J20"))  #Need to reorder factor so that WT appears first in plot
 
+FontSize<-10
+
 Grtr0SpikePlot<- ggplot(Fig1SummaryDataframe, aes(x=Genotype, y=Grtr0SpikeCtrl))
 
 Grtr0SpikePlot <- Grtr0SpikePlot+
   geom_point(size=2)+
   xlab("Genotype")+
-  ylab("Prop intervals > 0 spikes")
+  ylim(0, 0.2)+
+  ylab("Prop intervals > 0 spikes")+
+  theme(axis.text.x = element_text(size=FontSize),
+        axis.text.y = element_text(size=FontSize),
+        axis.title.x = element_text(size=FontSize),
+        axis.title.y = element_text(size=FontSize))
  
 Grtr0SpikePlot 
 
-ggsave("Output/Figures/Fig1/Fig1C.pdf", device="pdf")
+ggsave("Output/Figures/Fig1/Fig1C.pdf", device="pdf", width=4.5, height = 6, units="cm")
 
 ```
 
@@ -647,7 +659,7 @@ SampleMeanDeviation<-meandeviation(Fig2SummaryDataframe_J20$MeanAngle)
 SampleRayleighP<-rayleigh.test(Fig2SummaryDataframe_J20$MeanAngle)
 
 ```
-Across the sample of J20s, the IIS was significantly coupled to light periods (Phi_J20=`r SampleMeanDateTime$TimeOfDay`), Rho_20=`r SampleMeanDeviation`, RayleighP_J20=`r SampleRayleighP`.
+Across the sample of J20s, the IIS was significantly coupled to light periods (Phi_J20=`r SampleMeanDateTime$TimeOfDay`), Rho_J20=`r SampleMeanDeviation`, RayleighP_J20=`r SampleRayleighP`.
 
 
 ###3. Plot polar histograms for all J20s
@@ -714,6 +726,7 @@ To quantify the coupling of IIS to the day-night cycle, we calculated the circul
 
 #t-test to get CI
 MeanRho<-mean(Fig2SummaryDataframe_J20$Rho, na.rm=TRUE)
+SDRho<-sd(Fig2SummaryDataframe_J20$Rho, na.rm=TRUE)
 tRho<-t.test(Fig2SummaryDataframe_J20$Rho)
 CIRho<-tRho$conf.int
 
