@@ -867,27 +867,33 @@ FileList<-c("./Data/VideoScoring/VideoScoringJF220_040416.csv",
             "./Data/VideoScoring/VideoScoringJF220_060416.csv",  
             "./Data/VideoScoring/VideoScoringJF220_070416.csv",
             "./Data/VideoScoring/VideoScoringJF220_080416.csv", 
-           "./Data/VideoScoring/VideoScoringJ0373_030816Day.csv",
-            "./Data/VideoScoring/VideoScoringJ0373_030816Night.csv",
-            "./Data/VideoScoring/VideoScoringJ0375_120816Day.csv",
-            "./Data/VideoScoring/VideoScoringJ0375_120816Night.csv",
-            "./Data/VideoScoring/VideoScoringJ0376_140816Day.csv",
+            #WTs are commented out so as not to have them in the summary plot. However, they can be uncommented to create the individual traces
+           #"./Data/VideoScoring/VideoScoringJ0373_030816Day.csv",
+          #  "./Data/VideoScoring/VideoScoringJ0373_030816Night.csv",
+           # "./Data/VideoScoring/VideoScoringJ0375_120816Day.csv",
+          #  "./Data/VideoScoring/VideoScoringJ0375_120816Night.csv",
+          #  "./Data/VideoScoring/VideoScoringJ0376_140816Day.csv",
             "./Data/VideoScoring/VideoScoringJF221_040416.csv",
             "./Data/VideoScoring/VideoScoringJF221_050416.csv",
             "./Data/VideoScoring/VideoScoringJF221_060416.csv",
             "./Data/VideoScoring/VideoScoringJF221_080416.csv",
-           "./Data/VideoScoring/VideoScoringJ0456_260417.csv",
+          "./Data/VideoScoring/VideoScoringJ0456_250417_1.csv",
+          "./Data/VideoScoring/VideoScoringJ0456_250417_1b.csv",
+          # "./Data/VideoScoring/VideoScoringJ0456_260417.csv", J0456_260417.csv was for not time. None of the other animals used night time recordings so I am not including this file in analysis
+           "./Data/VideoScoring/VideoScoringJ0456_260417_2.csv",
+          "./Data/VideoScoring/VideoScoringJ0460_200517.csv",
           "./Data/VideoScoring/VideoScoringJ0460_210517.csv"
           )
 
 
 AnimalIDList<-c("JF220", "JF220", "JF220", "JF220", "JF220",
-               "J0373", "J0373",
-              "J0375", "J0375", 
-              "J0376", 
+              # "J0373", "J0373",
+             # "J0375", "J0375", 
+             # "J0376", 
               "JF221", "JF221", 
              "JF221", "JF221", 
-             "J0456", "J0460"
+             "J0456", "J0456","J0456",
+              "J0460", "J0460"
             )
 SCPPDataframeVideoTimesAll<-data.frame()
 AnimalIDVideoStartEnd<-list() #A list to store Start and End times for video data. The list index is AnimalID_FileIndex eg. JF220_1
@@ -938,7 +944,7 @@ for(FileIndex in 1:length(FileList)){
     SCPPDataframeVideoTimesAll$SleepWake<-as.factor(SCPPDataframeVideoTimesAll$SleepWake)
 }
 
-rm(SCPPDataframeVideoTimes, VideoScoring, VideoTimes)
+rm(SCPPDataframeVideoTimes, VideoScoring)
 ```
 
 
