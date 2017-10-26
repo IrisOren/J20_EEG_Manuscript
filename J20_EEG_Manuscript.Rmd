@@ -1216,7 +1216,7 @@ ThetaDeltaSpikePlot<-ggplot(SummaryThetaDelta,
                                 y=MeanThetaDelta, 
                                 group=AnimalIDVariable)) +
   geom_line(aes(colour=AnimalIDVariable))+
-  geom_point(aes(colour=AnimalIDVariable, shape=Coupling)) +
+  geom_point(aes(colour=AnimalIDVariable, shape=Coupling), size=2.5) +
   geom_errorbar(aes(ymin=CI_L, ymax=CI_U, colour=AnimalIDVariable)) +
   scale_x_continuous(name = "Spike Count/8s", breaks=seq(0,12,2)) +
   scale_shape_manual(values=c(16,1))+
