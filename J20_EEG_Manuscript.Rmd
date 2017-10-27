@@ -444,6 +444,15 @@ DataForTesting <-Fig1SummaryDataframe_J20$Grtr0SpikeCtrl
   SW_J20<-NormTesting(DataForTesting, "QQPlot_J20")
   SW_J20
   
+#Square root transformation 
+  DataForTesting <-sqrt(Fig1SummaryDataframe_WT$Grtr0SpikeCtrl)
+  SW_WT_sqrt<-NormTesting(DataForTesting, "QQPlot_WT_sqrt")
+  SW_WT_sqrt
+  
+DataForTesting <-sqrt(Fig1SummaryDataframe_J20$Grtr0SpikeCtrl)
+  SW_J20_sqrt<-NormTesting(DataForTesting, "QQPlot_J20_sqrt")
+  SW_J20_sqrt
+  
   #Summary statisitcs by genotype
 SummaryStatsGrtr0Spikes<-SummarySE(Fig1SummaryDataframe, measurevar="Grtr0SpikeCtrl", groupvars=c("Genotype"), na.rm=TRUE)
 
@@ -454,7 +463,8 @@ SummaryStatsGrtr0Spikes
 rm(DataForTesting, Fig1SummaryDataframe_J20, Fig1SummaryDataframe_WT)
 
 ```
-###Mann-Whitney test to compare intervals with 1 or more spikes between genotypes
+###T-test to compare intervals with 1 or more spikes between genotypes 
+Use sqrt transformed data
 
 ```{r Grtr0spike_Compare, echo=TRUE}
 
@@ -462,11 +472,11 @@ rm(DataForTesting, Fig1SummaryDataframe_J20, Fig1SummaryDataframe_WT)
 
 #Compare PercGreaterOneSpike in WT and J20
 
-Data<-Fig1SummaryDataframe$Grtr0SpikeCtrl
+Data<-sqrt(Fig1SummaryDataframe$Grtr0SpikeCtrl)
 Group<-Fig1SummaryDataframe$Genotype
 
-WilcoxTestGrtr0Spike<-wilcox.test(Data~Group)
-WilcoxTestGrtr0Spike
+tTestGrtr0Spike<-t.test(Data~Group)
+tTestGrtr0Spike
 #Permutation tests, two-sided hypothesis, with 4 methods of sampling
 
 
