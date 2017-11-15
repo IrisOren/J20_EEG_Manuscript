@@ -437,11 +437,11 @@ Fig1SummaryDataframe_J20<-filter(Fig1SummaryDataframe, Genotype=="J20")
 #Normality testing using Shapiro-Wilk and QQ plots
 
 DataForTesting <-Fig1SummaryDataframe_WT$Grtr0SpikeCtrl
-  SW_WT<-NormTesting(DataForTesting, "QQPlot_WT")
+  SW_WT<-NormTesting(100*DataForTesting, "QQPlot_WT")
   SW_WT
   
 DataForTesting <-Fig1SummaryDataframe_J20$Grtr0SpikeCtrl
-  SW_J20<-NormTesting(DataForTesting, "QQPlot_J20")
+  SW_J20<-NormTesting(100*DataForTesting, "QQPlot_J20")
   SW_J20
   
 #Square root transformation 
@@ -1845,8 +1845,8 @@ summary(AChEAbsorption.model)
 AChEAbsorption.null<-lmer(LogThioclineRate~ (1|RepeatID), data=AChEAbsorption, REML = FALSE)
 anova(AChEAbsorption.model, AChEAbsorption.null)
 
-
-
+coef(summary(AChEAbsorption.model))
+confint(AChEAbsorption.model)
 
 #Perform post-hoc tests. Use one sided for NSTG < DPZ < Ctrl. Use two-sided for  J20 and WT 
 summary(glht(AChEAbsorption.model, linfct = mcp(GenotypeTreatment = "Tukey"), alternative = "less", test = adjusted("holm")))
@@ -1854,7 +1854,7 @@ summary(glht(AChEAbsorption.model, linfct = mcp(GenotypeTreatment = "Tukey"), al
 
 summary(glht(AChEAbsorption.model, linfct = mcp(GenotypeTreatment = "Tukey"), alternative = "greater", test = adjusted("holm")))
 
-summary(glht(AChEAbsorption.model, linfct = mcp(GenotypeTreatment = "Tukey"), alternative = "two.sided", test = adjusted("holm")))
+GLHTSummary<-summary(glht(AChEAbsorption.model, linfct = mcp(GenotypeTreatment = "Tukey"), alternative = "two.sided", test = adjusted("holm")))
 
 ```
 
@@ -1955,4 +1955,4 @@ anova(CHAT.null,CHAT.model)
 
 
 ```
-
+The statistics table in the manuscript reports the 95%CI for  genotype as slope+-1.96SEM for Genotype = 6.667+-1.96*521.619
