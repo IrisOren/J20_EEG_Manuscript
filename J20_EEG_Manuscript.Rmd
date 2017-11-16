@@ -133,8 +133,8 @@ SummaryDataframe$Age<-as.POSIXct(SummaryDataframe$FirstNDF, origin="1970-01-01",
   
   
 ```{r ImportAndTransformNDFOutput_chunk, ECHO=FALSE}
-if(file.exists("./Output/SCPPDataframeAll.csv")){
-  SCPPDataframeAll<-read.csv("./Output/SCPPDataframeAll.csv")
+if(file.exists("./Output/SCPPDataframeAllOriginal.csv")){
+  SCPPDataframeAll<-read.csv("./Output/SCPPDataframeAllOriginal.csv")
   RemoveOption<-0
   } else{  #Else create SCPPDataframeAll.csv
     
@@ -177,11 +177,11 @@ if(file.exists("./Output/SCPPDataframeAll.csv")){
           
         #Apend time information to Data frame  
           SCPPDataframe <- GetTimeOfDayAndDate(SCPPDataframe, TimeZoneCurrent)
-          SCPPDataframe$TimeOfDay<-as.POSIXct(SCPPDataframe$TimeOfDay)
+         # SCPPDataframe$TimeOfDay<-as.POSIXct(SCPPDataframe$TimeOfDay, tz=TimeZoneCurrent)
           
         #Apend a Treatment variable to the dataframe, based on DrugDateTime as specified in Fig1SummaryDataframe 
           Treatment<-c()
-          Treatment[which(SCPPDataframe$TimeOfDay<strptime(DrugDateTimeCurrent, "%d/%m/%y %H:%M:%S"))]="Control"
+          Treatment[which(SCPPDataframe$TimeOfDay<strptime(DrugDateTimeCurrent, "%d/%m/%y %H:%M:%S", tz=TimeZoneCurrent))]="Control"
           #If there are more intervals than control condition ie. if drug given
           if(length(Treatment)<nrow(SCPPDataframe)){
             Treatment[length(Treatment)+1]="Unknown"
@@ -202,16 +202,22 @@ if(file.exists("./Output/SCPPDataframeAll.csv")){
       }
   
     #Add LightDark variable where LightDark=TRUE is lights on
-    Hour<-hour(SCPPDataframeAll$TimeOfDay)
+    Hour<-lubridate::hour(SCPPDataframeAll$TimeOfDay)
     SCPPDataframeAll$LightDark <- Hour %in% seq(7, 18)
     
     #Add ThetaOverDelta
     SCPPDataframeAll$ThetaOverDelta<-SCPPDataframeAll$Theta/SCPPDataframeAll$Delta
+       
+     #Rename SpikeCount to Single spikecount and calculate total spike count as burst + single
+    SCPPDataframeAll$SingleSpikeCount<-SCPPDataframeAll$SpikeCount
+    SCPPDataframeAll$SpikeCount<-SCPPDataframeAll$SingleSpikeCount+SCPPDataframeAll$BurstCount
+    
+
   RemoveOption<-1
     }
 
 if(RemoveOption==1){
-    rm(SCPPDataframe, FalsePositives, LossIntervalPercentage, Temp, Treatment, Genotype)
+    rm(SCPPDataframe, FalsePositives, LossIntervalPercentage, Treatment, Genotype)
 }
 ```
 
@@ -220,20 +226,20 @@ Save SCPPDataframeAll to output directory
 ```{r SaveSCPPDataframeAllChunk, echo=FALSE}
         
 if(file.exists("./Output/SCPPDataframeAll.csv")==0){
-        write.csv(SCPPDataframeAll,"./Output/SCPPDataframeAll.csv")
+        write.csv(SCPPDataframeAll,"./Output/SCPPDataframeAllOriginal.csv")
 }
   
 
 ```
 
-Make a copy of SCPPDataFrameAllOriginal and save to disk and exclude intervals from SCPPDataframeAll
+ exclude intervals from SCPPDataframeAll and save
 ```{r ExcludeIntervals, echo=FALSE, include=TRUE}
-SCPPDataframeAllOriginal<-SCPPDataframeAll
+
 SCPPDataframeAll<-filter(SCPPDataframeAll, ExcludeInterval==0)
-if(file.exists("./Output/SCPPDataframeAllOriginal.csv")==0){
-          write.csv(SCPPDataframeAllOriginal,"./Output/SCPPDataframeOriginal.csv")
+if(file.exists("./Output/SCPPDataframeAllExcluded.csv")==0){
+          write.csv(SCPPDataframeAll,"./Output/SCPPDataframeAllExcluded.csv")
 }
-rm(SCPPDataframeAllOriginal)
+
 
 ```
 #######################
@@ -510,7 +516,7 @@ FontSize<-10
 Grtr0SpikePlot<- ggplot(Fig1SummaryDataframe, aes(x=Genotype, y=Grtr0SpikeCtrl))
 
 Grtr0SpikePlot <- Grtr0SpikePlot+
-  geom_point(size=2)+
+  geom_boxplot()+
   xlab("Genotype")+
   ylim(0, 0.2)+
   ylab("Prop intervals > 0 spikes")+
@@ -518,6 +524,17 @@ Grtr0SpikePlot <- Grtr0SpikePlot+
         axis.text.y = element_text(size=FontSize),
         axis.title.x = element_text(size=FontSize),
         axis.title.y = element_text(size=FontSize))
+ 
+
+#Grtr0SpikePlot <- Grtr0SpikePlot+
+# geom_point(size=2)+
+#  xlab("Genotype")+
+#  ylim(0, 0.2)+
+#  ylab("Prop intervals > 0 spikes")+
+#  theme(axis.text.x = element_text(size=FontSize),
+#        axis.text.y = element_text(size=FontSize),
+#        axis.title.x = element_text(size=FontSize),
+#        axis.title.y = element_text(size=FontSize))
  
 Grtr0SpikePlot 
 
@@ -663,6 +680,8 @@ for(i in 1:nrow(Fig2SummaryDataframe)){
 rm(TempTimeDataframe, SCPPDataframeControl, AnimalIDCurrent,IISTimesCurrent,SummaryCircStatsCurrent)
 ```
 
+Mean rho: `r mean(Fig2SummaryDataframe_J20$Rho)`
+sd rho: `r sd(Fig2SummaryDataframe_J20$Rho)`
 
 ```{r SampleSummaryStats, echo=FALSE, include=FALSE}
 SampleMeanAngle<-mean.circular(Fig2SummaryDataframe_J20$MeanAngle)
@@ -1049,7 +1068,7 @@ SummarySW<-dplyr::summarise(SW_grouped,
                      CI_L=CI(SpikeCount)[1]/8,
                      CI_U=CI(SpikeCount)[3]/8, 
                      SleepWakeFull=if(SleepWake=="S") "Sleep" else "Wake")
-PhaseCoupling<-c(rep("Weak", 4), rep("Strong", 4))
+PhaseCoupling<-c(rep("Strong", 4), rep("Weak", 4))
 SummarySW$PhaseCoupling<- PhaseCoupling
 
 #Plot summary plot of mean spike rate
@@ -1288,10 +1307,11 @@ Event times are used for an event-triggered average for +-80s around interval of
 ```{r EventTriggeredAveragingOfThetaDelta, echo=FALSE, include=TRUE}
 
 #This chunk has been tested using the following test ETAvTest,R
-ETAvFilename<-"Ouput/ETAvDataframe.csv"
+ETAvFilename<-"Output/ETAvDataframe.csv"
 ETSweepsDataframeFilename<-"Output/ETSweepsDataframeFile.csv"
 if(file.exists(ETAvFilename)==1){
   ETAvDataframe<-read.csv(ETAvFilename)
+  ETSweepsDataframe<-read.csv(ETSweepsDataframeFilename)
 }else{
   AnimalIDList<-c("JF218", "JF220", "JF221",
                   "J0456", "J0460"
@@ -1384,7 +1404,7 @@ if(file.exists(ETAvFilename)==1){
     write.csv(ETAvDataframe, ETAvFilename)
     write.csv(ETSweepsDataframe, ETSweepsDataframeFilename)
     
-    rm(SCPPDataframeCurrent, ETAv, ETAvDataframeTemp, ETW, SCPPDataframeEventAv, ETSweepsDataframe)
+    rm(SCPPDataframeCurrent, ETAv, ETAvDataframeTemp, ETW, SCPPDataframeEventAv)
 }
 ``` 
 
@@ -1394,6 +1414,7 @@ NETAvFilename<-"Output/NETAvDataframe.csv"
 NETSweepsDataframeFilename<-"Output/NETSweepsDataframeFile.csv"
 if(file.exists(NETAvFilename)==1){
   NETAvDataframe<-read.csv(NETAvFilename)
+  NETSweepsDataframe<-read.csv(NETSweepsDataframeFilename)
 }else{
 NoIntervalsToSample<-2000
   
@@ -1483,7 +1504,7 @@ NoIntervalsToSample<-2000
       write.csv(NETAvDataframe, NETAvFilename)
   write.csv(NETSweepsDataframe, NETSweepsDataframeFilename)
   
-  rm(NETAv, NETAvDataframeTemp, NETW, SCPPDataframeEventAv, NETSweepsDataframe, SCPPDataframeCurrent)
+  rm(NETAv, NETAvDataframeTemp, NETW, SCPPDataframeEventAv, SCPPDataframeCurrent)
 }
 ```
 
@@ -1515,7 +1536,8 @@ MeansData<-data.frame(MeanThetaDelta=MeanThetaDeltaForAnimal$MeanThetaDelta, Ani
 #Combine ETSweepsDataframe and NETSweepsDataframe
 
 ThetaDeltaGrp<-group_by(ETSweepsDataframe, AnimalIDIndex, TimeForAv) 
- ThetaDeltaGrp<-summarise(ThetaDeltaGrp, MeanThetaDelta=mean(ThetaDelta),
+ThetaDeltaGrp<-ThetaDeltaGrp[complete.cases(ThetaDeltaGrp),]
+ ThetaDeltaGrp<-dplyr::summarise(ThetaDeltaGrp, MeanThetaDelta=mean(ThetaDelta, na.rm=TRUE),
                         CI_U=CI(ThetaDelta)[1],
                        CI_L=CI(ThetaDelta)[3]
                        )
@@ -1523,10 +1545,11 @@ ThetaDeltaGrp<-group_by(ETSweepsDataframe, AnimalIDIndex, TimeForAv)
     ThetaDeltaGrp<-mutate(ThetaDeltaGrp, Event="E")
  #Repeat for Non Events but set CI_U and CI_L to the mean to not plot error bars
     NEThetaDeltaGrp<-group_by(NETSweepsDataframe, AnimalIDIndex, TimeForAv) 
+    NEThetaDeltaGrp<-NEThetaDeltaGrp[complete.cases(NEThetaDeltaGrp),]
     NEThetaDeltaGrp<-summarise(NEThetaDeltaGrp,
-                               MeanThetaDelta=mean(ThetaDelta),
-                      CI_U=mean(ThetaDelta),
-                   CI_L=mean(ThetaDelta)
+                               MeanThetaDelta=mean(ThetaDelta, na.rm=TRUE),
+                      CI_U=mean(ThetaDelta, na.rm=TRUE),
+                   CI_L=mean(ThetaDelta, na.rm=TRUE)
                     )
       NEThetaDeltaGrp<-mutate(NEThetaDeltaGrp, Event="N")
  
@@ -1535,6 +1558,8 @@ ThetaDeltaGrp<-group_by(ETSweepsDataframe, AnimalIDIndex, TimeForAv)
  
 ThetaDeltaGrp$Coupling<-ifelse((ThetaDeltaGrp$AnimalIDIndex=="J0456"|ThetaDeltaGrp$AnimalIDIndex=="J0460"),"Weak", "Strong")
 
+ThetaDeltaGrp$AnimalIDIndex_f<-factor(ThetaDeltaGrp$AnimalIDIndex, levels=c("JF218", "JF220", "JF221", "J0456", "J0460"))
+
 #Plotting
 ETPlot<-ggplot(ThetaDeltaGrp, aes(x=TimeForAv, y=MeanThetaDelta, color=Event))+
   geom_line()+
@@ -1542,7 +1567,7 @@ ETPlot<-ggplot(ThetaDeltaGrp, aes(x=TimeForAv, y=MeanThetaDelta, color=Event))+
   geom_errorbar(
     aes(ymin=CI_L, ymax=CI_U),
     width=0.2)+
-  facet_grid(AnimalIDIndex~., scales="free_y")+
+  facet_grid(AnimalIDIndex_f~., scales="free_y")+
   scale_shape_manual(values=c(16,1)) +
   xlab("Time (s)")+
   ylab(expression(paste(theta, "/", delta)))+
