@@ -1227,29 +1227,88 @@ Fig4SummaryDataframe<-filter(Fig4SummaryDataframe, Fig4_BrainState=="YES", Genot
 ```
 
 3. For each animal to include, in control conditions: calculate theta/delta for 0 or > 0 spikes
-```{r, ThetaOverDeltaBySpikeNumChunk, echo=FALSE, include=TRUE}
+```{r, ThetaOverDeltaBySpikeNumChunk, echo=FALSE, include=FALSE}
  
-SCPPDataframeControl<-dplyr::filter(SCPPDataframeAll, Treatment=="Control") 
+#SCPPDataframeControl<-dplyr::filter(SCPPDataframeAll, Treatment=="Control") 
 
-ThetaDeltaGrouped<-dplyr::group_by(SCPPDataframeControl, AnimalIDVariable, SpikeCount)
+#ThetaDeltaGrouped<-dplyr::group_by(SCPPDataframeControl, AnimalIDVariable, SpikeCount)
 #Compute the mean spike rate for each animal in each behavioural state                     
-SummaryThetaDelta<-dplyr::summarise(ThetaDeltaGrouped, MeanThetaDelta=mean(ThetaOverDelta, na.rm = TRUE),
-                             CI_L=Rmisc::CI(ThetaOverDelta)[1],
-                             CI_U=Rmisc::CI(ThetaOverDelta)[3])
-SummaryThetaDelta<-dplyr::filter(SummaryThetaDelta, AnimalIDVariable %in% Fig4SummaryDataframe$AnimalID)
+#SummaryThetaDelta<-dplyr::summarise(ThetaDeltaGrouped, MeanThetaDelta=mean(ThetaOverDelta, na.rm = TRUE),
+                             #CI_L=Rmisc::CI(ThetaOverDelta)[1],
+                             #CI_U=Rmisc::CI(ThetaOverDelta)[3])
+#SummaryThetaDelta<-dplyr::filter(SummaryThetaDelta, AnimalIDVariable %in% Fig4SummaryDataframe$AnimalID)
+#SummaryThetaDelta$Coupling<-ifelse((SummaryThetaDelta$AnimalIDVariable=="J0456"|SummaryThetaDelta$AnimalIDVariable=="J0460"),"Weak", "Strong")
+#SummaryThetaDelta
+  
+#ThetaDeltaSpikePlot<-ggplot(SummaryThetaDelta, 
+#                            aes(x=SpikeCount,
+#                                y=MeanThetaDelta, 
+#                                group=AnimalIDVariable)) #+
+#  geom_line(aes(colour=AnimalIDVariable))+
+#  geom_point(aes(colour=AnimalIDVariable, #shape=Coupling), size=2.5) +
+#  geom_errorbar(aes(ymin=CI_L, ymax=CI_U, colour=AnimalIDVariable)) +
+#  scale_x_continuous(name = "Spike Count/8s", breaks=seq(0,12,2)) +
+#  scale_shape_manual(values=c(16,1))+
+#  theme(legend.position = c(0.7, 0.9), 
+#        axis.text.x = element_text(size=10),
+#        axis.text.y = element_text(size=10), 
+#        axis.title.x = element_text(size=10),
+#        axis.title.y = element_text(size=10), 
+#        panel.grid.major = element_blank(), 
+#        panel.grid.minor = element_blank(), 
+#        panel.background = element_blank(), 
+#        axis.line = element_line(colour="black")) +
+#  ylab(expression(paste(theta, "/", delta))) +
+#  scale_color_brewer(palette="Set1", guide=FALSE) +
+#  ylim(0, 3)
+
+#ThetaDeltaSpikePlot
+
+#ggsave("Output/Figures/Fig4/Fig4B.pdf", device="pdf", #height=6, width=8, units="cm")
+
+#rm(ThetaDeltaGrouped)
+
+```
+
+```{r SpikeCountVsThetaOverDelta, echo=FALSE}
+
+SpikesThetaDeltaExport<-dplyr::select(SCPPDataframeControl, SpikeCount, ThetaOverDelta, AnimalIDVariable, InitialisedTime, LightDark)
+SpikesThetaDeltaExport<-dplyr::filter(SpikesThetaDeltaExport,LightDark=="TRUE")
+SpikesThetaDeltaExport<-dplyr::filter(SpikesThetaDeltaExport, AnimalIDVariable %in% Fig4SummaryDataframe$AnimalID)
+
+SpikeCountVsThetaDelta<-SpikesThetaDeltaExport
+
+SpikeCountVsThetaDelta$TDBin<-cut(SpikeCountVsThetaDelta$ThetaOverDelta, breaks=c(0, 1, 2, Inf),# 3, 4, 5, 6, 7, 8, 9, 10, Inf), 
+                labels=c("<1", "1-2", ">2"))#, "3.5", "4.5",
+                       #  "5.5", "6.5",  "7.5", "8.5", #"9.5", 
+ #                        "10.5"))
+TDBin<-as.factor(SpikeCountVsThetaDelta$TDBin)
+
+
+ThetaDeltaGrouped<-dplyr::group_by(SpikeCountVsThetaDelta, AnimalIDVariable, TDBin)
+
+#Compute the mean spike rate for each animal in each the three bins of theta/delta                    
+SummaryThetaDelta<-dplyr::summarise(ThetaDeltaGrouped, MeanSpikeCount=mean(SpikeCount, na.rm = TRUE),
+                          CI_L=Rmisc::CI(SpikeCount)[1],
+                          CI_U=Rmisc::CI(SpikeCount)[3])
+
+#SummaryThetaDelta<-dplyr::filter(SummaryThetaDelta, AnimalIDVariable %in% Fig4SummaryDataframe$AnimalID)
+
 SummaryThetaDelta$Coupling<-ifelse((SummaryThetaDelta$AnimalIDVariable=="J0456"|SummaryThetaDelta$AnimalIDVariable=="J0460"),"Weak", "Strong")
+
+#SummaryThetaDelta$MeanSpikeCount<-ifelse(SummaryThetaDelta$MeanSpikeCount==0, NaN,SummaryThetaDelta$MeanSpikeCount )
 SummaryThetaDelta
   
 ThetaDeltaSpikePlot<-ggplot(SummaryThetaDelta, 
-                            aes(x=SpikeCount,
-                                y=MeanThetaDelta, 
+                            aes(x=TDBin,
+                                y=MeanSpikeCount, 
                                 group=AnimalIDVariable)) +
   geom_line(aes(colour=AnimalIDVariable))+
   geom_point(aes(colour=AnimalIDVariable, shape=Coupling), size=2.5) +
   geom_errorbar(aes(ymin=CI_L, ymax=CI_U, colour=AnimalIDVariable)) +
-  scale_x_continuous(name = "Spike Count/8s", breaks=seq(0,12,2)) +
+  #scale_x_continuous(name = "Spike Count/8s", breaks=seq(0,12,2)) +
   scale_shape_manual(values=c(16,1))+
-  theme(legend.position = c(0.7, 0.9), 
+  theme(legend.position = c(0.2, 0.9), 
         axis.text.x = element_text(size=10),
         axis.text.y = element_text(size=10), 
         axis.title.x = element_text(size=10),
@@ -1258,23 +1317,25 @@ ThetaDeltaSpikePlot<-ggplot(SummaryThetaDelta,
         panel.grid.minor = element_blank(), 
         panel.background = element_blank(), 
         axis.line = element_line(colour="black")) +
-  ylab(expression(paste(theta, "/", delta))) +
+  xlab(expression(paste(theta, "/", delta))) +
+  ylab("Mean spike count/8s") +
   scale_color_brewer(palette="Set1", guide=FALSE) +
-  ylim(0, 3)
+  ylim(0, 1.25)
 
 ThetaDeltaSpikePlot
 
 ggsave("Output/Figures/Fig4/Fig4B.pdf", device="pdf", height=6, width=8, units="cm")
 
-rm(ThetaDeltaGrouped)
+rm(ThetaDeltaGrouped, SpikeCountVsThetaDelta)
 
 ```
 Export for GLME and MCMC analysis
 ```{r ExportForGLME_MCMC, echo=FALSE}
 #This chunk exports the data, for 5 animals with CBLM reference, loss and artifacts excluded, in control conditions to csv for Crispin to analyse 
-SpikesThetaDeltaExport<-dplyr::select(SCPPDataframeControl, SpikeCount, ThetaOverDelta, AnimalIDVariable, InitialisedTime)
+SpikesThetaDeltaExport<-dplyr::select(SCPPDataframeControl, SpikeCount, ThetaOverDelta, AnimalIDVariable, InitialisedTime, LightDark)
+SpikesThetaDeltaExport<-dplyr::filter(SpikesThetaDeltaExport,LightDark=="TRUE")
 SpikesThetaDeltaExport<-dplyr::filter(SpikesThetaDeltaExport, AnimalIDVariable %in% Fig4SummaryDataframe$AnimalID)
-write.csv(SpikesThetaDeltaExport, "Output/SpikesThetaDeltaExport.csv")
+write.csv(SpikesThetaDeltaExport, "Output/SpikesThetaDeltaExport171117.csv")
 rm(SpikesThetaDeltaExport)
 
 
