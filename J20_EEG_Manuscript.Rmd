@@ -1119,6 +1119,11 @@ EndTime<-AnimalIDVideoStartEnd$JF220_1[[2]]
 
 SleepWakeSpikeCountData<-filter(SCPPDataframeVideoTimesAll, InitialisedTime>StartTime & InitialisedTime<EndTime)
 
+SleepWakeSpikeCountData$SleepWakeColourMod<-SleepWakeSpikeCountData$SleepWake
+
+SleepWakeSpikeCountData$SleepWakeColourMod[84]<-"X" #tmin=3088
+SleepWakeSpikeCountData$SleepWakeColourMod[135]<-"X" #tmin=3496
+SleepWakeSpikeCountData$SleepWakeColourMod[254]<-"X" #M1459762631.ndf tmin=848
 
 SleepWakeSpikeCountData$ZeroTime<-SleepWakeSpikeCountData$InitialisedTime-min(SleepWakeSpikeCountData$InitialisedTime)
 #SleepWakeSpikeCountData$PerSec<-SleepWakeSpikeCountData$SpikeCount/8
@@ -1134,7 +1139,7 @@ FontSize=10
 SleepWakeSpikeCountPlot<-ggplot(SleepWakeSpikeCountData,
                                 aes(x=ZeroTime, 
                                     y=SpikeCount,
-                                    color=SleepWake)) +
+                                    color=SleepWakeColourMod)) +
   scale_colour_grey() +
   geom_point(size=PtSize) +
   xlab("Time (s)") +
@@ -1152,7 +1157,7 @@ SleepWakeSpikeCountPlot<-ggplot(SleepWakeSpikeCountData,
       ThetaPlot<-ggplot(SleepWakeSpikeCountData, 
                         aes(x=ZeroTime, 
                             y=ThetauVolts, 
-                            color=SleepWake)) +
+                            color=SleepWakeColourMod)) +
         scale_colour_grey() +
         geom_point(size=PtSize) + 
         scale_y_continuous(limits=c(0,20000), breaks=seq(0, 20000, 10000))+
@@ -1170,7 +1175,7 @@ SleepWakeSpikeCountPlot<-ggplot(SleepWakeSpikeCountData,
       DeltaPlot<-ggplot(SleepWakeSpikeCountData, 
                         aes(x=ZeroTime, 
                             y=DeltauVolts, 
-                            color=SleepWake)) +
+                            color=SleepWakeColourMod)) +
         scale_colour_grey() +
         geom_point(size=PtSize)+
         ylab(expression(paste(delta, " (", mu, V^{2}, ")"))) +
@@ -1186,8 +1191,8 @@ SleepWakeSpikeCountPlot<-ggplot(SleepWakeSpikeCountData,
       ThetaOverDeltaPlot<-ggplot(SleepWakeSpikeCountData, 
                                  aes(x=ZeroTime, 
                                      y=ThetaOverDelta, 
-                                     color=SleepWake)) +
-        scale_colour_grey() +
+                                     color=SleepWakeColourMod)) +
+        scale_colour_grey(na.value = "red") +
         geom_point(size=PtSize) +
         scale_y_continuous(limits=c(0,5), breaks=seq(0, 5, 2.5))+
         ylab(expression(paste(theta, "/", delta)))+
@@ -1207,12 +1212,84 @@ SleepWakeSpikeCountPlot<-ggplot(SleepWakeSpikeCountData,
   
  SleepWakeThetaDelta
  
-ggsave("Output/Figures/Fig4/Fig4A.pdf",device="pdf",  width=8, height=12, units="cm")      
+ggsave("Output/Figures/Fig4/Fig4A_Revision.pdf",device="pdf",  width=8, height=12, units="cm")      
 
 
 ```
 
 
+```{r Fig4Examples, include=TRUE}
+Filename<-"./Data/Fig4RawTraces/Tmin3088.txt" #From JF220 M1459759032.ndf
+
+Trace<-read.csv(Filename, header = FALSE)
+Trace$mV<-Trace$V1*400*10^(-6)
+Trace$Time<-seq(from=0,to=((nrow(Trace)-1)/512), by=1/512)
+Plot<-ggplot(Trace, aes(x=Time, y=mV))+
+  geom_line() +
+  scale_y_continuous(limits=c(16.7, 18.05))+
+  #geom_text(x=27.5, y=16.7, label="5 s") +
+  #geom_text(x=28, y=16.88, label = "0.25 mV")+
+  theme(axis.title.x = element_blank(), 
+        axis.text.x = element_blank(), 
+        axis.ticks.x = element_blank(), 
+        axis.line.x = element_blank(),
+        axis.title.y = element_blank(), 
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.line.y = element_blank())
+  
+
+Plot
+
+ggsave("Output/Figures/Fig4/Fig4Ai.png", device="png", dpi=600)
+############
+Filename<-"./Data/Fig4RawTraces/Tmin3496.txt" #From JF220 M1459759032.ndf
+
+Trace<-read.csv(Filename, header = FALSE)
+Trace$mV<-Trace$V1*400*10^(-6)
+Trace$Time<-seq(from=0,to=((nrow(Trace)-1)/512), by=1/512)
+Plot<-ggplot(Trace, aes(x=Time, y=mV))+
+  geom_line() +
+  scale_y_continuous(limits=c(16.7, 18.05))+
+  #geom_text(x=27.5, y=16.7, label="5 s") +
+  #geom_text(x=28, y=16.88, label = "0.25 mV")+
+  theme(axis.title.x = element_blank(), 
+        axis.text.x = element_blank(), 
+        axis.ticks.x = element_blank(), 
+        axis.line.x = element_blank(),
+        axis.title.y = element_blank(), 
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.line.y = element_blank())
+  
+
+Plot
+ggsave("Output/Figures/Fig4/Fig4Aii.png", device="png", dpi=600)
+
+############
+Filename<-"./Data/Fig4RawTraces/Tmin848.txt" #From JF220 M1459762631.ndf
+
+Trace<-read.csv(Filename, header = FALSE)
+Trace$mV<-Trace$V1*400*10^(-6)
+Trace$Time<-seq(from=0,to=((nrow(Trace)-1)/512), by=1/512)
+Plot<-ggplot(Trace, aes(x=Time, y=mV))+
+  geom_line() +
+  scale_y_continuous(limits=c(16.7, 18.05))+
+  geom_segment(x=0, xend=1, y=16.75, yend=16.75)+ #1s
+  geom_segment(x=0, xend=0, y=16.75, yend=17) +  #250microV
+  theme(axis.title.x = element_blank(), 
+        axis.text.x = element_blank(), 
+        axis.ticks.x = element_blank(), 
+        axis.line.x = element_blank(),
+        axis.title.y = element_blank(), 
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.line.y = element_blank())
+  
+
+Plot
+ggsave("Output/Figures/Fig4/Fig4Aiii.png", device="png", dpi=600)
+```
 ```{r create_fig3_dataframe, ECHO=FALSE}
   Fig4SummaryDataframe<-SummaryDataframe[, c("AnimalID", "Genotype", "TimeZone", "DrugDateTime", "Fig4_BrainState", "LossIntervalPercentage")]
 #Remove rows with missing variables
