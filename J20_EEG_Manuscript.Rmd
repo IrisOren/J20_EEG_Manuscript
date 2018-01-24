@@ -1245,7 +1245,7 @@ Plot<-ggplot(Trace, aes(x=Time, y=mV))+
 
 Plot
 
-ggsave("Output/Figures/Fig4/Fig4Ai.png", device="png", dpi=600)
+ggsave("Output/Figures/Fig4/Fig4Ai.pdf", width=12, units="cm", device="pdf")
 ############
 Filename<-"./Data/Fig4RawTraces/Tmin3496.txt" #From JF220 M1459759032.ndf
 
@@ -1272,7 +1272,7 @@ Plot<-ggplot(Trace, aes(x=Time, y=mV))+
   
 
 Plot
-ggsave("Output/Figures/Fig4/Fig4Aii.png", device="png", dpi=600)
+ggsave("Output/Figures/Fig4/Fig4Aii.pdf", width=12, units="cm", device="pdf")
 
 ############
 Filename<-"./Data/Fig4RawTraces/Tmin848.txt" #From JF220 M1459762631.ndf
@@ -1299,7 +1299,7 @@ Plot<-ggplot(Trace, aes(x=Time, y=mV))+
         panel.border = element_blank())
 
 Plot
-ggsave("Output/Figures/Fig4/Fig4Aiii.png", device="png", dpi=600)
+ggsave("Output/Figures/Fig4/Fig4Aiii.pdf",width=12, units="cm", device="pdf")
 ```
 
 ```{r Fig4ExamplesSpectra, include=TRUE}
