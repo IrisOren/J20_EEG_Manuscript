@@ -1229,6 +1229,7 @@ Plot<-ggplot(Trace, aes(x=Time, y=mV))+
   scale_y_continuous(limits=c(16.7, 18.05))+
   #geom_text(x=27.5, y=16.7, label="5 s") +
   #geom_text(x=28, y=16.88, label = "0.25 mV")+
+  theme_bw()+
   theme(axis.title.x = element_blank(), 
         axis.text.x = element_blank(), 
         axis.ticks.x = element_blank(), 
@@ -1236,7 +1237,10 @@ Plot<-ggplot(Trace, aes(x=Time, y=mV))+
         axis.title.y = element_blank(), 
         axis.text.y = element_blank(),
         axis.ticks.y = element_blank(),
-        axis.line.y = element_blank())
+        axis.line.y = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank())
   
 
 Plot
@@ -1253,6 +1257,7 @@ Plot<-ggplot(Trace, aes(x=Time, y=mV))+
   scale_y_continuous(limits=c(16.7, 18.05))+
   #geom_text(x=27.5, y=16.7, label="5 s") +
   #geom_text(x=28, y=16.88, label = "0.25 mV")+
+  theme_bw()+
   theme(axis.title.x = element_blank(), 
         axis.text.x = element_blank(), 
         axis.ticks.x = element_blank(), 
@@ -1260,7 +1265,10 @@ Plot<-ggplot(Trace, aes(x=Time, y=mV))+
         axis.title.y = element_blank(), 
         axis.text.y = element_blank(),
         axis.ticks.y = element_blank(),
-        axis.line.y = element_blank())
+        axis.line.y = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank())
   
 
 Plot
@@ -1277,6 +1285,7 @@ Plot<-ggplot(Trace, aes(x=Time, y=mV))+
   scale_y_continuous(limits=c(16.7, 18.05))+
   geom_segment(x=0, xend=1, y=16.75, yend=16.75)+ #1s
   geom_segment(x=0, xend=0, y=16.75, yend=17) +  #250microV
+  theme_bw()+
   theme(axis.title.x = element_blank(), 
         axis.text.x = element_blank(), 
         axis.ticks.x = element_blank(), 
@@ -1284,12 +1293,117 @@ Plot<-ggplot(Trace, aes(x=Time, y=mV))+
         axis.title.y = element_blank(), 
         axis.text.y = element_blank(),
         axis.ticks.y = element_blank(),
-        axis.line.y = element_blank())
-  
+        axis.line.y = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank())
 
 Plot
 ggsave("Output/Figures/Fig4/Fig4Aiii.png", device="png", dpi=600)
 ```
+
+```{r Fig4ExamplesSpectra, include=TRUE}
+Height=4
+Width=7
+FontSize=10
+Filename<-"./Data/Fig4RawTraces/Tmin3088_Spec.txt" #From JF220 M1459759032.ndf
+
+Spec<-read.table(Filename, header = FALSE, sep=" ")
+names(Spec)<-c("Freq", "PowerCount2")
+Spec$PowerV2e_6<-Spec$PowerCount2*((400*10^(-6))^2/10^(-6))
+Plot<-ggplot(Spec, aes(x=Freq, y=PowerCount2))+
+  geom_line() +
+  coord_trans(x="log10")+
+  scale_y_continuous(limits=c(0, 100))+
+  scale_x_continuous(limits=c(0.1, 256), breaks=c(2, 20, 200))+
+  #geom_text(x=27.5, y=16.7, label="5 s") +
+  #geom_text(x=28, y=16.88, label = "0.25 mV")+
+  theme_bw() +
+  theme(panel.border = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), 
+        axis.line = element_line(colour = "black"),
+        axis.title.x=element_text(size=FontSize), 
+        axis.text.x=element_text(size=FontSize), 
+        legend.position = "none", 
+        axis.text.y = element_text(size=FontSize),
+        axis.title.y = element_text(size=FontSize))+
+  labs(x="Frequency (Hz)", 
+        y=expression(paste("Power (","10"^{-6},"V"^2, "/Hz)")))
+
+  
+
+Plot
+
+ggsave("Output/Figures/Fig4/Fig4Ai_Spec.pdf", device="pdf", height=Height,width=Width, units="cm")
+
+###########
+
+Filename<-"./Data/Fig4RawTraces/Tmin3496_Spec.txt" 
+
+Spec<-read.table(Filename, header = FALSE, sep=" ")
+names(Spec)<-c("Freq", "PowerCount2")
+Spec$PowerV2e_6<-Spec$PowerCount2*((400*10^(-6))^2/10^(-6))
+Plot<-ggplot(Spec, aes(x=Freq, y=PowerCount2))+
+  geom_line() +
+  coord_trans(x="log10")+
+  scale_y_continuous(limits=c(0, 100))+
+  scale_x_continuous(limits=c(0.1, 256), breaks=c(2, 20, 200))+
+  #geom_text(x=27.5, y=16.7, label="5 s") +
+  #geom_text(x=28, y=16.88, label = "0.25 mV")+
+  theme_bw() +
+  theme(panel.border = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), 
+        axis.line = element_line(colour = "black"),
+        axis.title.x=element_text(size=FontSize), 
+        axis.text.x=element_text(size=FontSize), 
+        legend.position = "none", 
+        axis.text.y = element_text(size=FontSize),
+        axis.title.y = element_text(size=FontSize))+
+  labs(x="Frequency (Hz)", 
+        y=expression(paste("Power (","10"^{-6},"V"^2, "/Hz)")))
+
+  
+
+Plot
+
+ggsave("Output/Figures/Fig4/Fig4Aii_Spec.pdf", device="pdf", height=Height, width=Width, units="cm")
+
+#########
+Filename<-"./Data/Fig4RawTraces/Tmin848_Spec.txt" 
+
+Spec<-read.table(Filename, header = FALSE, sep=" ")
+names(Spec)<-c("Freq", "PowerCount2")
+Spec$PowerV2e_6<-Spec$PowerCount2*((400*10^(-6))^2/10^(-6))
+Plot<-ggplot(Spec, aes(x=Freq, y=PowerCount2))+
+  geom_line() +
+  coord_trans(x="log10")+
+  scale_y_continuous(limits=c(0, 100))+
+  scale_x_continuous(limits=c(0.1, 256), breaks=c(2, 20, 200))+
+  #geom_text(x=27.5, y=16.7, label="5 s") +
+  #geom_text(x=28, y=16.88, label = "0.25 mV")+
+  theme_bw() +
+  theme(panel.border = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), 
+        axis.line = element_line(colour = "black"),
+        axis.title.x=element_text(size=FontSize), 
+        axis.text.x=element_text(size=FontSize), 
+        legend.position = "none", 
+        axis.text.y = element_text(size=FontSize),
+        axis.title.y = element_text(size=FontSize))+
+  labs(x="Frequency (Hz)", 
+        y=expression(paste("Power (","10"^{-6},"V"^2, "/Hz)")))
+
+  
+
+Plot
+
+ggsave("Output/Figures/Fig4/Fig4Aiii_Spec.pdf", device="pdf", height=Height, width=Width, units="cm")
+
+```
+
 ```{r create_fig3_dataframe, ECHO=FALSE}
   Fig4SummaryDataframe<-SummaryDataframe[, c("AnimalID", "Genotype", "TimeZone", "DrugDateTime", "Fig4_BrainState", "LossIntervalPercentage")]
 #Remove rows with missing variables
