@@ -897,8 +897,8 @@ FileList<-c("./Data/VideoScoring/VideoScoringJF220_040416.csv",
             "./Data/VideoScoring/VideoScoringJF220_070416.csv",
             "./Data/VideoScoring/VideoScoringJF220_080416.csv", 
             #WTs are commented out so as not to have them in the summary plot. However, they can be uncommented to create the individual traces
-           #"./Data/VideoScoring/VideoScoringJ0373_030816Day.csv",
-          #  "./Data/VideoScoring/VideoScoringJ0373_030816Night.csv",
+         #  "./Data/VideoScoring/VideoScoringJ0373_030816Day.csv",
+         #   "./Data/VideoScoring/VideoScoringJ0373_030816Night.csv",
            # "./Data/VideoScoring/VideoScoringJ0375_120816Day.csv",
           #  "./Data/VideoScoring/VideoScoringJ0375_120816Night.csv",
           #  "./Data/VideoScoring/VideoScoringJ0376_140816Day.csv",
@@ -1849,9 +1849,9 @@ AnimalIDCurrent<-"J0373"
 StartTime<-AnimalIDVideoStartEnd$J0373_6[[2]]-7200
 EndTime<-AnimalIDVideoStartEnd$J0373_6[[2]]
 
-SleepWakeSpikeCountData<-filter(SCPPDataframeVideoTimesAll, InitialisedTime>StartTime & InitialisedTime<EndTime)
+SleepWakeSpikeCountDataWT<-filter(SCPPDataframeVideoTimesAll, InitialisedTime>StartTime & InitialisedTime<EndTime)
 
-SleepWakeSpikeCountData$ZeroTime<-SleepWakeSpikeCountData$InitialisedTime-min(SleepWakeSpikeCountData$InitialisedTime)
+SleepWakeSpikeCountDataWT$ZeroTime<-SleepWakeSpikeCountDataWT$InitialisedTime-min(SleepWakeSpikeCountDataWT$InitialisedTime)
 
 
 
@@ -1860,13 +1860,13 @@ PtSize=0.5
 FontSize=10
 
    
-      ThetaOverDeltaPlot<-ggplot(SleepWakeSpikeCountData, 
+      ThetaOverDeltaPlot<-ggplot(SleepWakeSpikeCountDataWT, 
                                  aes(x=ZeroTime, 
                                      y=ThetaOverDelta, 
                                      color=SleepWake)) +
         scale_colour_grey() +
         geom_point(size=PtSize) +
-        scale_y_continuous(limits=c(0,5), breaks=seq(0, 5, 2.5))+
+        scale_y_continuous(limits=c(0,20), breaks=seq(0, 20, 5))+
         ylab(expression(paste(theta, "/", delta)))+
         xlab("Time (s)")+
         xlim(c(0, 7200))+
@@ -1883,7 +1883,7 @@ FontSize=10
    
  ThetaOverDeltaPlot
  
-ggsave("Output/Figures/Fig4/Fig4D.pdf",device="pdf",  width=8, height=3, units="cm")      
+ggsave("Output/Figures/FigWTECoG/Fig4B.pdf",device="pdf",  width=8, height=3, units="cm")      
 
 
 ```
