@@ -1853,40 +1853,273 @@ SleepWakeSpikeCountDataWT<-filter(SCPPDataframeVideoTimesAll, InitialisedTime>St
 
 SleepWakeSpikeCountDataWT$ZeroTime<-SleepWakeSpikeCountDataWT$InitialisedTime-min(SleepWakeSpikeCountDataWT$InitialisedTime)
 
+SleepWakeSpikeCountDataWT$SleepWakeColourMod<-SleepWakeSpikeCountDataWT$SleepWake
+
+SleepWakeSpikeCountDataWT$SleepWakeColourMod[126]<-"X" #tmin=3248
+SleepWakeSpikeCountDataWT$SleepWakeColourMod[156]<-"X" #tmin=3496
 
 
+###
+SleepWakeSpikeCountDataWT$ThetauVolts<-SleepWakeSpikeCountDataWT$Theta*160
+
+
+SleepWakeSpikeCountDataWT$DeltauVolts<-SleepWakeSpikeCountDataWT$Delta*160
 
 PtSize=0.5
 FontSize=10
 
-   
-      ThetaOverDeltaPlot<-ggplot(SleepWakeSpikeCountDataWT, 
+    
+      
+ThetaPlot<-ggplot(SleepWakeSpikeCountDataWT, 
+                        aes(x=ZeroTime, 
+                            y=ThetauVolts, 
+                            color=SleepWakeColourMod)) +
+        scale_colour_grey() +
+        geom_point(size=PtSize) + 
+        scale_y_continuous(limits=c(0,20000), breaks=seq(0, 20000, 10000))+
+        xlab("Time (s)") +
+  ylab(expression(paste(theta, " (", mu, V^{2}, ")"))) +
+  xlim(c(0, 7200))+ 
+        theme(axis.title.x=element_blank(), 
+              axis.text.x=element_blank(), 
+              axis.ticks.x = element_blank(), 
+              legend.position = "none")+
+        theme(axis.text.y = element_text(size=FontSize),
+        axis.title.y = element_text(size=FontSize))
+      
+      
+DeltaPlot<-ggplot(SleepWakeSpikeCountDataWT, 
+                        aes(x=ZeroTime, 
+                            y=DeltauVolts, 
+                            color=SleepWakeColourMod)) +
+        scale_colour_grey() +
+        geom_point(size=PtSize)+
+        ylab(expression(paste(delta, " (", mu, V^{2}, ")"))) +
+        scale_y_continuous(limits=c(0,40000), breaks=seq(0, 40000, 20000))+
+        xlim(c(0, 7200))+
+        theme(axis.title.x=element_blank(), 
+              axis.text.x=element_blank(), 
+              axis.ticks.x = element_blank(), 
+              legend.position = "none")+
+      theme(axis.text.y = element_text(size=FontSize),
+        axis.title.y = element_text(size=FontSize))
+      
+ThetaOverDeltaPlot<-ggplot(SleepWakeSpikeCountDataWT, 
                                  aes(x=ZeroTime, 
                                      y=ThetaOverDelta, 
-                                     color=SleepWake)) +
-        scale_colour_grey() +
+                                    color=SleepWakeColourMod))  +
+        scale_colour_grey(na.value = "red") +
         geom_point(size=PtSize) +
         scale_y_continuous(limits=c(0,20), breaks=seq(0, 20, 5))+
         ylab(expression(paste(theta, "/", delta)))+
-        xlab("Time (s)")+
         xlim(c(0, 7200))+
-        theme(axis.title.x=element_text(size=FontSize), 
-              axis.text.x=element_text(size=FontSize), 
-              legend.position = "none", 
-              axis.text.y = element_text(size=FontSize),
+        theme(axis.title.x=element_blank(), 
+              axis.text.x=element_blank(), 
+              axis.ticks.x = element_blank(), 
+              legend.position = "none")+
+        theme(axis.text.y = element_text(size=FontSize),
         axis.title.y = element_text(size=FontSize))
       
       
       
      
 
-   
- ThetaOverDeltaPlot
+    SleepWakeThetaDelta<-plot_grid(DeltaPlot,ThetaPlot,  ThetaOverDeltaPlot, align = "v", nrow = 3, rel_heights = c(1,1,1))
+  
+ SleepWakeThetaDelta
  
-ggsave("Output/Figures/FigWTECoG/Fig4B.pdf",device="pdf",  width=8, height=3, units="cm")      
+
+ 
+ggsave("Output/Figures/FigWTECoG/Fig4B.pdf",device="pdf",  width=8, height=10,  units="cm")      
 
 
 ```
+```{r Fig4Examples, include=TRUE}
+Filename<-"./Data/Fig4RawTraces/J0373/M1470125501_Tmin3476.txt"
+
+Trace<-read.csv(Filename, header = FALSE)
+Trace$mV<-Trace$V1*400*10^(-6)
+Trace$Time<-seq(from=0,to=((nrow(Trace)-1)/512), by=1/512)
+Plot<-ggplot(Trace, aes(x=Time, y=mV))+
+  geom_line() +
+  scale_y_continuous(limits=c(16.7, 18.05))+
+  #geom_text(x=27.5, y=16.7, label="5 s") +
+  #geom_text(x=28, y=16.88, label = "0.25 mV")+
+  theme_bw()+
+  theme(axis.title.x = element_blank(), 
+        axis.text.x = element_blank(), 
+        axis.ticks.x = element_blank(), 
+        axis.line.x = element_blank(),
+        axis.title.y = element_blank(), 
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.line.y = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank())
+  
+
+Plot
+
+ggsave("Output/Figures/FigWTECoG/FigWTAi.pdf", width=12, units="cm", device="pdf")
+############
+Filename<-"./Data/Fig4RawTraces/J0373/M1470136301_Tmin3248.txt"
+Trace<-read.csv(Filename, header = FALSE)
+Trace$mV<-Trace$V1*400*10^(-6)
+Trace$Time<-seq(from=0,to=((nrow(Trace)-1)/512), by=1/512)
+Plot<-ggplot(Trace, aes(x=Time, y=mV))+
+  geom_line() +
+  scale_y_continuous(limits=c(16.7, 18.05))+
+  #geom_text(x=27.5, y=16.7, label="5 s") +
+  #geom_text(x=28, y=16.88, label = "0.25 mV")+
+  theme_bw()+
+  theme(axis.title.x = element_blank(), 
+        axis.text.x = element_blank(), 
+        axis.ticks.x = element_blank(), 
+        axis.line.x = element_blank(),
+        axis.title.y = element_blank(), 
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.line.y = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank())
+  
+
+Plot
+ggsave("Output/Figures/FigWTECoG/FigWTAii.pdf", width=12, units="cm", device="pdf")
+
+############
+Filename<-"./Data/Fig4RawTraces/J0373/M1470136301_Tmin3496.txt" 
+
+Trace<-read.csv(Filename, header = FALSE)
+Trace$mV<-Trace$V1*400*10^(-6)
+Trace$Time<-seq(from=0,to=((nrow(Trace)-1)/512), by=1/512)
+Plot<-ggplot(Trace, aes(x=Time, y=mV))+
+  geom_line() +
+  scale_y_continuous(limits=c(16.7, 18.05))+
+  geom_segment(x=0, xend=1, y=16.75, yend=16.75)+ #1s
+  geom_segment(x=0, xend=0, y=16.75, yend=17) +  #250microV
+  theme_bw()+
+  theme(axis.title.x = element_blank(), 
+        axis.text.x = element_blank(), 
+        axis.ticks.x = element_blank(), 
+        axis.line.x = element_blank(),
+        axis.title.y = element_blank(), 
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.line.y = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank())
+
+Plot
+ggsave("Output/Figures/FigWTECoG/FigWTAiii.pdf",width=12, units="cm", device="pdf")
+```
+
+```{r Fig4ExamplesSpectra, include=TRUE}
+Height=4
+Width=7
+FontSize=10
+Filename<-"./Data/Fig4RawTraces/J0373/M1470125501_Tmin3476_Spec.txt" 
+
+Spec<-read.table(Filename, header = FALSE, sep=" ")
+names(Spec)<-c("Freq", "PowerCount2")
+Spec$PowerV2e_6<-Spec$PowerCount2*((400*10^(-6))^2/10^(-6))
+Plot<-ggplot(Spec, aes(x=Freq, y=PowerCount2))+
+  geom_line() +
+  coord_trans(x="log10")+
+  scale_y_continuous(limits=c(0, 100))+
+  scale_x_continuous(limits=c(0.1, 256), breaks=c(2, 20, 200))+
+  #geom_text(x=27.5, y=16.7, label="5 s") +
+  #geom_text(x=28, y=16.88, label = "0.25 mV")+
+  theme_bw() +
+  theme(panel.border = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), 
+        axis.line = element_line(colour = "black"),
+        axis.title.x=element_text(size=FontSize), 
+        axis.text.x=element_text(size=FontSize), 
+        legend.position = "none", 
+        axis.text.y = element_text(size=FontSize),
+        axis.title.y = element_text(size=FontSize))+
+  labs(x="Frequency (Hz)", 
+        y=expression(paste("Power (","10"^{-6},"V"^2, "/Hz)")))
+
+  
+
+Plot
+
+ggsave("Output/Figures/FigWTECoG/FigWTAi_Spec.pdf", device="pdf", height=Height,width=Width, units="cm")
+
+###########
+
+Filename<-"./Data/Fig4RawTraces/J0373/M1470136301_Tmin3248_Spec.txt" 
+
+Spec<-read.table(Filename, header = FALSE, sep=" ")
+names(Spec)<-c("Freq", "PowerCount2")
+Spec$PowerV2e_6<-Spec$PowerCount2*((400*10^(-6))^2/10^(-6))
+Plot<-ggplot(Spec, aes(x=Freq, y=PowerCount2))+
+  geom_line() +
+  coord_trans(x="log10")+
+  scale_y_continuous(limits=c(0, 100))+
+  scale_x_continuous(limits=c(0.1, 256), breaks=c(2, 20, 200))+
+  #geom_text(x=27.5, y=16.7, label="5 s") +
+  #geom_text(x=28, y=16.88, label = "0.25 mV")+
+  theme_bw() +
+  theme(panel.border = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), 
+        axis.line = element_line(colour = "black"),
+        axis.title.x=element_text(size=FontSize), 
+        axis.text.x=element_text(size=FontSize), 
+        legend.position = "none", 
+        axis.text.y = element_text(size=FontSize),
+        axis.title.y = element_text(size=FontSize))+
+  labs(x="Frequency (Hz)", 
+        y=expression(paste("Power (","10"^{-6},"V"^2, "/Hz)")))
+
+  
+
+Plot
+
+ggsave("Output/Figures/FigWTECoG/FigWTAii_Spec.pdf", device="pdf", height=Height, width=Width, units="cm")
+
+#########
+Filename<-"./Data/Fig4RawTraces/J0373/M1470136301_Tmin3496_Spec.txt" 
+
+Spec<-read.table(Filename, header = FALSE, sep=" ")
+names(Spec)<-c("Freq", "PowerCount2")
+Spec$PowerV2e_6<-Spec$PowerCount2*((400*10^(-6))^2/10^(-6))
+Plot<-ggplot(Spec, aes(x=Freq, y=PowerCount2))+
+  geom_line() +
+  coord_trans(x="log10")+
+  scale_y_continuous(limits=c(0, 100))+
+  scale_x_continuous(limits=c(0.1, 256), breaks=c(2, 20, 200))+
+  #geom_text(x=27.5, y=16.7, label="5 s") +
+  #geom_text(x=28, y=16.88, label = "0.25 mV")+
+  theme_bw() +
+  theme(panel.border = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), 
+        axis.line = element_line(colour = "black"),
+        axis.title.x=element_text(size=FontSize), 
+        axis.text.x=element_text(size=FontSize), 
+        legend.position = "none", 
+        axis.text.y = element_text(size=FontSize),
+        axis.title.y = element_text(size=FontSize))+
+  labs(x="Frequency (Hz)", 
+        y=expression(paste("Power (","10"^{-6},"V"^2, "/Hz)")))
+
+  
+
+Plot
+
+ggsave("Output/Figures/FigWTECog/FigWTAiii_Spec.pdf", device="pdf", height=Height, width=Width, units="cm")
+
+```
+
+
 ###########
 ###Fig 5: DPZ treatment and spike count
 Compare SpikeNumber in Ctrl and DPZ condition for DPZAM and DPZPM groups
