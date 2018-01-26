@@ -1219,87 +1219,51 @@ ggsave("Output/Figures/Fig4/Fig4A_Revision.pdf",device="pdf",  width=8, height=1
 
 
 ```{r Fig4Examples, include=TRUE}
-Filename<-"./Data/Fig4RawTraces/Tmin3088.txt" #From JF220 M1459759032.ndf
+Filename1<-"./Data/Fig4RawTraces/Tmin3088.txt" #From JF220 M1459759032.ndf
 
-Trace<-read.csv(Filename, header = FALSE)
-Trace$mV<-Trace$V1*400*10^(-6)
-Trace$Time<-seq(from=0,to=((nrow(Trace)-1)/512), by=1/512)
-Plot<-ggplot(Trace, aes(x=Time, y=mV))+
-  geom_line() +
-  scale_y_continuous(limits=c(16.7, 18.05))+
-  #geom_text(x=27.5, y=16.7, label="5 s") +
-  #geom_text(x=28, y=16.88, label = "0.25 mV")+
+Trace1<-read.csv(Filename1, header = FALSE)
+Trace1<-Trace1*400*10^(-6)
+
+Filename2<-"./Data/Fig4RawTraces/Tmin3496.txt" #From JF220 M1459759032.ndf
+
+Trace2<-read.csv(Filename2, header = FALSE)
+Trace2<-Trace2*400*10^(-6)
+
+Filename3<-"./Data/Fig4RawTraces/Tmin848.txt" #From JF220 M1459762631.ndf
+
+Trace3<-read.csv(Filename3, header = FALSE)
+Trace3<-Trace3*400*10^(-6)
+
+Traces<-data.frame(c(Trace1, Trace2, Trace3))
+names(Traces)<-c("i. Wake", "ii.Sleep", "iii.Sleep")
+
+Traces$Time<-seq(from=0,to=((nrow(Trace)-1)/512), by=1/512)
+
+MaxSpan<-max(c((max1-min1), (max2-min2), (max3-min3)))
+
+Traces.melted<-melt(Traces, id="Time")
+
+Plot<-ggplot(data = Traces.melted, aes(x = Time, y = value))+
+    geom_line()+
+  facet_grid(variable~.)+
+  scale_y_continuous(limits=c(16.5, 18.05))+
+  geom_segment(x=0, xend=1, y=16.5, yend=16.5)+ #1s
+  geom_segment(x=0, xend=0, y=16.5, yend=17) +  #500microV
   theme_bw()+
-  theme(axis.title.x = element_blank(), 
-        axis.text.x = element_blank(), 
-        axis.ticks.x = element_blank(), 
-        axis.line.x = element_blank(),
-        axis.title.y = element_blank(), 
-        axis.text.y = element_blank(),
-        axis.ticks.y = element_blank(),
-        axis.line.y = element_blank(), 
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.border = element_blank())
-  
-
+  theme(axis.title.x = element_blank(),
+         axis.text.x = element_blank(),
+         axis.ticks.x = element_blank(),
+         axis.line.x = element_blank(),
+         axis.title.y = element_blank(),
+         axis.text.y = element_blank(),
+         axis.ticks.y = element_blank(),
+         axis.line.y = element_blank(),
+         panel.grid.major = element_blank(),
+         panel.grid.minor = element_blank(),
+         panel.border = element_blank())
 Plot
 
-ggsave("Output/Figures/Fig4/Fig4Ai.pdf", width=12, units="cm", device="pdf")
-############
-Filename<-"./Data/Fig4RawTraces/Tmin3496.txt" #From JF220 M1459759032.ndf
-
-Trace<-read.csv(Filename, header = FALSE)
-Trace$mV<-Trace$V1*400*10^(-6)
-Trace$Time<-seq(from=0,to=((nrow(Trace)-1)/512), by=1/512)
-Plot<-ggplot(Trace, aes(x=Time, y=mV))+
-  geom_line() +
-  scale_y_continuous(limits=c(16.7, 18.05))+
-  #geom_text(x=27.5, y=16.7, label="5 s") +
-  #geom_text(x=28, y=16.88, label = "0.25 mV")+
-  theme_bw()+
-  theme(axis.title.x = element_blank(), 
-        axis.text.x = element_blank(), 
-        axis.ticks.x = element_blank(), 
-        axis.line.x = element_blank(),
-        axis.title.y = element_blank(), 
-        axis.text.y = element_blank(),
-        axis.ticks.y = element_blank(),
-        axis.line.y = element_blank(), 
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.border = element_blank())
-  
-
-Plot
-ggsave("Output/Figures/Fig4/Fig4Aii.pdf", width=12, units="cm", device="pdf")
-
-############
-Filename<-"./Data/Fig4RawTraces/Tmin848.txt" #From JF220 M1459762631.ndf
-
-Trace<-read.csv(Filename, header = FALSE)
-Trace$mV<-Trace$V1*400*10^(-6)
-Trace$Time<-seq(from=0,to=((nrow(Trace)-1)/512), by=1/512)
-Plot<-ggplot(Trace, aes(x=Time, y=mV))+
-  geom_line() +
-  scale_y_continuous(limits=c(16.7, 18.05))+
-  geom_segment(x=0, xend=1, y=16.75, yend=16.75)+ #1s
-  geom_segment(x=0, xend=0, y=16.75, yend=17) +  #250microV
-  theme_bw()+
-  theme(axis.title.x = element_blank(), 
-        axis.text.x = element_blank(), 
-        axis.ticks.x = element_blank(), 
-        axis.line.x = element_blank(),
-        axis.title.y = element_blank(), 
-        axis.text.y = element_blank(),
-        axis.ticks.y = element_blank(),
-        axis.line.y = element_blank(), 
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.border = element_blank())
-
-Plot
-ggsave("Output/Figures/Fig4/Fig4Aiii.pdf",width=12, units="cm", device="pdf")
+ggsave("Output/Figures/Fig4/Fig4ALeft.pdf",width=12,height=10, units="cm", device="pdf")
 ```
 
 ```{r Fig4ExamplesSpectra, include=TRUE}
@@ -1843,7 +1807,7 @@ rm(SCPPDataframeEventAv)
 
 
 Example of theta/delta and spike count for WT
-```{r SpikeCountThetaDeltaExample, echo=FALSE}
+```{r ThetaDeltaExampleWT, echo=FALSE}
 
 AnimalIDCurrent<-"J0373"
 StartTime<-AnimalIDVideoStartEnd$J0373_6[[2]]-7200
@@ -1934,87 +1898,52 @@ ggsave("Output/Figures/FigWTECoG/Fig4B.pdf",device="pdf",  width=8, height=10,  
 
 
 ```
-```{r Fig4Examples, include=TRUE}
-Filename<-"./Data/Fig4RawTraces/J0373/M1470125501_Tmin3476.txt"
 
-Trace<-read.csv(Filename, header = FALSE)
-Trace$mV<-Trace$V1*400*10^(-6)
-Trace$Time<-seq(from=0,to=((nrow(Trace)-1)/512), by=1/512)
-Plot<-ggplot(Trace, aes(x=Time, y=mV))+
-  geom_line() +
-  scale_y_continuous(limits=c(16.7, 18.05))+
-  #geom_text(x=27.5, y=16.7, label="5 s") +
-  #geom_text(x=28, y=16.88, label = "0.25 mV")+
+
+```{r FigWTExamples, include=TRUE}
+Filename1<-"./Data/Fig4RawTraces/J0373/M1470125501_Tmin3476.txt"
+
+Trace1<-read.csv(Filename1, header = FALSE)
+Trace1<-Trace1*400*10^(-6)
+
+Filename2<-"./Data/Fig4RawTraces/J0373/M1470136301_Tmin3248.txt"
+Trace2<-read.csv(Filename2, header = FALSE)
+Trace2<-Trace2*400*10^(-6)
+
+Filename3<-"./Data/Fig4RawTraces/J0373/M1470136301_Tmin3496.txt" 
+
+Trace3<-read.csv(Filename3, header = FALSE)
+Trace3<-Trace3*400*10^(-6)
+TracesWT<-data.frame(c(Trace1, Trace2, Trace3))
+names(TracesWT)<-c("i. Wake", "ii.Sleep", "iii.Sleep")
+
+TracesWT$Time<-seq(from=0,to=((nrow(Trace)-1)/512), by=1/512)
+
+
+
+TracesWT.melted<-melt(TracesWT, id="Time")
+
+PlotWT<-ggplot(data = TracesWT.melted, aes(x = Time, y = value))+
+    geom_line()+
+  facet_grid(variable~.)+
+  scale_y_continuous(limits=c(16.5, 18.05))+
+  geom_segment(x=0, xend=1, y=16.5, yend=16.5)+ #1s
+  geom_segment(x=0, xend=0, y=16.5, yend=17) +  #500microV
   theme_bw()+
-  theme(axis.title.x = element_blank(), 
-        axis.text.x = element_blank(), 
-        axis.ticks.x = element_blank(), 
-        axis.line.x = element_blank(),
-        axis.title.y = element_blank(), 
-        axis.text.y = element_blank(),
-        axis.ticks.y = element_blank(),
-        axis.line.y = element_blank(), 
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.border = element_blank())
-  
+  theme(axis.title.x = element_blank(),
+         axis.text.x = element_blank(),
+         axis.ticks.x = element_blank(),
+         axis.line.x = element_blank(),
+         axis.title.y = element_blank(),
+         axis.text.y = element_blank(),
+         axis.ticks.y = element_blank(),
+         axis.line.y = element_blank(),
+         panel.grid.major = element_blank(),
+         panel.grid.minor = element_blank(),
+         panel.border = element_blank())
+PlotWT
 
-Plot
-
-ggsave("Output/Figures/FigWTECoG/FigWTAi.pdf", width=12, units="cm", device="pdf")
-############
-Filename<-"./Data/Fig4RawTraces/J0373/M1470136301_Tmin3248.txt"
-Trace<-read.csv(Filename, header = FALSE)
-Trace$mV<-Trace$V1*400*10^(-6)
-Trace$Time<-seq(from=0,to=((nrow(Trace)-1)/512), by=1/512)
-Plot<-ggplot(Trace, aes(x=Time, y=mV))+
-  geom_line() +
-  scale_y_continuous(limits=c(16.7, 18.05))+
-  #geom_text(x=27.5, y=16.7, label="5 s") +
-  #geom_text(x=28, y=16.88, label = "0.25 mV")+
-  theme_bw()+
-  theme(axis.title.x = element_blank(), 
-        axis.text.x = element_blank(), 
-        axis.ticks.x = element_blank(), 
-        axis.line.x = element_blank(),
-        axis.title.y = element_blank(), 
-        axis.text.y = element_blank(),
-        axis.ticks.y = element_blank(),
-        axis.line.y = element_blank(), 
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.border = element_blank())
-  
-
-Plot
-ggsave("Output/Figures/FigWTECoG/FigWTAii.pdf", width=12, units="cm", device="pdf")
-
-############
-Filename<-"./Data/Fig4RawTraces/J0373/M1470136301_Tmin3496.txt" 
-
-Trace<-read.csv(Filename, header = FALSE)
-Trace$mV<-Trace$V1*400*10^(-6)
-Trace$Time<-seq(from=0,to=((nrow(Trace)-1)/512), by=1/512)
-Plot<-ggplot(Trace, aes(x=Time, y=mV))+
-  geom_line() +
-  scale_y_continuous(limits=c(16.7, 18.05))+
-  geom_segment(x=0, xend=1, y=16.75, yend=16.75)+ #1s
-  geom_segment(x=0, xend=0, y=16.75, yend=17) +  #250microV
-  theme_bw()+
-  theme(axis.title.x = element_blank(), 
-        axis.text.x = element_blank(), 
-        axis.ticks.x = element_blank(), 
-        axis.line.x = element_blank(),
-        axis.title.y = element_blank(), 
-        axis.text.y = element_blank(),
-        axis.ticks.y = element_blank(),
-        axis.line.y = element_blank(), 
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.border = element_blank())
-
-Plot
-ggsave("Output/Figures/FigWTECoG/FigWTAiii.pdf",width=12, units="cm", device="pdf")
+ggsave("Output/Figures/FigWTECoG/FigWTSignals.pdf",width=12,height=10, units="cm", device="pdf")
 ```
 
 ```{r Fig4ExamplesSpectra, include=TRUE}
