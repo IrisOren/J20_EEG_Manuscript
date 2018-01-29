@@ -897,8 +897,8 @@ FileList<-c("./Data/VideoScoring/VideoScoringJF220_040416.csv",
             "./Data/VideoScoring/VideoScoringJF220_070416.csv",
             "./Data/VideoScoring/VideoScoringJF220_080416.csv", 
             #WTs are commented out so as not to have them in the summary plot. However, they can be uncommented to create the individual traces
-         #  "./Data/VideoScoring/VideoScoringJ0373_030816Day.csv",
-         #   "./Data/VideoScoring/VideoScoringJ0373_030816Night.csv",
+           "./Data/VideoScoring/VideoScoringJ0373_030816Day.csv",
+            "./Data/VideoScoring/VideoScoringJ0373_030816Night.csv",
            # "./Data/VideoScoring/VideoScoringJ0375_120816Day.csv",
           #  "./Data/VideoScoring/VideoScoringJ0375_120816Night.csv",
           #  "./Data/VideoScoring/VideoScoringJ0376_140816Day.csv",
@@ -916,7 +916,7 @@ FileList<-c("./Data/VideoScoring/VideoScoringJF220_040416.csv",
 
 
 AnimalIDList<-c("JF220", "JF220", "JF220", "JF220", "JF220",
-              # "J0373", "J0373",
+              "J0373", "J0373",
              # "J0375", "J0375", 
              # "J0376", 
               "JF221", "JF221", 
@@ -1810,8 +1810,9 @@ Example of theta/delta and spike count for WT
 ```{r ThetaDeltaExampleWT, echo=FALSE}
 
 AnimalIDCurrent<-"J0373"
-StartTime<-AnimalIDVideoStartEnd$J0373_6[[2]]-7200
-EndTime<-AnimalIDVideoStartEnd$J0373_6[[2]]
+StartTime<-AnimalIDVideoStartEnd$J0373_6[[2]]-14400
+EndTime<-AnimalIDVideoStartEnd$J0373_6[[2]]-7200
+#Note, the subtraction of points is not based on anything in the data, other than to capture both wake and sleep epochs
 
 SleepWakeSpikeCountDataWT<-filter(SCPPDataframeVideoTimesAll, InitialisedTime>StartTime & InitialisedTime<EndTime)
 
@@ -1819,8 +1820,10 @@ SleepWakeSpikeCountDataWT$ZeroTime<-SleepWakeSpikeCountDataWT$InitialisedTime-mi
 
 SleepWakeSpikeCountDataWT$SleepWakeColourMod<-SleepWakeSpikeCountDataWT$SleepWake
 
-SleepWakeSpikeCountDataWT$SleepWakeColourMod[126]<-"X" #tmin=3248
-SleepWakeSpikeCountDataWT$SleepWakeColourMod[156]<-"X" #tmin=3496
+SleepWakeSpikeCountDataWT$SleepWakeColourMod[151]<-"X" #M1470125501 tmin=3472
+SleepWakeSpikeCountDataWT$SleepWakeColourMod[651]<-"X" #M1470132701 tmin=312
+
+SleepWakeSpikeCountDataWT$SleepWakeColourMod[771]<-"X" #M1470132701 tmin=1280
 
 
 ###
@@ -1840,7 +1843,7 @@ ThetaPlot<-ggplot(SleepWakeSpikeCountDataWT,
                             color=SleepWakeColourMod)) +
         scale_colour_grey() +
         geom_point(size=PtSize) + 
-        scale_y_continuous(limits=c(0,20000), breaks=seq(0, 20000, 10000))+
+        scale_y_continuous(limits=c(0,10000), breaks=seq(0, 20000, 10000))+
         xlab("Time (s)") +
   ylab(expression(paste(theta, " (", mu, V^{2}, ")"))) +
   xlim(c(0, 7200))+ 
@@ -1877,12 +1880,13 @@ ThetaOverDeltaPlot<-ggplot(SleepWakeSpikeCountDataWT,
         scale_y_continuous(limits=c(0,20), breaks=seq(0, 20, 5))+
         ylab(expression(paste(theta, "/", delta)))+
         xlim(c(0, 7200))+
-        theme(axis.title.x=element_blank(), 
-              axis.text.x=element_blank(), 
+        theme(axis.text.x = element_text(size=FontSize),
+              axis.title.x = element_text(size=FontSize), 
               axis.ticks.x = element_blank(), 
               legend.position = "none")+
         theme(axis.text.y = element_text(size=FontSize),
-        axis.title.y = element_text(size=FontSize))
+        axis.title.y = element_text(size=FontSize))+
+  xlab("Time (s)")
       
       
       
@@ -1894,23 +1898,23 @@ ThetaOverDeltaPlot<-ggplot(SleepWakeSpikeCountDataWT,
  
 
  
-ggsave("Output/Figures/FigWTECoG/Fig4B.pdf",device="pdf",  width=8, height=10,  units="cm")      
+ggsave("Output/Figures/FigWTECoG/FigWTECoG_Revision.pdf",device="pdf",  width=8, height=10,  units="cm")      
 
 
 ```
 
 
 ```{r FigWTExamples, include=TRUE}
-Filename1<-"./Data/Fig4RawTraces/J0373/M1470125501_Tmin3476.txt"
+Filename1<-"./Data/Fig4RawTraces/J0373/M1470125501_Tmin3472.txt"
 
 Trace1<-read.csv(Filename1, header = FALSE)
 Trace1<-Trace1*400*10^(-6)
 
-Filename2<-"./Data/Fig4RawTraces/J0373/M1470136301_Tmin3248.txt"
+Filename2<-"./Data/Fig4RawTraces/J0373/M1470132701_Tmin312.txt"
 Trace2<-read.csv(Filename2, header = FALSE)
 Trace2<-Trace2*400*10^(-6)
 
-Filename3<-"./Data/Fig4RawTraces/J0373/M1470136301_Tmin3496.txt" 
+Filename3<-"./Data/Fig4RawTraces/J0373/M1470132701_Tmin1280.txt" 
 
 Trace3<-read.csv(Filename3, header = FALSE)
 Trace3<-Trace3*400*10^(-6)
@@ -1950,7 +1954,7 @@ ggsave("Output/Figures/FigWTECoG/FigWTSignals.pdf",width=12,height=10, units="cm
 Height=4
 Width=7
 FontSize=10
-Filename<-"./Data/Fig4RawTraces/J0373/M1470125501_Tmin3476_Spec.txt" 
+Filename<-"./Data/Fig4RawTraces/J0373/M1470125501_Tmin3472_Spec.txt" 
 
 Spec<-read.table(Filename, header = FALSE, sep=" ")
 names(Spec)<-c("Freq", "PowerCount2")
@@ -1979,11 +1983,11 @@ Plot<-ggplot(Spec, aes(x=Freq, y=PowerCount2))+
 
 Plot
 
-ggsave("Output/Figures/FigWTECoG/FigWTAi_Spec.pdf", device="pdf", height=Height,width=Width, units="cm")
+ggsave("Output/Figures/FigWTECoG/FigWTi_Spec.pdf", device="pdf", height=Height,width=Width, units="cm")
 
 ###########
 
-Filename<-"./Data/Fig4RawTraces/J0373/M1470136301_Tmin3248_Spec.txt" 
+Filename<-"./Data/Fig4RawTraces/J0373/M1470132701_Tmin312_Spec.txt"
 
 Spec<-read.table(Filename, header = FALSE, sep=" ")
 names(Spec)<-c("Freq", "PowerCount2")
@@ -2012,10 +2016,10 @@ Plot<-ggplot(Spec, aes(x=Freq, y=PowerCount2))+
 
 Plot
 
-ggsave("Output/Figures/FigWTECoG/FigWTAii_Spec.pdf", device="pdf", height=Height, width=Width, units="cm")
+ggsave("Output/Figures/FigWTECoG/FigWTii_Spec.pdf", device="pdf", height=Height, width=Width, units="cm")
 
 #########
-Filename<-"./Data/Fig4RawTraces/J0373/M1470136301_Tmin3496_Spec.txt" 
+Filename<-"./Data/Fig4RawTraces/J0373/M1470132701_Tmin1280_Spec.txt" 
 
 Spec<-read.table(Filename, header = FALSE, sep=" ")
 names(Spec)<-c("Freq", "PowerCount2")
@@ -2044,7 +2048,7 @@ Plot<-ggplot(Spec, aes(x=Freq, y=PowerCount2))+
 
 Plot
 
-ggsave("Output/Figures/FigWTECog/FigWTAiii_Spec.pdf", device="pdf", height=Height, width=Width, units="cm")
+ggsave("Output/Figures/FigWTECog/FigWTiii_Spec.pdf", device="pdf", height=Height, width=Width, units="cm")
 
 ```
 
