@@ -897,11 +897,11 @@ FileList<-c("./Data/VideoScoring/VideoScoringJF220_040416.csv",
             "./Data/VideoScoring/VideoScoringJF220_070416.csv",
             "./Data/VideoScoring/VideoScoringJF220_080416.csv", 
             #WTs are commented out so as not to have them in the summary plot. However, they can be uncommented to create the individual traces
-       #    "./Data/VideoScoring/VideoScoringJ0373_030816Day.csv",
+          "./Data/VideoScoring/VideoScoringJ0373_030816Day.csv",
         #    "./Data/VideoScoring/VideoScoringJ0373_030816Night.csv",
-           # "./Data/VideoScoring/VideoScoringJ0375_120816Day.csv",
+           "./Data/VideoScoring/VideoScoringJ0375_120816Day.csv",
           #  "./Data/VideoScoring/VideoScoringJ0375_120816Night.csv",
-          #  "./Data/VideoScoring/VideoScoringJ0376_140816Day.csv",
+            "./Data/VideoScoring/VideoScoringJ0376_140816Day.csv",
             "./Data/VideoScoring/VideoScoringJF221_040416.csv",
             "./Data/VideoScoring/VideoScoringJF221_050416.csv",
             "./Data/VideoScoring/VideoScoringJF221_060416.csv",
@@ -916,9 +916,9 @@ FileList<-c("./Data/VideoScoring/VideoScoringJF220_040416.csv",
 
 
 AnimalIDList<-c("JF220", "JF220", "JF220", "JF220", "JF220",
-             # "J0373", "J0373",
-             # "J0375", "J0375", 
-             # "J0376", 
+             "J0373",# "J0373",
+             "J0375",# "J0375", 
+             "J0376", 
               "JF221", "JF221", 
              "JF221", "JF221", 
              "J0456", "J0456","J0456",
@@ -972,11 +972,56 @@ for(FileIndex in 1:length(FileList)){
   
     SCPPDataframeVideoTimesAll$SleepWake<-as.factor(SCPPDataframeVideoTimesAll$SleepWake)
 }
-
+SCPPDataframeVideoTimesAllWithWT<-SCPPDataframeVideoTimesAll
+SCPPDataframeVideoTimesAll<-filter(SCPPDataframeVideoTimesAll, 
+                                   AnimalIDVariable %in% c("JF220", "JF221", "J0456", "J0460"))
 rm(SCPPDataframeVideoTimes, VideoScoring)
 ```
 
+Calculate ratio of REM (theta/delta>2)/total sleep
+```{r REM_ratio, include=TRUE, echo=FALSE}
+#this chunk uses SCPPDataframeVideoTimesAll with the WT included. For the MS, used WT scored in day time onlu
+REMRatioDF<-data.frame(AnimalID=c("JF220", 
+                                    "J0373",
+                                    "J0375", 
+                                    "J0376", 
+                                    "JF221",
+                                    "J0456", 
+                                    "J0460"), 
+                         Genotype=c("J20", 
+                                    "WT", 
+                                    "WT",
+                                    "WT",
+                                    "J20", 
+                                    "J20",
+                                    "J20"
+                                  ))
+#filter SCPPDataframeVideoTimesAll for sleep periods only
+SleepDataframe<-filter(SCPPDataframeVideoTimesAllWithWT, SleepWake=="S")
+#Add a variable to SleepDataframe for identifying REM sleep
+SleepDataframe$REM<-ifelse(SleepDataframe$ThetaOverDelta>2, "R", "N")
 
+
+for(i in 1:nrow(REMRatioDF)){
+  AnimalIDCurrent<-as.character(REMRatioDF$AnimalID[i])
+  SleepdataframeCurrent<-filter(SleepDataframe, AnimalIDVariable==AnimalIDCurrent)
+  REMRatioDF$REMTotal[i]<-sum(SleepdataframeCurrent$REM=="R")
+  REMRatioDF$SleepTotal[i]<-nrow(SleepdataframeCurrent)
+
+}
+REMRatioDF$REM_ratio<-REMRatioDF$REMTotal/REMRatioDF$SleepTotal
+
+
+REMRatioDFGrouped<-dplyr::group_by(REMRatioDF, Genotype)
+REMRAtioByGenotype<-dplyr::summarise(REMRatioDFGrouped, 
+                      MeanRatio=mean(REM_ratio), 
+                      sdRatio=sd(REM_ratio))
+
+```
+REM to total sleep ratio between genotypes
+`r REMRatioByGenotype`
+
+##########
 5. Plot theta/delta and sleep wake against time. The chunk iterates through all animals and saves output plots into folder ./Output/ThetaDeltaBehavioralState
 
 ```{r, PlotThetaDeltaSW_all, echo=FALSE, include=FALSE}
@@ -1104,6 +1149,10 @@ ggsave("Output/Figures/Fig3/Fig3B.pdf", device="pdf", width=8, height=5, units="
 #rm(SCPPDataframeVideoTimesAll)
 
 ```
+
+
+
+
 ######################################
 ####Fig 4 IIS and theta/delta
 Theta/delta ratios have been used to characterise sleep stages (Ewell et al 2016) and seizures were shown to be more prevalent following REM. We thus asked whether IIS were more prevalent during periods of elevated Theta/Delta.
@@ -1814,7 +1863,7 @@ StartTime<-AnimalIDVideoStartEnd$J0373_6[[2]]-14400
 EndTime<-AnimalIDVideoStartEnd$J0373_6[[2]]-7200
 #Note, the subtraction of points is not based on anything in the data, other than to capture both wake and sleep epochs
 
-SleepWakeSpikeCountDataWT<-filter(SCPPDataframeVideoTimesAll, InitialisedTime>StartTime & InitialisedTime<EndTime)
+SleepWakeSpikeCountDataWT<-filter(SCPPDataframeVideoTimesAllWithWT, InitialisedTime>StartTime & InitialisedTime<EndTime & AnimalIDVariable==AnimalIDCurrent)
 
 SleepWakeSpikeCountDataWT$ZeroTime<-SleepWakeSpikeCountDataWT$InitialisedTime-min(SleepWakeSpikeCountDataWT$InitialisedTime)
 
