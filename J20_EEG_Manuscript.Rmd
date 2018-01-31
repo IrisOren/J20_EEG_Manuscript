@@ -972,7 +972,11 @@ for(FileIndex in 1:length(FileList)){
   
     SCPPDataframeVideoTimesAll$SleepWake<-as.factor(SCPPDataframeVideoTimesAll$SleepWake)
 }
+
+#Copy of SCPPDataframeVideoTimesAll which includes WT
 SCPPDataframeVideoTimesAllWithWT<-SCPPDataframeVideoTimesAll
+
+#Copy of SCPPDataframeVideoTimesAll which includes only J20 for use in preexisting code below
 SCPPDataframeVideoTimesAll<-filter(SCPPDataframeVideoTimesAll, 
                                    AnimalIDVariable %in% c("JF220", "JF221", "J0456", "J0460"))
 rm(SCPPDataframeVideoTimes, VideoScoring)
