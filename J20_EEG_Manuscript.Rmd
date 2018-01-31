@@ -897,8 +897,8 @@ FileList<-c("./Data/VideoScoring/VideoScoringJF220_040416.csv",
             "./Data/VideoScoring/VideoScoringJF220_070416.csv",
             "./Data/VideoScoring/VideoScoringJF220_080416.csv", 
             #WTs are commented out so as not to have them in the summary plot. However, they can be uncommented to create the individual traces
-           "./Data/VideoScoring/VideoScoringJ0373_030816Day.csv",
-            "./Data/VideoScoring/VideoScoringJ0373_030816Night.csv",
+       #    "./Data/VideoScoring/VideoScoringJ0373_030816Day.csv",
+        #    "./Data/VideoScoring/VideoScoringJ0373_030816Night.csv",
            # "./Data/VideoScoring/VideoScoringJ0375_120816Day.csv",
           #  "./Data/VideoScoring/VideoScoringJ0375_120816Night.csv",
           #  "./Data/VideoScoring/VideoScoringJ0376_140816Day.csv",
@@ -916,7 +916,7 @@ FileList<-c("./Data/VideoScoring/VideoScoringJF220_040416.csv",
 
 
 AnimalIDList<-c("JF220", "JF220", "JF220", "JF220", "JF220",
-              "J0373", "J0373",
+             # "J0373", "J0373",
              # "J0375", "J0375", 
              # "J0376", 
               "JF221", "JF221", 
@@ -1843,7 +1843,7 @@ ThetaPlot<-ggplot(SleepWakeSpikeCountDataWT,
                             color=SleepWakeColourMod)) +
         scale_colour_grey() +
         geom_point(size=PtSize) + 
-        scale_y_continuous(limits=c(0,10000), breaks=seq(0, 20000, 10000))+
+        scale_y_continuous(limits=c(0,10000), breaks=seq(0, 10000, 5000))+
         xlab("Time (s)") +
   ylab(expression(paste(theta, " (", mu, V^{2}, ")"))) +
   xlim(c(0, 7200))+ 
@@ -1877,12 +1877,11 @@ ThetaOverDeltaPlot<-ggplot(SleepWakeSpikeCountDataWT,
                                     color=SleepWakeColourMod))  +
         scale_colour_grey(na.value = "red") +
         geom_point(size=PtSize) +
-        scale_y_continuous(limits=c(0,20), breaks=seq(0, 20, 5))+
+        scale_y_continuous(limits=c(0,15), breaks=seq(0, 15, 5))+
         ylab(expression(paste(theta, "/", delta)))+
         xlim(c(0, 7200))+
         theme(axis.text.x = element_text(size=FontSize),
               axis.title.x = element_text(size=FontSize), 
-              axis.ticks.x = element_blank(), 
               legend.position = "none")+
         theme(axis.text.y = element_text(size=FontSize),
         axis.title.y = element_text(size=FontSize))+
@@ -1892,7 +1891,7 @@ ThetaOverDeltaPlot<-ggplot(SleepWakeSpikeCountDataWT,
       
      
 
-    SleepWakeThetaDelta<-plot_grid(DeltaPlot,ThetaPlot,  ThetaOverDeltaPlot, align = "v", nrow = 3, rel_heights = c(1,1,1))
+    SleepWakeThetaDelta<-plot_grid(DeltaPlot,ThetaPlot,  ThetaOverDeltaPlot, align = "v", nrow = 3, rel_heights = c(1,1,1.25))
   
  SleepWakeThetaDelta
  
