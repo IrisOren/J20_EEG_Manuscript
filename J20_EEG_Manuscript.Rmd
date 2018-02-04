@@ -1011,15 +1011,18 @@ for(i in 1:nrow(REMRatioDF)){
   SleepdataframeCurrent<-filter(SleepDataframe, AnimalIDVariable==AnimalIDCurrent)
   REMRatioDF$REMTotal[i]<-sum(SleepdataframeCurrent$REM=="R")
   REMRatioDF$SleepTotal[i]<-nrow(SleepdataframeCurrent)
-
+  REMRatioDF$Quantile90[i]<-quantile(SleepdataframeCurrent$ThetaOverDelta, c(0.9))
 }
 REMRatioDF$REM_ratio<-REMRatioDF$REMTotal/REMRatioDF$SleepTotal
 
 
 REMRatioDFGrouped<-dplyr::group_by(REMRatioDF, Genotype)
-REMRAtioByGenotype<-dplyr::summarise(REMRatioDFGrouped, 
+REMRatioByGenotype<-dplyr::summarise(REMRatioDFGrouped, 
                       MeanRatio=mean(REM_ratio), 
-                      sdRatio=sd(REM_ratio))
+                      sdRatio=sd(REM_ratio),
+                      MeanQuantile90=mean(Quantile90),
+                      sdQuantile90=sd(Quantile90)
+                      )
 
 ```
 REM to total sleep ratio between genotypes
