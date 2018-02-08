@@ -1919,9 +1919,6 @@ ThetaOverDeltaGrouped<-dplyr::summarise(ThetaOverDeltaGrouped,
                                         MeanThetaOverDelta=mean(ThetaOverDelta))
 ThetaOverDeltaGrouped
 
-ThetaOverDelta.aov<-aov(ThetaOverDelta ~ Index + Error(AnimalID/Index), data=ThetaOverDeltaValsLong)
-summary(ThetaOverDelta.aov)
-qqnorm(residuals(ThetaOverDelta.aov))
 
 ThetaOverDelta.model<-lme4::lmer((ThetaOverDelta)^(1/4)~ Index + (1|AnimalID),
                            data=ThetaOverDeltaValsLong, 
