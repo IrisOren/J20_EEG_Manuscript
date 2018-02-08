@@ -1860,7 +1860,90 @@ rm(SCPPDataframeEventAv)
 
 ```
 
+##########
+###IIS contribution to theta/delta
 
+```{r IISContributionToPower, include=TRUE, echo=FALSE}
+#First select dataframe as was exported for IIS and theta/delta analysis
+IISThetaDeltaDF<-dplyr::select(SCPPDataframeControl, SpikeCount, ThetaOverDelta, AnimalIDVariable, InitialisedTime, LightDark)
+IISThetaDeltaDF<-dplyr::filter(IISThetaDeltaDF,LightDark=="TRUE")
+IISThetaDeltaDF<-dplyr::filter(IISThetaDeltaDF, AnimalIDVariable %in% Fig4SummaryDataframe$AnimalID)
+
+ThetaOverDeltaValsLong<-data.frame()
+for(i in 1:nrow(Fig4SummaryDataframe)){
+  AnimalIDCurrent<-Fig4SummaryDataframe$AnimalID[i]
+  IISThetaDeltaDFCurrent<-filter(IISThetaDeltaDF, AnimalIDVariable==AnimalIDCurrent)
+  #Get non-zero IIS index
+  NonZeroIISIndex<-which(IISThetaDeltaDFCurrent$SpikeCount>0)
+ 
+  #We create dataframe which is indexed by the intervals with non-zero IIS
+  DataFrameByIISIndex<-data.frame(NonZeroIISIndex)
+  
+  #For each index, we get the SpikeCount in preceding interval
+  for(j in 1:length(NonZeroIISIndex)){
+      DataFrameByIISIndex$IISMinus1[j]<-IISThetaDeltaDFCurrent$SpikeCount[NonZeroIISIndex[j]-1]
+  }
+  
+  
+  
+  #Filter for intervals where IIS-1==0
+  DataFrameByIISIndex<-filter(DataFrameByIISIndex, IISMinus1==0)
+  
+  #Get theta/delta in index
+  for(j in 1:nrow(DataFrameByIISIndex)){
+      Index<-DataFrameByIISIndex$NonZeroIISIndex[j]
+      DataFrameByIISIndex$ThetaOverDelta[j]<-IISThetaDeltaDFCurrent$ThetaOverDelta[Index]
+      DataFrameByIISIndex$ThetaOverDeltaMinus1[j]<-IISThetaDeltaDFCurrent$ThetaOverDelta[Index-1]
+  }
+  
+  #Create temporary dataframe of theta/delta values in long format indexed by whether it is interval i-1 or i
+  ThetaOverDeltaValsCurrent<-DataFrameByIISIndex[3:4]
+  ThetaOverDeltaValsCurrentLong<-reshape2::melt(ThetaOverDeltaValsCurrent, 
+                                         variable.name="Index", 
+                                         value.name="ThetaOverDelta")
+  levels(ThetaOverDeltaValsCurrentLong$Index)<-c("i", "iMinus1")
+  ThetaOverDeltaValsCurrentLong$AnimalID<-as.factor(AnimalIDCurrent)
+  
+  #Bind current thetaOverDelta values to existing long dataframe
+  ThetaOverDeltaValsLong<-rbind(ThetaOverDeltaValsLong, ThetaOverDeltaValsCurrentLong)
+}
+write.csv(ThetaOverDeltaValsLong, "./Output/ThetaOverDeltaValsLong.csv")
+rm(ThetaOverDeltaValsCurrent, ThetaOverDeltaValsCurrentLong, DataFrameByIISIndex, IISThetaDeltaDF, IISThetaDeltaDFCurrent)  
+```
+Now fit linear mixed model, and look at the effect of index on theta over delta
+```{r IISContributionToPowerStats, include=TRUE, echo=FALSE}
+
+ThetaOverDeltaGrouped<-group_by(ThetaOverDeltaValsLong, 
+                                AnimalID, Index)
+ThetaOverDeltaGrouped<-dplyr::summarise(ThetaOverDeltaGrouped, 
+                                        MeanThetaOverDelta=mean(ThetaOverDelta))
+ThetaOverDeltaGrouped
+
+ThetaOverDelta.aov<-aov(ThetaOverDelta ~ Index + Error(AnimalID/Index), data=ThetaOverDeltaValsLong)
+summary(ThetaOverDelta.aov)
+qqnorm(residuals(ThetaOverDelta.aov))
+
+ThetaOverDelta.model<-lme4::lmer((ThetaOverDelta)^(1/4)~ Index + (1|AnimalID),
+                           data=ThetaOverDeltaValsLong, 
+                           REML=FALSE)
+
+#Plot residuals
+plot(fitted(ThetaOverDelta.model), residuals(ThetaOverDelta.model))
+qqnorm(residuals(ThetaOverDelta.model))
+hist(residuals(ThetaOverDelta.model))
+summary(ThetaOverDelta.model)
+
+
+#Test signficance of SpikesBinary fixed effect using a chi-squared statistic
+ThetaOverDelta.null<-lme4::lmer((ThetaOverDelta)^(1/4)~ (1|AnimalID), 
+                          data=ThetaOverDeltaValsLong,
+                          REML = FALSE)
+anova(ThetaOverDelta.model, ThetaOverDelta.null)
+```
+
+
+
+#####################
 
 Example of theta/delta and spike count for WT
 ```{r ThetaDeltaExampleWT, echo=FALSE}
