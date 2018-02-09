@@ -1936,8 +1936,11 @@ ThetaOverDelta.null<-lme4::lmer((ThetaOverDelta)^(1/4)~ (1|AnimalID),
                           data=ThetaOverDeltaValsLong,
                           REML = FALSE)
 anova(ThetaOverDelta.model, ThetaOverDelta.null)
-```
 
+coef(summary(ThetaOverDelta.model))
+confint(ThetaOverDelta.model)
+```
+The statistics table in the manuscript reports a 95%CI for the slope as 1.96*SEM. Here 0.0018 +-1.96*0.003=(-0.00408, 0.00768)
 
 
 #####################
@@ -2356,8 +2359,8 @@ DataForTesting <-AChEAbsorptionGenotype$ThioclineRate
   SW_AChE
 
 
-WTThioclineRate<-filter(AChEAbsorptionTTestData,Genotype=="WT")  
-J20ThioclineRate<-filter(AChEAbsorptionTTestData,Genotype=="J20")
+WTThioclineRate<-filter(AChEAbsorptionGenotype,Genotype=="WT")  
+J20ThioclineRate<-filter(AChEAbsorptionGenotype,Genotype=="J20")
 
 #Test normality of differences
   DataForTesting<-WTThioclineRate$ThioclineRate-J20ThioclineRate$ThioclineRate
@@ -2370,7 +2373,7 @@ J20ThioclineRate<-filter(AChEAbsorptionTTestData,Genotype=="J20")
   #The differences are not normally distributed
   
   AChEWilcox<-wilcox.test(WTThioclineRate$ThioclineRate, J20ThioclineRate$ThioclineRate, 
-                      paired = TRUE)
+                      paired = TRUE, conf.int = TRUE)
 
 AChEWilcox
 
