@@ -1012,6 +1012,8 @@ for(i in 1:nrow(REMRatioDF)){
   REMRatioDF$REMTotal[i]<-sum(SleepdataframeCurrent$REM=="R")
   REMRatioDF$SleepTotal[i]<-nrow(SleepdataframeCurrent)
   REMRatioDF$Quantile90[i]<-quantile(SleepdataframeCurrent$ThetaOverDelta, c(0.9))
+  REMRatioDF$RangeL[i]<-range(SleepdataframeCurrent$ThetaOverDelta)[1]
+  REMRatioDF$RangeU[i]<-range(SleepdataframeCurrent$ThetaOverDelta)[2]
 }
 REMRatioDF$REM_ratio<-REMRatioDF$REMTotal/REMRatioDF$SleepTotal
 
@@ -1021,7 +1023,9 @@ REMRatioByGenotype<-dplyr::summarise(REMRatioDFGrouped,
                       MeanRatio=mean(REM_ratio), 
                       sdRatio=sd(REM_ratio),
                       MeanQuantile90=mean(Quantile90),
-                      sdQuantile90=sd(Quantile90)
+                      sdQuantile90=sd(Quantile90),
+                      MeanRangeL=mean(RangeL),
+                      MeanRangeU=mean(RangeU)
                       )
 
 ```
